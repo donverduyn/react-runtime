@@ -102,5 +102,8 @@
   "bugs": {
     "url": "https://github.com/donverduyn/react-runtime/issues"
   },
-  "homepage": "https://github.com/donverduyn/react-runtime#readme"
+  "homepage": "https://github.com/donverduyn/react-runtime#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
