@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com/donverduyn/react-runtime.git"
+    "url": "https://github.com/donverduyn/react-runtime.git"
   },
   "keywords": [
     "effect-ts",
