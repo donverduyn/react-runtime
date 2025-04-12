@@ -10,12 +10,6 @@
       ],
       "module": "ESNext",
       "outDir": "dist",
-      "plugins": [
-        {
-          "transform": "@zerollup/ts-transform-paths",
-          "exclude": ["*"]
-        }
-      ],
     },
     "include": [
       "index.ts",

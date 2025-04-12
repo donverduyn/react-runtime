@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { isPlainObject } from 'remeda';
+import { isPlainObject } from './object';
 
 export function isReactContext2<T>(
   variable: unknown

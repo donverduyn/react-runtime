@@ -1,12 +1,26 @@
 {
-  "name": "react-runtime",
+  "name": "@donverduyn/react-runtime",
   "version": "1.0.0",
   "description": "effect-ts react integration",
-  "main": "index.js",
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "type": "module",
   "scripts": {
     "test": "vitest",
     "lint": "eslint ./src",
+    "build": "rollup -c",
     "publish": "npm publish --access public"
   },
   "repository": {
@@ -24,7 +38,11 @@
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "@semantic-release/npm": "^12.0.1",
     "@testing-library/dom": "^10.2.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -36,7 +54,7 @@
     "@typescript-eslint/parser": "^8.28.0",
     "@vitest/coverage-v8": "^3.0.9",
     "@vitest/ui": "^3.0.9",
-    "@zerollup/ts-transform-paths": "^1.7.18",
+    "effect": "^3.14.8",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-import-resolver-typescript": "^4.2.4",
@@ -51,10 +69,13 @@
     "eslint-plugin-vitest": "^0.5.4",
     "happy-dom": "^17.4.4",
     "prettier": "^3.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "rollup": "^4.39.0",
+    "rollup-plugin-dts": "^6.2.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-tsconfig-paths": "^1.5.2",
-    "rollup-plugin-typescript2": "^0.36.0",
+    "semantic-release": "^24.2.3",
     "ts-node": "^10.9.2",
     "ttypescript": "^1.5.15",
     "typescript": "^5.8.3",
@@ -62,12 +83,13 @@
     "vitest": "^3.0.9"
   },
   "dependencies": {
-    "effect": "^3.14.8",
     "moize": "^6.1.6",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "remeda": "^2.21.2",
     "type-fest": "^4.39.1",
     "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.14.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   }
 }

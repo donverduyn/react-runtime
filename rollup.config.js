@@ -1,85 +1,96 @@
-// import commonjs from '@rollup/plugin-commonjs';
-// import { nodeResolve } from '@rollup/plugin-node-resolve';
-// import typescript from '@rollup/plugin-typescript';
-
-// const config = {
-//   input: './index.ts',
-//   plugins: [
-    // tsConfigPaths({ tsConfigPath: './tsconfig.lib.json' }),
-//     nodeResolve({ extensions: ['.tsx', '.ts', '.json'] }),
-//     commonjs(),
-//     typescript({
-//       tsconfig: './tsconfig.lib.json',
-//       // tsConfigPaths: true,
-//     }),
-//   ],
-// };
-
-// export default config;
-import fs from 'fs';
-import path from 'path';
-import resolve from '@rollup/plugin-node-resolve';
-// import typescript from '@rollup/plugin-typescript';
+import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
+import dts from 'rollup-plugin-dts';
 import peerDepsExternal from 'rollup-plugin-peer-deps-external';
-import typescript from 'rollup-plugin-typescript2';
-import tsConfigPaths from 'rollup-plugin-tsconfig-paths';
-// import ttypescript from 'ttypescript'
-// import alias from '@rollup/plugin-alias';
+import tsconfigPaths from 'rollup-plugin-tsconfig-paths';
 
-// Helper to get tsconfig paths
-// const tsconfig = JSON.parse(fs.readFileSync('./tsconfig.lib.json', 'utf8'));
-// const paths = tsconfig.compilerOptions.paths || {};
-// const aliases = Object.entries(paths).map(([key, value]) => ({
-//   find: key.replace('/*', ''),
-//   replacement: path.resolve(__dirname, value[0].replace('/*', '')),
-// }));
+const input = 'index.ts';
+const external = [
+  'react',
+  'react-dom',
+  'effect',
+  'uuid',
+  'moize',
+  'fast-equals',
+  'micro-memoize',
+  /^react\/.*/,
+  /^effect\/.*/,
+];
 
-export default {
-  input: 'index.ts',
-  output: [
-    {
-      file: 'dist/index.cjs.js',
-      format: 'cjs',
-      sourcemap: true,
-    },
-    {
-      file: 'dist/index.esm.js',
+export default [
+  // ESM + CJS
+  {
+    input,
+    external,
+    output: [
+      {
+        file: 'dist/index.cjs.js',
+        format: 'cjs',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/index.esm.js',
+        format: 'esm',
+        sourcemap: true,
+      },
+    ],
+    plugins: [
+      peerDepsExternal(),
+      tsconfigPaths({ projects: ['./tsconfig.build.json'] }),
+      nodeResolve(),
+      commonjs(),
+      typescript({
+        tsconfig: './tsconfig.build.json',
+        declaration: false,
+        outputToFilesystem: true,
+      }),
+    ],
+  },
+
+  // Minified ESM
+  {
+    input,
+    external,
+    output: {
+      file: 'dist/index.esm.min.js',
       format: 'esm',
       sourcemap: true,
     },
-  ],
-  plugins: [
-    // tsConfigPaths({ tsConfigPath: './tsconfig.lib.json' }),
-    peerDepsExternal(),
-    // alias({
-    //   entries: [
-    //     { find: 'hooks', replacement: path.resolve(__dirname, 'src/hooks') },
-    //     { find: 'utils', replacement: path.resolve(__dirname, 'src/utils') },
-    //   ],
-    // }),
-    // alias({
-    //   entries: aliases,
-    // }),
-    // tsConfigPaths({ tsConfigPath: './tsconfig.lib.json' }),
-    // resolve({
-    //   extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    // }),
-    // commonjs(),
-    typescript({
-      tsconfig: './tsconfig.lib.json',
-      clean: true,
-      // useTsconfigDeclarationDir: true,
-      declaration: true,
-      declarationDir: 'dist/types',
-      exclude: [
-        'node_modules',
-        // Exclude test files
-        /\.test.((js|jsx|ts|tsx))$/,
-        // Exclude story files
-        /\.stories.((js|jsx|ts|tsx|mdx))$/,
-      ],
-      // typescript: ttypescript
-    }),
-  ],
-  external: ['react', 'react-dom'],
-};
+    plugins: [
+      peerDepsExternal(),
+      tsconfigPaths({ projects: ['./tsconfig.build.json'] }),
+      nodeResolve(),
+      commonjs(),
+      typescript({
+        tsconfig: './tsconfig.build.json',
+        declaration: false,
+        outputToFilesystem: true,
+      }),
+      terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+        },
+        format: {
+          comments: false,
+        },
+      }),
+    ],
+  },
+
+  // Types
+  {
+    input,
+    external,
+    output: {
+      file: 'dist/index.d.ts',
+      format: 'es',
+    },
+    plugins: [
+      tsconfigPaths({ projects: ['./tsconfig.lib.json'] }),
+      dts({ tsconfig: './tsconfig.lib.json' }),
+    ],
+  },
+];
