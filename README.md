@@ -14,7 +14,7 @@
 ## Installation
 
 ```bash
-npm install react-runtime
+npm install @donverduyn/react-runtime
 ```
 
 ## Usage
