@@ -21,6 +21,7 @@
     "test": "vitest",
     "lint": "eslint ./src",
     "build": "rollup -c",
+    "playwright:install": "yarn playwright install --with-deps --only-shell chromium",
     "publish": "npm publish --access public"
   },
   "repository": {
@@ -68,6 +69,7 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-vitest": "^0.5.4",
     "happy-dom": "^17.4.4",
+    "playwright": "^1.51.1",
     "prettier": "^3.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

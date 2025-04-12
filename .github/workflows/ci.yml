@@ -59,7 +59,7 @@ jobs:
 
     - name: Install Playwright browsers
       if: steps.cache-playwright.outputs.cache-hit != 'true'
-      run: yarn ws client playwright:install
+      run: yarn playwright:install
 
     - name: Lint
       run: yarn lint
