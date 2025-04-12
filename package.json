@@ -22,8 +22,7 @@
     "test": "vitest ./",
     "lint": "eslint ./src",
     "build": "rollup -c",
-    "playwright:install": "yarn playwright install --with-deps --only-shell chromium",
-    "publish": "npm publish --access public"
+    "playwright:install": "yarn playwright install --with-deps --only-shell chromium"
   },
   "repository": {
     "type": "git",
