@@ -1,0 +1,31 @@
+{
+    "extends": "./tsconfig.options.json",
+    "compilerOptions": {
+      "target": "ES2022",
+      "lib": ["ES2023", "DOM", "DOM.Iterable"],
+      "module": "ESNext",
+      "outDir": ".cache/tsc/workspace/test",
+      "moduleResolution": "Bundler",
+      "types": [
+        "node",
+        "vitest/globals",
+      ],
+    },
+    "exclude": [
+      "**/node_modules/**/*",
+      "dist/**/*",
+      "packages/**/*"
+    ],
+    "include": [
+      ".*/**/*.test.ts",
+      ".*/**/*.test.tsx",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "tests/**/*",
+    ],
+    "references": [
+      {
+        "path": "./tsconfig.lib.json"
+      },
+    ]
+  }

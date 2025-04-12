@@ -1,0 +1,12 @@
+services:
+  devcontainer:
+    image: "mcr.microsoft.com/devcontainers/base:bullseye"
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    user: vscode
+    
+    volumes:
+      - ..:/workspaces/react-runtime:cached
+      - node_modules:/workspaces/react-runtime/node_modules
+
+volumes:
+  node_modules:
