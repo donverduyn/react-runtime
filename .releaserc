@@ -4,5 +4,8 @@
     "@semantic-release/commit-analyzer",
     "@semantic-release/npm",
     "@semantic-release/github"
-  ]
+  ],
+  "npmPublish": true, 
+  "tarballDir": "dist",
+  "npmPublishArgs": "--access public"
 }
