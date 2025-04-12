@@ -1,6 +1,6 @@
 {
   "name": "@donverduyn/react-runtime",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "private": false,
   "description": "effect-ts react integration",
   "main": "./dist/index.cjs.js",
