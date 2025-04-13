@@ -29,8 +29,13 @@
     "url": "git+https://github.com/donverduyn/react-runtime.git"
   },
   "keywords": [
-    "effect-ts",
+    "@donverduyn",
+    "react-runtime",
     "react",
+    "effect",
+    "effect-ts",
+    "runtime",
+    "typescript",
     "di"
   ],
   "author": "Don Verduyn",
