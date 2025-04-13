@@ -33,17 +33,17 @@ export const getDeps = (input: any, deps: React.DependencyList) =>
 
 export const getRuntime = <R, R1>(
   input: any,
-  localContext: any,
-  localRuntime: any
+  localContext: RuntimeContext<any>,
+  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
 ) => {
   const result = (
     isReactContext<RuntimeContext<R1>>(input)
       ? input !== localContext
         ? React.use(input)
-        : localRuntime
+        : instances.get(input)
       : ManagedRuntime.isManagedRuntime(input)
         ? input
-        : localRuntime
+        : instances.get(localContext)
   ) as RuntimeInstance<R | R1> | undefined;
 
   if (result === undefined) {

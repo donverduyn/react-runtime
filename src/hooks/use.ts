@@ -9,7 +9,11 @@ import {
 } from './common/utils.arg';
 
 export const createUse =
-  <R>(localContext: RuntimeContext<R>, localRuntime: RuntimeInstance<R>) =>
+  <R>(
+    localContext: RuntimeContext<R>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  ) =>
   <A, E, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
@@ -23,15 +27,10 @@ export const createUse =
       targetOrEffect,
       effectOrDeps
     );
-    const runtime = getRuntime<R, R1>(
-      targetOrEffect,
-      localContext,
-      localRuntime
-    );
+    const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
 
     return React.useMemo(
       () => runtime.runSync(effect),
-
-      [localRuntime, runtime, ...finalDeps]
+      [instances, runtime, ...finalDeps]
     );
   };

@@ -31,7 +31,10 @@ type Sanitize<T> = T extends InvalidShapes
     : T;
 
 export const createFn =
-  <R>(localContext: RuntimeContext<R>, localRuntime: RuntimeInstance<R>) =>
+  <R>(
+    localContext: RuntimeContext<R>,
+    instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  ) =>
   <T extends unknown[], T1 extends unknown[], A, A1, E, E1, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
@@ -47,21 +50,17 @@ export const createFn =
       (...args: Sanitize<T> | T1) => Effect.Effect<A | A1, E | E1, R | R1>
     >(targetOrEffect, fnOrDeps);
 
-    const runtime = getRuntime<R, R1>(
-      targetOrEffect,
-      localContext,
-      localRuntime
-    );
+    const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
     const fnRef = React.useRef(effectFn);
 
     React.useEffect(() => {
       fnRef.current = effectFn;
-    }, [localRuntime, runtime, effectFn, ...finalDeps]);
+    }, [instances, runtime, effectFn, ...finalDeps]);
 
     const emitter = React.useMemo(
       () => new EventEmitter<[...(Sanitize<T> | T1)], A | A1>(),
 
-      [localRuntime, runtime, ...finalDeps]
+      [instances, runtime, ...finalDeps]
     );
     const stream = React.useMemo(
       () =>
@@ -76,7 +75,7 @@ export const createFn =
           Stream.runDrain
         ),
 
-      [localRuntime, runtime, ...finalDeps]
+      [instances, runtime, ...finalDeps]
     );
 
     React.useEffect(() => {
@@ -85,7 +84,7 @@ export const createFn =
       return () => {
         runtime.runFork(Scope.close(scope, Exit.void));
       };
-    }, [localRuntime, runtime, emitter, ...finalDeps]);
+    }, [instances, runtime, emitter, ...finalDeps]);
 
     return emitter.emit as IsUnknown<Fallback<T1, Sanitize<T>>> extends true
       ? () => Promise<Fallback<A1, A>>

@@ -14,7 +14,11 @@ It takes a context and an effect and runs the effect in the runtime provided by 
 */
 
 export const createRun =
-  <R>(localContext: RuntimeContext<R>, localRuntime: RuntimeInstance<R>) =>
+  <R>(
+    localContext: RuntimeContext<R>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  ) =>
   <A, E, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
@@ -30,11 +34,7 @@ export const createRun =
       targetOrEffect,
       effectOrDeps
     );
-    const runtime = getRuntime<R, R1>(
-      targetOrEffect,
-      localContext,
-      localRuntime
-    );
+    const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
 
     const hasRun = React.useRef(false);
     const scope = React.useRef<Scope.CloseableScope>(null as never);
@@ -58,5 +58,5 @@ export const createRun =
         runtime.runFork(Scope.close(scope.current, Exit.void));
         hasRun.current = false;
       };
-    }, [localRuntime, runtime, ...finalDeps]);
+    }, [instances, runtime, ...finalDeps]);
   };
