@@ -1,6 +1,6 @@
 import { withRuntime } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
-import { context as ChildRuntime } from './Child.runtime';
+import * as ChildRuntime from './Child.runtime';
 import * as Tags from './Child.tags';
 
 type Props = {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { withRuntime } from '@donverduyn/react-runtime';
 import { pipe, type Context } from 'effect';
-import { context as AppRuntime, Store } from './App.runtime';
+import * as AppRuntime from './App.runtime';  
 import { Observer } from 'mobx-react-lite';
 import reactLogo from './assets/react.svg';
 // eslint-disable-next-line import/no-unresolved
@@ -12,16 +12,17 @@ export const App = pipe(
   AppView,
   withRuntime(AppRuntime, (configure) => {
     const runtime = configure();
-    return { store: runtime.use(Store) };
+    return { store: runtime.use(AppRuntime.Store) };
   })
 );
 
 type Props = {
-  readonly store: Context.Tag.Service<Store>;
+  readonly store: Context.Tag.Service<AppRuntime.Store>;
+  readonly initialCount: number;
 };
 
-export function AppView({ store }: Props) {
-  const [count, setCount] = useState(0);
+export function AppView({ store, initialCount }: Props) {
+  const [count, setCount] = useState(initialCount);
 
   return (
     <>
