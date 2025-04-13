@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { withRuntime } from '@donverduyn/react-runtime';
 import { pipe, type Context } from 'effect';
-import * as AppRuntime from './App.runtime';  
+import * as AppRuntime from './App.runtime';
 import { Observer } from 'mobx-react-lite';
 import reactLogo from './assets/react.svg';
 // eslint-disable-next-line import/no-unresolved
@@ -18,11 +18,10 @@ export const App = pipe(
 
 type Props = {
   readonly store: Context.Tag.Service<AppRuntime.Store>;
-  readonly initialCount: number;
 };
 
-export function AppView({ store, initialCount }: Props) {
-  const [count, setCount] = useState(initialCount);
+export function AppView({ store }: Props) {
+  const [count, setCount] = useState(0);
 
   return (
     <>
@@ -52,6 +51,7 @@ export function AppView({ store, initialCount }: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
+        {/*  eslint-disable-next-line react-perf/jsx-no-new-function-as-prop */}
         <Observer render={() => <h2>{store.get('message')}</h2>} />
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

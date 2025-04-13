@@ -78,10 +78,6 @@ type AnnotatedComponent<C extends React.FC<any>> = React.FC<
   [COMPONENT_PROP]?: ExtractStaticComponent<C>;
 };
 
-const hasStaticRegistry = <C extends React.FC<any>>(
-  component: C & AnnotatedComponent<C>
-) => REGISTRY_PROP in component;
-
 const getStaticRegistry = <C extends React.FC<any>>(
   component: (C & AnnotatedComponent<C>) | AnnotatedComponent<C>
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -112,10 +108,6 @@ function collectRuntimeGraph<C extends React.FC<any>, R>(
   component: C & AnnotatedComponent<C>,
   entry: RuntimeEntry<R, C>
 ) {
-  hoistUpdatedRegistry(component, Object.assign(getStaticRegistry(component), {
-    [entry.id]: entry,
-  }) as Record<string, RuntimeEntry<R, C>>);
-  
   const graph: RuntimeEntry<any, any>[] = [];
   const visited = new Set<AnnotatedComponent<any>>();
 
@@ -123,22 +115,25 @@ function collectRuntimeGraph<C extends React.FC<any>, R>(
     if (visited.has(comp)) return;
     visited.add(comp);
 
-    const registry = getStaticRegistry(comp) as Record<string, any>;
-    for (const [key, item] of Object.entries(registry)) {
-      const item = registry[key] as RuntimeEntry<R, React.FC<any>>;
+    const registry = getStaticRegistry(comp);
+    const appendedRegistry =
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      comp === component ? { ...registry, [entry.id]: entry } : registry;
+
+    for (const [key] of Object.entries(appendedRegistry)) {
+      const item = appendedRegistry[key] as RuntimeEntry<R, React.FC<any>>;
       graph.push(item);
 
-      // avoid reading the reference of the component we are creating, as in: if using withRuntime(AppRuntime), skip reading the reference in AppRuntime when traversing the component registries. This is okay, because this component is always the leaf and we are only interested in what goes up, which is always defined directly on the component registry itself (through withUpstream) 
-      
+      // avoid reading the reference of the component we are creating, as in: if using withRuntime(AppRuntime), skip reading the reference in AppRuntime when traversing the component registries. This is okay, because this component is always the leaf and we are only interested in what goes up, which is always defined directly on the component registry itself (through withUpstream)
       let ref: AnnotatedComponent<any> | undefined;
       try {
-        ref = entry.context.reference?.();
-      } catch (err) {
+        ref = entry.context.reference();
+      } catch (_) {
         ref = undefined;
       }
-
       // we currently only support a single reference (assuming a single withRuntime usage for a runtime)
-      ref && dfs(ref);
+      if (ref) dfs(ref);
     }
   }
 
@@ -147,8 +142,7 @@ function collectRuntimeGraph<C extends React.FC<any>, R>(
 }
 
 function topologicalSort<R, C extends AnnotatedComponent<any>>(
-  entries: RuntimeEntry<R, C>[],
-  current: RuntimeEntry<R, C>
+  entries: RuntimeEntry<R, C>[]
 ): Array<RuntimeEntry<any, any> & { level: number }> {
   const contextToEntry = new Map<string, RuntimeEntry<any, any>>();
   const inDegree = new Map<string, number>();
@@ -161,22 +155,29 @@ function topologicalSort<R, C extends AnnotatedComponent<any>>(
   }
 
   for (const entry of entries) {
-    // Skip calling `.reference()` if it's the context we are currently constructing
-    if (entry.context === current.context) continue;
-  
-    const referencedComponent = entry.context.reference?.() ;
-    const depId = [...contextToEntry.entries()].find(
-      ([, e]) => e.context.reference?.() === referencedComponent
-    )?.[0];
-    // @ts-expect-error
-    if (referencedComponent && depId) {
+    let ref: AnnotatedComponent<any> | undefined;
+    let depId: string | undefined;
+    try {
+      ref = entry.context.reference();
+      depId = [...contextToEntry.entries()].find(
+        ([, e]) => e.context.reference() === ref
+      )?.[0];
+    } catch (_) {
+      ref = undefined;
+      depId = undefined;
+    }
+    if (ref && depId) {
       const deps = adjacency.get(depId) ?? [];
       adjacency.set(depId, [...deps, entry.id]);
       inDegree.set(entry.id, (inDegree.get(entry.id) ?? 0) + 1);
     }
   }
 
-  const queue: Array<{ ctx: RuntimeContextReference<R, C>, id: string; level: number }> = [];
+  const queue: Array<{
+    ctx: RuntimeContextReference<R, C>;
+    id: string;
+    level: number;
+  }> = [];
   for (const entry of entries) {
     if (inDegree.get(entry.id)! === 0) {
       queue.push({ ctx: entry.context, id: entry.id, level: 0 });
@@ -196,9 +197,9 @@ function topologicalSort<R, C extends AnnotatedComponent<any>>(
     for (const dep of dependents) {
       inDegree.set(dep, inDegree.get(dep)! - 1);
       if (inDegree.get(dep)! === 0) {
-        const depCtx = contextToEntry.get(dep)?.context;
-        if (depCtx) {
-          queue.push({ ctx: depCtx, id: dep, level: level + 1 });
+        const depEntry = contextToEntry.get(dep);
+        if (depEntry) {
+          queue.push({ ctx: depEntry.context, id: dep, level: level + 1 });
         }
       }
     }
@@ -212,6 +213,7 @@ function topologicalSort<R, C extends AnnotatedComponent<any>>(
 
   return result;
 }
+
 export function withRuntime<R, TProps, C extends React.FC<any>>(
   Context: RuntimeContextReference<R>,
   getSource: (
@@ -257,7 +259,7 @@ export function withRuntime<
       type: 'runtime' as const,
     };
     const rawGraph = collectRuntimeGraph(Component, entry);
-    const sortedRuntimes = topologicalSort(rawGraph, entry);
+    const sortedRuntimes = topologicalSort(rawGraph);
 
     const Wrapper: React.FC<Partial<FallbackProps<C, Props>>> = (props) => {
       // console.log('render', id)

@@ -18,9 +18,10 @@ const messageToggler = Effect.gen(function* () {
   );
 });
 
-export class Store extends Context.Tag(
-  'App/Store'
-)<Store, ObservableMap<string, string>>() {}
+export class Store extends Context.Tag('App/Store')<
+  Store,
+  ObservableMap<string, string>
+>() {}
 
 export const context = pipe(
   Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
