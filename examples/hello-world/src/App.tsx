@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
 import { pipe, type Context } from 'effect';
-import * as AppRuntime from './App.runtime';
 import * as SomeRuntime from './Some.runtime';
+import { Child } from './components/Child/Child';
 import { Observer } from 'mobx-react-lite';
+import * as AppRuntime from './App.runtime';
 import reactLogo from './assets/react.svg';
 // eslint-disable-next-line import/no-unresolved
 import viteLogo from '/vite.svg';
@@ -13,10 +14,11 @@ export const App = pipe(
   AppView,
   // withStatic({ foo: 'bar' }),
   withUpstream(SomeRuntime, ({ runtime }) => {
-    console.log('SomeRuntime', runtime);
+    console.log('SomeRuntime', runtime.runtime.id);
   }),
   withRuntime(AppRuntime, ({ configure }) => {
     const runtime = configure();
+    console.log('AppRuntime', runtime.runtime);
     return { store: runtime.use(AppRuntime.Store) };
   })
 );
@@ -56,7 +58,8 @@ export function AppView({ store }: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
-        {/*  eslint-disable-next-line react-perf/jsx-no-new-function-as-prop */}
+        {}
+        <Child />
         <Observer render={() => <h2>{store.get('message')}</h2>} />
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

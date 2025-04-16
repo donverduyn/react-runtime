@@ -121,9 +121,18 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           RuntimeInstance<any>
         >();
         const mergedFromConfigs = {};
-        const { layer } = Context.context as unknown as {
-          layer: Layer.Layer<R>;
-        };
+        const upstreamContexts = new Map<
+          RuntimeContext<any>,
+          RuntimeInstance<any>
+        >();
+
+        rawGraph.forEach(({ context }) => {
+          const val = React.use(context.context);
+          if (val) {
+            upstreamContexts.set(context.context, val);
+            runtimeInstances.set(context.context, val);
+          }
+        });
 
         console.log(rawGraph);
 
@@ -136,24 +145,17 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             env: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
           };
 
+          const { layer } = entry.context.context as unknown as {
+            layer: Layer.Layer<R>;
+          };
           const factory = (overrides?: Partial<Config>) => {
-            if (type === 'runtime') {
-              const safeConfig = Object.assign(config, overrides ?? {});
+            const safeConfig = Object.assign(config, overrides ?? {});
+            const runtime =
+              runtimeInstances.get(context.context) ??
               // eslint-disable-next-line react-hooks/rules-of-hooks
-              const upstream = React.use(context.context);
-              const runtime =
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                upstream ?? useRuntimeInstance(layer, safeConfig);
-              runtimeInstances.set(context.context, runtime);
-            }
-            const runtime = runtimeInstances.get(context.context);
-            if (!runtime) {
-              throw new Error(
-                `[${name}] Runtime not found for context ${String(
-                  context.context
-                )}`
-              );
-            }
+              useRuntimeInstance(layer, safeConfig);
+            runtimeInstances.set(context.context, runtime);
+
             return {
               runtime,
               use: createUse(context.context, runtimeInstances),
@@ -163,7 +165,7 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           };
 
           if (type === 'upstream' && config.env !== 'prod') {
-            const upstream = React.use(context.context);
+            const upstream = runtimeInstances.get(context.context);
             if (!upstream) {
               // Fallback to useRuntimeInstance if not found
               // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -196,13 +198,6 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             if (entry.level === 0 && maybeProps) {
               Object.assign(mergedFromConfigs, maybeProps);
             }
-
-            // if (configFn) {
-
-            // const maybeProps = configFn(factory, props);
-            // if (entry.level === 0 && maybeProps) {
-            //   Object.assign(mergedFromConfigs, maybeProps);
-            // }
           } else if (type === 'runtime') {
             const instance = factory();
             runtimeInstances.set(context.context, instance.runtime);
@@ -217,14 +212,15 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
 
         return rawGraph
           .filter((item) => item.type === 'runtime')
-          .reduceRight(
-            (acc, { context: { context: Context } }) => (
+          .reduceRight((acc, { context: { context: Context } }) => {
+            const value = upstreamContexts.get(Context);
+            if (value) return acc;
+            return (
               <Context.Provider value={runtimeInstances.get(Context)}>
                 {acc}
               </Context.Provider>
-            ),
-            children
-          );
+            );
+          }, children);
       };
 
       const meta = extractMeta(Component);

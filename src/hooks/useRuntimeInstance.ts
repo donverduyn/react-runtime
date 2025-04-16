@@ -31,26 +31,29 @@ export const useRuntimeInstance = <T>(
   layer: Layer.Layer<T>,
   config: Config
 ) => {
-  // TODO: use useSyncExternalStore to keep track of runtime instances and dispose them based on postUnmountTTL. Rehydrate the runtime instances on mount (maybe we need a component name/id combo here)
+  // TODO: use useSyncExternalStore to keep track of runtime instances and dispose them based on postUnmountTTL. Rehydrate the runtime instances on mount (maybe we need a component name/id combo here). The idea is that we can control the rotation of runtime instances based on what's in the map. This way we can control how any concurrent mode pecularities affect it. This also means we would no longer need to memoize the factory in useState, because the defensive logic would be in the store, to prevent unwanted half executed rotations.
 
   const layerRef = React.useRef(layer);
   const shouldCreate = React.useRef(false);
   const runtimeId = React.useRef(uuid());
   const hasMounted = React.useRef(false);
+  const configRef = React.useRef(config);
 
   const [runtime, setRuntime] = React.useState(() =>
     createRuntime(layerRef.current, runtimeId.current, config)
   );
 
-  const previousConfig = React.useRef(config);
   React.useEffect(() => {
-    if (!deepEqual(previousConfig.current, config)) {
-      previousConfig.current = config;
+    if (!deepEqual(configRef.current, config)) {
       printLog(config, `recreating runtime ${runtimeId.current}`);
       const newRuntime = Object.assign(ManagedRuntime.make(layer), {
         id: uuid(),
       });
-      setRuntime(() => newRuntime);
+      void runtime.dispose().then(() => {
+        setRuntime(() => newRuntime);
+        configRef.current = config;
+        runtimeId.current = newRuntime.id;
+      });
     }
   }, [config]);
 
@@ -63,12 +66,12 @@ export const useRuntimeInstance = <T>(
   React.useEffect(() => {
     if (shouldCreate.current || layerRef.current !== layer) {
       layerRef.current = layer;
-      runtimeId.current = uuid();
       shouldCreate.current = false;
       printLog(config, `recreating runtime ${runtimeId.current}`);
       const newRuntime = Object.assign(ManagedRuntime.make(layer), {
-        id: runtimeId.current,
+        id: uuid(),
       });
+      runtimeId.current = uuid();
       setRuntime(() => newRuntime);
     }
 

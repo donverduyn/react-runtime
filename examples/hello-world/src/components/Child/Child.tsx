@@ -15,10 +15,9 @@ type Props = {
 export const Child = pipe(
   ChildView,
   withUpstream(AppRuntime, ({ runtime }) => {
-    console.log('AppRuntime', runtime);
+    console.log('AppRuntime', runtime.use(AppRuntime.Store));
   }),
-  withRuntime(ChildRuntime, ({ configure }) => {
-    const runtime = configure();
+  withRuntime(ChildRuntime, ({ runtime }) => {
     return { name: runtime.use(Tags.Name) };
   })
 );
