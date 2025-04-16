@@ -1,7 +1,7 @@
 import {
   withRuntime,
   withUpstream,
-  CollectRuntimes,
+  TraverseDeps,
 } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
 import * as AppRuntime from '../../App.runtime';
@@ -26,7 +26,7 @@ export const Child = pipe(
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-type UniqueRuntimes = CollectRuntimes<typeof Child>;
+type UniqueRuntimes = TraverseDeps<typeof Child>;
 
 export function ChildView({ name }: Props) {
   return (

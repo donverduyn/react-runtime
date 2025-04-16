@@ -4,6 +4,7 @@ import memoize from 'moize';
 import { v4 as uuid } from 'uuid';
 import type { Config } from 'components/common/types';
 import { RuntimeInstance } from 'utils/context';
+import { deepEqual } from 'utils/object';
 
 const printLog = (config: Config, message: string) => {
   if (!config.debug) return;
@@ -40,6 +41,18 @@ export const useRuntimeInstance = <T>(
   const [runtime, setRuntime] = React.useState(() =>
     createRuntime(layerRef.current, runtimeId.current, config)
   );
+
+  const previousConfig = React.useRef(config);
+  React.useEffect(() => {
+    if (!deepEqual(previousConfig.current, config)) {
+      previousConfig.current = config;
+      printLog(config, `recreating runtime ${runtimeId.current}`);
+      const newRuntime = Object.assign(ManagedRuntime.make(layer), {
+        id: uuid(),
+      });
+      setRuntime(() => newRuntime);
+    }
+  }, [config]);
 
   if (!hasMounted.current) {
     hasMounted.current = true;

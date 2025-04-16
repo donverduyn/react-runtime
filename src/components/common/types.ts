@@ -1,5 +1,6 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Call, Tuples } from 'hotscript';
 import type { Simplify } from 'type-fest';
 import type { createUse } from 'hooks/use';
 import type { createFn } from 'hooks/useFn';
@@ -77,11 +78,13 @@ type Includes<T extends readonly unknown[], V> = T extends [
 type PushUnique<T extends readonly unknown[], V> =
   Includes<T, V> extends true ? T : [...T, V];
 
+type Reverse<T> = Call<Tuples.Reverse, T>;
+
 export type CollectRuntimes<
   Component,
   Seen extends unknown[] = [],
   Acc extends unknown[] = [],
-> = Unique<
+> =
   ExtractRuntimes<Component> extends readonly [infer Head, ...infer Tail]
     ? ExtractReference<Head> extends infer Ref
       ? Ref extends object
@@ -97,8 +100,9 @@ export type CollectRuntimes<
             >
         : CollectRuntimes<{ __runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
       : Acc
-    : Acc
->;
+    : Acc;
+
+export type TraverseDeps<T> = Reverse<Unique<CollectRuntimes<T>>>;
 
 type Unique<T extends any[], Acc extends any[] = []> = T extends [
   infer Head,

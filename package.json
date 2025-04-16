@@ -92,6 +92,7 @@
     "vitest": "^3.0.9"
   },
   "dependencies": {
+    "hotscript": "^1.0.13",
     "moize": "^6.1.6",
     "type-fest": "^4.39.1",
     "uuid": "^11.1.0"
