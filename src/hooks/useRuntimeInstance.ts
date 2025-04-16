@@ -2,7 +2,8 @@ import * as React from 'react';
 import { Layer, ManagedRuntime } from 'effect';
 import memoize from 'moize';
 import { v4 as uuid } from 'uuid';
-import { RuntimeInstance, type Config } from 'utils/context';
+import type { Config } from 'components/common/types';
+import { RuntimeInstance } from 'utils/context';
 
 const printLog = (config: Config, message: string) => {
   if (!config.debug) return;
