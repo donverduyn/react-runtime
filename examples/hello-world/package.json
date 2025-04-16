@@ -21,6 +21,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "globals": "^15.15.0",
+    "hotscript": "^1.0.13",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }

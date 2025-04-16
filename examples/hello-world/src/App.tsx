@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { withRuntime } from '@donverduyn/react-runtime';
+import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
 import { pipe, type Context } from 'effect';
 import * as AppRuntime from './App.runtime';
+import * as SomeRuntime from './Some.runtime';
 import { Observer } from 'mobx-react-lite';
 import reactLogo from './assets/react.svg';
 // eslint-disable-next-line import/no-unresolved
@@ -10,7 +11,11 @@ import './App.css';
 
 export const App = pipe(
   AppView,
-  withRuntime(AppRuntime, (configure) => {
+  // withStatic({ foo: 'bar' }),
+  withUpstream(SomeRuntime, ({ runtime }) => {
+    console.log('SomeRuntime', runtime);
+  }),
+  withRuntime(AppRuntime, ({ configure }) => {
     const runtime = configure();
     return { store: runtime.use(AppRuntime.Store) };
   })
@@ -70,5 +75,3 @@ export function AppView({ store }: Props) {
     </>
   );
 }
-
-export default App;

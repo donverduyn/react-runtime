@@ -7,11 +7,11 @@
 ## Features
 
 - **Hybrid Higher-Order Components (HOCs):** Use HOCs to define and manage runtime dependencies with static properties that reflect the dependency trees statically and at runtime.
-- **Dependency Injection (DI):** Automatically resolve and inject dependencies using topological sort and lazy instantiation using props for dynamic configurations.
+- **Dependency Injection (DI):** Automatically resolve and inject dependencies using proxy-based or lazy instantiation with props for dynamic configurations.
 - **Portable Components:** Create components that instantiate all dependent runtimes and configuration functions upstream in integration tests and storybook.
 - **Cross-runtime Communication:** Facilitate RPC style communication between different runtimes and components using backpressured functions, to manage push/pull semantics.
-- **Type Safety:** Leverage TypeScript for type-safe dependency management and runtime context resolution.
-- **Clean separation of concerns:** Keep your components clean and focused on their functionality while managing dependencies externally.
+- **Type level Dependency Graph Resolution:** Leverage TypeScript for type-safe dependency management and runtime context resolution.
+- **Clean separation of concerns:** Keep your UI layer separated from the business logic, for better maintainability and testability.
 
 ## Installation
 
@@ -95,7 +95,7 @@ const ChildView = (props) => {
 
 ### Dependency Injection
 
-The HOCs automatically resolve and inject dependencies using topological sorting and lazy instantiation, ensuring that all required runtimes are initialized in the correct order.
+The HOCs automatically resolve and inject dependencies using proxy based and lazy instantiation, ensuring that all required runtimes are initialized in the correct order.
 
 ## Example
 

@@ -1,65 +1,59 @@
-// import * as React from 'react';
-// import { type Layer } from 'effect';
-// import { useRuntimeInstance } from 'hooks/useRuntimeInstance';
-// import type { RuntimeContext, Config } from 'utils/context';
-// import { copyStaticProperties, extractMeta, getDisplayName } from 'utils/react';
+/* eslint-disable eslint-comments/disable-enable-pair */
+/* eslint-disable react/jsx-filename-extension */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import * as React from 'react';
+import type { Simplify, Merge } from 'type-fest';
+import { hocFactory } from 'components/common/factory';
+import type {
+  RuntimeContextReference,
+  RuntimeApi,
+  RUNTIME_PROP,
+  ExtractStaticRegistry,
+  COMPONENT_PROP,
+  ExtractStaticComponent,
+} from 'components/common/types';
+import { type ExtractMeta } from 'utils/react';
 
-export const withUpstream = () => {
-  return <div>withUpstream</div>;
-};
+export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
+  Context: TContext & RuntimeContextReference<R>,
+  getSource: (
+    api: { runtime: RuntimeApi<R> },
+    props: Simplify<Partial<React.ComponentProps<C>>>
+  ) => TProps
+): (Component: C) => React.FC<
+  Simplify<Omit<React.ComponentProps<C>, keyof TProps>>
+> &
+  Merge<
+    ExtractMeta<C>,
+    {
+      [RUNTIME_PROP]: ExtractStaticRegistry<C> extends never
+        ? [TContext]
+        : [...ExtractStaticRegistry<C>, TContext];
+      [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    }
+  >;
 
-// const UPSTREAM_KEY = '__runtimes';
+export function withUpstream<TTarget, C extends React.FC<any>>(
+  Context: RuntimeContextReference<TTarget>,
+  getSource?: (
+    api: { runtime: RuntimeApi<TTarget> },
+    props: Simplify<Partial<React.ComponentProps<C>>>
+  ) => void
+): (
+  Component: C
+) => React.FC<Simplify<React.ComponentProps<C>>> & Simplify<ExtractMeta<C>>;
 
-// export const WithUpstream =
-//   <R,>(Context: RuntimeContext<R>) =>
-//   <C extends React.FC<any>>(Component: C): C => {
-//     const { layer } = Context as unknown as {
-//       layer: Layer.Layer<R>;
-//     };
-
-//     const meta = extractMeta(Component);
-
-//     const existing = (meta[UPSTREAM_KEY as keyof typeof meta] ??
-//       []) as RuntimeContext<any>[];
-//     const base = Object.assign({}, meta, {
-//       [UPSTREAM_KEY]: existing.concat(Context),
-//     });
-
-//     const Wrapper = (
-//       props: React.ComponentProps<C> & {
-//         readonly __render: (cmp: C) => React.ElementType | null;
-//       }
-//     ) => {
-//       // console.log('withUpstream', props);
-//       const { __render, ...rest } = props;
-//       const finalRender = (__render ?? (() => null)) as (
-//         cmp: C,
-//         props: React.ComponentProps<C>
-//       ) => React.ReactNode | null;
-
-//       const upstream = React.use(Context);
-//       const config: Config = {
-//         componentName: getDisplayName(Component, 'WithUpStream'),
-//         debug: true,
-//         postUnmountTTL: 1000,
-//       };
-
-//       // we always create a new runtime, but use an inert factory to prevent instantiation
-//       // because we can't guarantee the number of hook calls otherwise.
-//       const runtime = useRuntimeInstance(layer, config);
-//       const Result = finalRender(Component, props);
-
-//       return upstream !== undefined ? (
-//         (Result ?? <Component {...(rest as React.ComponentProps<C>)} />)
-//       ) : (
-//         // this is the fallback for testing/storybook
-//         <Context.Provider value={runtime}>
-//           {Result ?? <Component {...(rest as React.ComponentProps<C>)} />}
-//         </Context.Provider>
-//       );
-//     };
-
-//     copyStaticProperties(base, Wrapper);
-//     Wrapper.displayName = getDisplayName(Component, 'WithUpstream');
-//     return Wrapper as C;
-//   };
+export function withUpstream<
+  C extends React.FC<any>,
+  R,
+  TProps extends Record<string, unknown> | undefined,
+>(
+  Context: RuntimeContextReference<R>,
+  getSource?: (
+    api: { runtime: RuntimeApi<R> },
+    props: Partial<React.ComponentProps<C>>
+  ) => TProps
+) {
+  const hoc = hocFactory('upstream', 'withUpstream');
+  return hoc(Context, getSource);
+}
