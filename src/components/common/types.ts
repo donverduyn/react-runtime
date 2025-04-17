@@ -1,6 +1,6 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Call, Tuples } from 'hotscript';
+import type { Booleans, Call, Objects, Tuples } from 'hotscript';
 import type { Simplify } from 'type-fest';
 import type { createUse } from 'hooks/use';
 import type { createFn } from 'hooks/useFn';
@@ -9,6 +9,8 @@ import type { RuntimeContext, RuntimeInstance } from 'utils/context';
 
 export const RUNTIME_PROP = '__runtimes';
 export const COMPONENT_PROP = '__component';
+export const PROPS_PROP = '__props';
+export const UPSTREAM_PROP = '__upstream';
 
 export type RuntimeApi<R> = {
   runtime: RuntimeInstance<R>;
@@ -57,13 +59,48 @@ export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
     : never
   : T;
 
-export type ExtractStaticRegistry<T> = T extends { [RUNTIME_PROP]: infer R }
+export type ExtractStaticRuntimes<T> = T extends { [RUNTIME_PROP]: infer R }
   ? R extends unknown[]
     ? R
     : never
-  : never;
+  : [];
 
-type ExtractReference<T> = T extends { reference: () => infer R } ? R : never;
+export type ExtractStaticProps<T> = T extends { [PROPS_PROP]: infer P }
+  ? P
+  : Record<never, never>;
+
+export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }
+  ? U extends unknown[]
+    ? U
+    : never
+  : [];
+
+export type UnwrapRuntime<T> = T extends { __runtime: infer R } ? R : T;
+
+type ExtractReference<T> =
+  UnwrapRuntime<T> extends { reference: () => infer R } ? R : never;
+
+declare const UpstreamSymbol: unique symbol;
+
+type UpstreamBrand = {
+  readonly [UpstreamSymbol]: never;
+};
+
+export type Up<T> = T & UpstreamBrand;
+
+export type KeepUpstream<T> = Call<
+  Tuples.Filter<Booleans.Extends<{ [UpstreamSymbol]: true }>>,
+  T
+>;
+
+type DownstreamBrand = {
+  readonly [UpstreamSymbol]: false;
+};
+
+export type Down<T> = T & DownstreamBrand;
+
+export type FilterReference<T> = Call<Tuples.Map<Objects.Get<'type'>>, T>;
+
 type ExtractRuntimes<T> = T extends { __runtimes?: infer R } ? R : never;
 
 type Includes<T extends readonly unknown[], V> = T extends [

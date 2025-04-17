@@ -8,9 +8,15 @@ import type {
   RuntimeContextReference,
   RuntimeApi,
   RUNTIME_PROP,
-  ExtractStaticRegistry,
+  ExtractStaticRuntimes,
   COMPONENT_PROP,
   ExtractStaticComponent,
+  PROPS_PROP,
+  ExtractStaticProps,
+  UPSTREAM_PROP,
+  TraverseDeps,
+  KeepUpstream,
+  Up,
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
@@ -26,22 +32,26 @@ export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
   Merge<
     ExtractMeta<C>,
     {
-      [RUNTIME_PROP]: ExtractStaticRegistry<C> extends never
-        ? [TContext]
-        : [...ExtractStaticRegistry<C>, TContext];
+      [UPSTREAM_PROP]: TraverseDeps<{
+        [RUNTIME_PROP]: KeepUpstream<
+          [...ExtractStaticRuntimes<C>, Up<TContext>]
+        >;
+      }>;
+      [RUNTIME_PROP]: [...ExtractStaticRuntimes<C>, Up<TContext>];
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
+      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }
   >;
 
-export function withUpstream<TTarget, C extends React.FC<any>>(
-  Context: RuntimeContextReference<TTarget>,
-  getSource?: (
-    api: { runtime: RuntimeApi<TTarget> },
-    props: Simplify<Partial<React.ComponentProps<C>>>
-  ) => void
-): (
-  Component: C
-) => React.FC<Simplify<React.ComponentProps<C>>> & Simplify<ExtractMeta<C>>;
+// export function withUpstream<TTarget, C extends React.FC<any>>(
+//   Context: RuntimeContextReference<TTarget>,
+//   getSource?: (
+//     api: { runtime: RuntimeApi<TTarget> },
+//     props: Simplify<Partial<React.ComponentProps<C>>>
+//   ) => void
+// ): (
+//   Component: C
+// ) => React.FC<Simplify<React.ComponentProps<C>>> & Simplify<ExtractMeta<C>>;
 
 export function withUpstream<
   C extends React.FC<any>,

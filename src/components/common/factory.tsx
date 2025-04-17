@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Layer } from 'effect';
+import type { Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { createUse } from 'hooks/use';
 import { createFn } from 'hooks/useFn';
@@ -14,17 +15,20 @@ import {
   getDisplayName,
   copyStaticProperties,
 } from 'utils/react';
-import type {
-  ExtractStaticComponent,
-  ExtractStaticRegistry,
-  RuntimeApi,
-  RuntimeContextReference,
-  RuntimeEntry,
-  Config,
+import {
+  type ExtractStaticComponent,
+  type ExtractStaticRuntimes,
+  type RuntimeApi,
+  type RuntimeContextReference,
+  type RuntimeEntry,
+  type Config,
+  type PROPS_PROP,
+  type ExtractStaticProps,
+  COMPONENT_PROP,
+  RUNTIME_PROP,
+  type UPSTREAM_PROP,
+  type TraverseDeps,
 } from './types';
-
-const RUNTIME_PROP = '__runtimes';
-const COMPONENT_PROP = '__component';
 
 const getStaticRegistry = <C extends React.FC<any>, R>(
   component: C & { [RUNTIME_PROP]?: RuntimeEntry<R, C>[] }
@@ -48,10 +52,10 @@ const hoistUpdatedRegistry = <C extends React.FC<any>, R>(
   Wrapper: C & { [RUNTIME_PROP]?: RuntimeEntry<R, C>[] },
   registry: RuntimeEntry<R, C>[]
 ) => {
-  Wrapper[RUNTIME_PROP] = registry as ExtractStaticRegistry<C>;
+  Wrapper[RUNTIME_PROP] = registry as ExtractStaticRuntimes<C>;
 };
 
-function collectRuntimeGraph<C extends React.FC<any>, R>(
+function collectRuntimeEntries<C extends React.FC<any>, R>(
   component: C,
   entry: RuntimeEntry<R, C>
 ) {
@@ -115,7 +119,7 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
       };
 
       const Wrapper: React.FC<Partial<React.ComponentProps<C>>> = (props) => {
-        const rawGraph = collectRuntimeGraph(Component, entry);
+        const entries = collectRuntimeEntries(Component, entry);
         const runtimeInstances = new Map<
           RuntimeContext<any>,
           RuntimeInstance<any>
@@ -126,7 +130,7 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           RuntimeInstance<any>
         >();
 
-        rawGraph.forEach(({ context }) => {
+        entries.forEach(({ context }) => {
           const val = React.use(context.context);
           if (val) {
             upstreamContexts.set(context.context, val);
@@ -134,9 +138,9 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           }
         });
 
-        console.log(rawGraph);
+        console.log(entries);
 
-        rawGraph.forEach((entry) => {
+        entries.forEach((entry) => {
           const { context, configFn, type } = entry;
           const config: Config = {
             componentName: getDisplayName(target, 'Runtime'),
@@ -192,15 +196,16 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
                 runtime: RuntimeApi<R>;
                 configure: typeof factory;
               },
-              props
+              Object.assign({}, mergedFromConfigs, props)
             );
 
             if (entry.level === 0 && maybeProps) {
               Object.assign(mergedFromConfigs, maybeProps);
             }
           } else if (type === 'runtime') {
-            const instance = factory();
-            runtimeInstances.set(context.context, instance.runtime);
+            factory();
+            // const instance = factory();
+            // runtimeInstances.set(context.context, instance.runtime);
           }
         });
 
@@ -210,7 +215,7 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           (props.children as React.ReactNode) ??
           null;
 
-        return rawGraph
+        return entries
           .filter((item) => item.type === 'runtime')
           .reduceRight((acc, { context: { context: Context } }) => {
             const value = upstreamContexts.get(Context);
@@ -235,10 +240,12 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
       );
 
       return Memo as typeof Memo & {
-        [RUNTIME_PROP]: ExtractStaticRegistry<C> extends never
-          ? [typeof Context]
-          : [...ExtractStaticRegistry<C>, typeof Context];
+        [UPSTREAM_PROP]: TraverseDeps<{
+          [RUNTIME_PROP]: [...ExtractStaticRuntimes<C>, typeof Context];
+        }>;
+        [RUNTIME_PROP]: [...ExtractStaticRuntimes<C>, typeof Context];
         [COMPONENT_PROP]: ExtractStaticComponent<C>;
+        [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
       };
     };
   };

@@ -10,17 +10,23 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
+const withLogger = <C extends React.FC<Props>>(component: C) =>
+  pipe(
+    component,
+    withUpstream(SomeRuntime, ({ runtime }, props) => {
+      console.log('SomeRuntime', runtime.runtime.id);
+    }),
+    withRuntime(AppRuntime, ({ configure }) => {
+      const runtime = configure({ postUnmountTTL: 1000 });
+      console.log('AppRuntime', runtime.runtime);
+      return { store: runtime.use(AppRuntime.Store) };
+    })
+  );
+
 export const App = pipe(
   AppView,
   // withStatic({ foo: 'bar' }),
-  withUpstream(SomeRuntime, ({ runtime }) => {
-    console.log('SomeRuntime', runtime.runtime.id);
-  }),
-  withRuntime(AppRuntime, ({ configure }) => {
-    const runtime = configure();
-    console.log('AppRuntime', runtime.runtime);
-    return { store: runtime.use(AppRuntime.Store) };
-  })
+  withLogger
 );
 
 type Props = {
