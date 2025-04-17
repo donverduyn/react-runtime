@@ -2,6 +2,9 @@
 
 `react-runtime` is a library designed to integrate [effect-ts](https://github.com/Effect-TS/core) with React, enabling seamless dependency injection and runtime management through hybrid higher-order components (HOCs). It provides a powerful API for creating portable React components that manage their dependencies dynamically and efficiently.
 
+<img width="936" alt="Screenshot 2025-04-17 at 22 16 28" src="https://github.com/user-attachments/assets/8bd9704d-0626-4966-84f9-e73550352816" />
+
+
 **NOTE: This project is currently WIP**
 
 ## Features
