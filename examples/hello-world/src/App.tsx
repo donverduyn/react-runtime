@@ -18,16 +18,11 @@ const withLogger = <C extends React.FC<Props>>(component: C) =>
     }),
     withRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
-      console.log('AppRuntime', runtime.runtime);
       return { store: runtime.use(AppRuntime.Store) };
     })
   );
 
-export const App = pipe(
-  AppView,
-  // withStatic({ foo: 'bar' }),
-  withLogger
-);
+export const App = pipe(AppView, withLogger);
 
 type Props = {
   readonly store: Context.Tag.Service<AppRuntime.Store>;

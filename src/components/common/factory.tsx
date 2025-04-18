@@ -138,8 +138,6 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
           }
         });
 
-        console.log(entries);
-
         entries.forEach((entry) => {
           const { context, configFn, type } = entry;
           const config: Config = {

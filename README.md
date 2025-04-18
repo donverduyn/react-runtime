@@ -1,17 +1,30 @@
 # react-runtime
 
-`react-runtime` is a library designed to integrate [effect-ts](https://github.com/Effect-TS/core) with React, enabling seamless dependency injection and runtime management through hybrid higher-order components (HOCs). It provides a powerful API for creating portable React components that manage their dependencies dynamically and efficiently.
+**react-runtime** introduces a new component model for [React](https://github.com/facebook/react) — where components act as computational units in a runtime graph. Using static type metadata, it traverses the dependency tree to collect runtime registrations and rebuilds exactly what’s needed at the leaf. 
 
+### Demo
 ![Snap](https://github.com/user-attachments/assets/9f2edeb2-ebed-4fe0-af21-fb74eb388e79)
+
+Powered by [Effect](https://github.com/Effect-TS/effect) and self-deduplicating HOCs, it enables portable, reactive components that inject services, push data upstream, and execute effects across runtime boundaries — without mocks, boilerplate, or manual wiring. All scopes are closed automatically on unmount, ensuring upstream callbacks and subscriptions are safely cleaned up.
 
 ## Features
 
-- **Hybrid Higher-Order Components (HOCs):** Use HOCs to define and manage runtime dependencies with static properties that reflect the dependency trees statically and at runtime.
-- **Dependency Injection (DI):** Automatically resolve and inject dependencies using proxy-based or lazy instantiation with props for dynamic configurations.
-- **Portable Components:** Create components that instantiate all dependent runtimes and configuration functions upstream in integration tests and storybook.
-- **Cross-runtime Communication:** Facilitate RPC style communication between different runtimes and components using backpressured functions, to manage push/pull semantics.
-- **Type level Dependency Graph Resolution:** Leverage TypeScript for type-safe dependency management and runtime context resolution.
-- **Clean separation of concerns:** Keep your UI layer separated from the business logic, for better maintainability and testability.
+✨ Here’s what you get out of the box:
+
+- **Dependency Injection Made Simple**: Inject runtimes automatically using proxy-based or lazy instantiation — with full support for dynamic config via props.
+
+- **Cross-Runtime Communication**: Pass data, callbacks, or event handlers into upstream runtimes using backpressured functions — enabling reactive streams, remote effect execution, and automatic cleanup on unmount.
+
+- **Add Behavior with One Line**: Use withRuntime and withUpstream to declaratively attach data, side effects, or services to any component.
+
+- **No More Setup Boilerplate**: Components get everything they need — even in tests or Storybook — without decorators or mocks.
+
+- **No Wrapper Hell**: Self-deduplicating HOCs merge all runtime logic into a single wrapper — without interfering with any other HOCs.
+
+- **Keep Logic Out of the UI**: Colocate your domain logic in reusable runtime modules and keep your components focused purely on rendering.
+
+- **Type-Driven Transparency**: TypeScript infers the entire runtime dependency graph and shows exactly what each component expects and receives — no more guessing, no digging through files.
+
 
 ## Installation
 
@@ -85,11 +98,14 @@ import * as AppTags from './../App.tags';
 
 export const Child = pipe(
     ChildView,
-    withUpstream(AppRuntime),
+    withUpstream(AppRuntime, ({ runtime }) => {
+        const store = runtime.use(AppTags.Store);
+        return { store }
+    }),
 )
 
-const ChildView = (props) => {
-    return <div>Child Component</div>;
+const ChildView = ({ store }) => {
+    return <div>{store.size}</div>;
 }
 ```
 
@@ -127,10 +143,13 @@ const ChildView: React.FC<Props> = ({ store }) => {
 
 ## How It Works
 
-1. **Runtime Definition:** Each `.runtime.ts` file exports a runtime context and a registry of components using `withRuntime`.
-2. **Upstream Dependencies:** Components define their dependencies using `withUpstream(SomeRuntime)`.
-3. **Dependency Resolution:** The HOCs use topological sorting to resolve the dependency tree and lazily instantiate runtimes as needed.
-4. **Component Composition:** The HOC composition flattens nested wrappers and returns a component with a single context provider tree. The last HOC in the chain always renders the component, while previous HOCs their wrappers are discarded, to rely on assigned static properties for the dependency resolution process.
+1. **Runtime Definition:** Each `.runtime.ts` file exports a runtime context and a reference to the component in which it is used by `withRuntime`. We currently assume, a runtime is only used in one component, because it shadows itself in the dependency tree. We might change this in the future.
+
+2. **Upstream Dependencies:** Components define their dependencies using `withUpstream(SomeRuntime)`. During testing or storybook, they will inject the upstream runtime context directly into the component.
+
+3. **Dependency Resolution:** The HOCs traverse bottom to top, and instantiate top to bottom, and then the order in which hocs are specificed, to resolve the dependency tree and lazily instantiate runtimes as needed.
+
+4. **Component Composition:** The HOC composition flattens nested wrappers and returns a component with a single context provider tree. The last HOC in the chain always renders the component, while previous HOCs their wrappers are discarded, relyiing on assigned static properties for the dependency resolution process and a component side channel, which is passed into the first `withRuntime` or `withUpstream` hoc.
 
 
 ## License

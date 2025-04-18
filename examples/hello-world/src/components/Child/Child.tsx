@@ -1,8 +1,4 @@
-import {
-  withRuntime,
-  withUpstream,
-  TraverseDeps,
-} from '@donverduyn/react-runtime';
+import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
 import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
@@ -13,9 +9,10 @@ type Props = {
 };
 
 export const Child = pipe(
-  ChildView,
+  ({ name }: Props) => <h1>Hello, {name}!</h1>,
+
   withUpstream(AppRuntime, ({ runtime }) => {
-    console.log('AppRuntime', runtime.use(AppRuntime.Store));
+    console.log(runtime.runtime.id);
     return { foo: true };
   }),
   withRuntime(ChildRuntime, ({ runtime }) => {
@@ -23,15 +20,10 @@ export const Child = pipe(
   })
 );
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type UniqueRuntimes = TraverseDeps<typeof Child>;
-
-export function ChildView({ name }: Props) {
+export const ChildView: React.FC<Props> = ({ name }) => {
   return (
     <div>
-      <h1>Hello,{name}!</h1>
+      <h1>Hello, {name}!</h1>
     </div>
   );
-}
+};
