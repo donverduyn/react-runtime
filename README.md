@@ -1,5 +1,12 @@
 # react-runtime
 
+[![npm version](https://img.shields.io/npm/v/@donverduyn/react-runtime.svg?label=%20npm)](https://www.npmjs.com/package/@donverduyn/react-runtime)
+[![CI](https://img.shields.io/github/actions/workflow/status/donverduyn/react-runtime/ci.yml?label=CI)](https://github.com/donverduyn/react-runtime/actions)
+[![License](https://img.shields.io/npm/l/@donverduyn/react-runtime)](LICENSE)
+[![Types](https://img.shields.io/npm/types/@donverduyn/react-runtime.svg)](https://www.npmjs.com/package/@donverduyn/react-runtime)
+[![Made with Effect](https://img.shields.io/badge/made%20with-Effect-7347ff)](https://github.com/Effect-TS/effect)
+
+
 **react-runtime** introduces a new component model for [React](https://github.com/facebook/react) — where components act as computational units in a runtime graph. Using static type metadata, it traverses the dependency tree to collect runtime registrations and rebuilds exactly what’s needed at the leaf. 
 
 **Portable, Reactive, Dependency-Injected Components.**
@@ -10,21 +17,21 @@ Powered by [Effect](https://github.com/Effect-TS/effect) and self-deduplicating 
 
 ## Features
 
-✨ Here’s what you get out of the box:
+Here’s what you get out of the box:
 
-- **Dependency Injection Made Simple**: Inject runtimes automatically using proxy-based or lazy instantiation — with full support for dynamic config via props.
+- 🧩 **Dependency Injection Made Simple**: Inject runtimes automatically using proxy-based or lazy instantiation — with full support for dynamic config via props.
 
-- **Cross-Runtime Communication**: Pass data, callbacks, or event handlers into upstream runtimes using backpressured functions — enabling reactive streams, remote effect execution, and automatic cleanup on unmount.
+- 🔁 **Cross-Runtime Communication**: Pass data, callbacks, or event handlers into upstream runtimes using backpressured functions — enabling reactive streams, remote effect execution, and automatic cleanup on unmount.
 
-- **Add Behavior with One Line**: Use withRuntime and withUpstream to declaratively attach data, side effects, or services to any component.
+- ✨ **Add Behavior with One Line**: Use withRuntime and withUpstream to declaratively attach data, side effects, or services to any component.
 
-- **No More Setup Boilerplate**: Components get everything they need — even in tests or Storybook — without decorators or mocks.
+- 🧬 **No More Setup Boilerplate**: Components get everything they need — even in tests or Storybook — without decorators or mocks.
 
-- **No Wrapper Hell**: Self-deduplicating HOCs merge all runtime logic into a single wrapper — without interfering with any other HOCs.
+- 🚫 **No Wrapper Hell**: Self-deduplicating HOCs merge all runtime logic into a single wrapper — without interfering with any other HOCs.
 
-- **Keep Logic Out of the UI**: Colocate your domain logic in reusable runtime modules and keep your components focused purely on rendering.
+- 🧠 **Keep Logic Out of the UI**: Colocate your domain logic in reusable runtime modules and keep your components focused purely on rendering.
 
-- **Type-Driven Transparency**: TypeScript infers the entire runtime dependency graph and shows exactly what each component expects and receives — no more guessing, no digging through files.
+- 🔍 **Type-Driven Transparency**: TypeScript infers the entire runtime dependency graph and shows exactly what each component expects and receives — no more guessing, no digging through files.
 
 
 ## Installation
