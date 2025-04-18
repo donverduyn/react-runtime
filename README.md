@@ -2,7 +2,8 @@
 
 **react-runtime** introduces a new component model for [React](https://github.com/facebook/react) — where components act as computational units in a runtime graph. Using static type metadata, it traverses the dependency tree to collect runtime registrations and rebuilds exactly what’s needed at the leaf. 
 
-### Demo
+**Portable, Reactive, Dependency-Injected Components.**
+
 ![Snap](https://github.com/user-attachments/assets/9f2edeb2-ebed-4fe0-af21-fb74eb388e79)
 
 Powered by [Effect](https://github.com/Effect-TS/effect) and self-deduplicating HOCs, it enables portable, reactive components that inject services, push data upstream, and execute effects across runtime boundaries — without mocks, boilerplate, or manual wiring. All scopes are closed automatically on unmount, ensuring upstream callbacks and subscriptions are safely cleaned up.
