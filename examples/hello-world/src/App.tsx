@@ -13,7 +13,7 @@ import './App.css';
 const withLogger = <C extends React.FC<Props>>(component: C) =>
   pipe(
     component,
-    withUpstream(SomeRuntime, ({ runtime }, props) => {
+    withUpstream(SomeRuntime, ({ runtime }) => {
       console.log('SomeRuntime', runtime.runtime.id);
     }),
     withRuntime(AppRuntime, ({ configure }) => {

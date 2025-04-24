@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
 import type { IsUnknown } from 'type-fest';
-import { RuntimeContext, RuntimeInstance } from 'utils/context';
+import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
 import {
   getDeps,

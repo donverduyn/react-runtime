@@ -6,6 +6,7 @@ import {
   type Layer,
   type ManagedRuntime,
 } from 'effect';
+import type { Config, RuntimeContext } from 'components/common/types';
 
 export type RuntimeContext2<T, R> = {
   context: React.Context<
@@ -32,22 +33,22 @@ export const createRuntimeContext2 =
       };
     };
 
-export const createRuntimeContext = <T>(layer: Layer.Layer<T>) => {
-  const context = React.createContext<
-    (ManagedRuntime.ManagedRuntime<T, never> & { id: string }) | undefined
-  >(undefined);
-  return Object.assign(context, { layer });
-};
-
-export type RuntimeContext<T> = React.Context<RuntimeInstance<T> | undefined>;
-
-export type RuntimeInstance<R> = ManagedRuntime.ManagedRuntime<R, never> & {
-  id: string;
-};
-export type RuntimeType<T> =
-  T extends React.Context<infer U> ? NonNullable<U> : never;
-
-export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
+export const createRuntimeContext =
+  <TT extends RuntimeContext<R>, R = never>(config: Partial<Config>) =>
+  (layer: Layer.Layer<R>) => {
+    const reactCtx = React.createContext<
+      | (ManagedRuntime.ManagedRuntime<R, never> & {
+          id: string;
+          config: Config;
+        })
+      | undefined
+    >(undefined);
+    const context: RuntimeContext<R> = Object.assign(reactCtx, {
+      layer,
+      config,
+    });
+    return context as TT;
+  };
 
 export const fromLayer = <A, E, R, TResult = Effect.Effect<A, E, R>>(
   layer: Effect.Effect<A, E, R>,

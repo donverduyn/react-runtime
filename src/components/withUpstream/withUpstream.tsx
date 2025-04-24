@@ -20,11 +20,13 @@ import type {
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
+const withUpstreamImpl = hocFactory('upstream', 'withUpstream');
+
 export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
   Context: TContext & RuntimeContextReference<R>,
   getSource: (
     api: { runtime: RuntimeApi<R> },
-    props: Simplify<Partial<React.ComponentProps<C>>>
+    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
   Simplify<Omit<React.ComponentProps<C>, keyof TProps>>
@@ -43,16 +45,6 @@ export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
     }
   >;
 
-// export function withUpstream<TTarget, C extends React.FC<any>>(
-//   Context: RuntimeContextReference<TTarget>,
-//   getSource?: (
-//     api: { runtime: RuntimeApi<TTarget> },
-//     props: Simplify<Partial<React.ComponentProps<C>>>
-//   ) => void
-// ): (
-//   Component: C
-// ) => React.FC<Simplify<React.ComponentProps<C>>> & Simplify<ExtractMeta<C>>;
-
 export function withUpstream<
   C extends React.FC<any>,
   R,
@@ -61,9 +53,8 @@ export function withUpstream<
   Context: RuntimeContextReference<R>,
   getSource?: (
     api: { runtime: RuntimeApi<R> },
-    props: Partial<React.ComponentProps<C>>
+    props: Merge<React.ComponentProps<C>, ExtractStaticProps<C>>
   ) => TProps
 ) {
-  const hoc = hocFactory('upstream', 'withUpstream');
-  return hoc(Context, getSource);
+  return withUpstreamImpl(Context, getSource);
 }

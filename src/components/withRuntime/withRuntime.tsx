@@ -20,6 +20,8 @@ import type {
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
+const withRuntimeImpl = hocFactory('runtime', 'withRuntime');
+
 export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
   Context: TContext & RuntimeContextReference<R>,
   getSource: (
@@ -27,7 +29,7 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
       configure: (config?: Partial<Config>) => RuntimeApi<R>;
       runtime: RuntimeApi<R>;
     },
-    props: Simplify<Partial<React.ComponentProps<C>>>
+    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
   Simplify<Omit<React.ComponentProps<C>, keyof TProps>>
@@ -96,9 +98,8 @@ export function withRuntime<
       configure: (config?: Partial<Config>) => RuntimeApi<R>;
       runtime: RuntimeApi<R>;
     },
-    props: Partial<React.ComponentProps<C>>
+    props: Merge<React.ComponentProps<C>, ExtractStaticProps<C>>
   ) => TProps
 ) {
-  const hoc = hocFactory('runtime', 'withRuntime');
-  return hoc(Context, getSource);
+  return withRuntimeImpl(Context, getSource);
 }

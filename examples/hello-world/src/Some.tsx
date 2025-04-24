@@ -6,11 +6,11 @@ import * as SomeRuntime from './Some.runtime';
 export const Some = pipe(
   SomeView,
   withUpstream(FooRuntime, ({ runtime }) => {
-    console.log('FooRuntime', runtime.runtime.id);
+    // console.log('FooRuntime', runtime.runtime.id);
   }),
   withRuntime(SomeRuntime, ({ configure }) => {
     const runtime = configure();
-    console.log('SomeRuntime', runtime.runtime.id);
+    // console.log('SomeRuntime', runtime.runtime.id);
   })
 );
 

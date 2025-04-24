@@ -1,6 +1,5 @@
-import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
+import { withRuntime } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
-import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
 import * as Tags from './Child.tags';
 
@@ -9,21 +8,30 @@ type Props = {
 };
 
 export const Child = pipe(
-  ({ name }: Props) => <h1>Hello, {name}!</h1>,
+  ChildView,
 
-  withUpstream(AppRuntime, ({ runtime }) => {
-    console.log(runtime.runtime.id);
-    return { foo: true };
+  // withUpstream(AppRuntime, ({ runtime }) => {
+  //   // console.log(runtime.runtime.id);
+  //   // return { foo: true };
+  // }),
+  withRuntime(ChildRuntime, ({ configure }) => {
+    const runtime = configure({ debug: true });
+    return { name: runtime.use(Tags.Name) };
   }),
-  withRuntime(ChildRuntime, ({ runtime }) => {
+  withRuntime(ChildRuntime, ({ configure }) => {
+    const runtime = configure({
+      debug: true,
+      fresh: true,
+      disposeStrategy: 'dispose',
+    });
     return { name: runtime.use(Tags.Name) };
   })
 );
 
-export const ChildView: React.FC<Props> = ({ name }) => {
+function ChildView({ name }: Props) {
   return (
     <div>
       <h1>Hello, {name}!</h1>
     </div>
   );
-};
+}

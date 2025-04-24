@@ -1,1 +1,1 @@
-export const random = (i: number) => (i % 2 === 0 ? 'Hey!' : 'Hello?');
+export const randomString = (i: number) => (i % 2 === 0 ? 'Hey!' : 'Hello?');

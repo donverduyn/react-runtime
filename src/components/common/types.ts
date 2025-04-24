@@ -1,11 +1,11 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
-import type { Simplify } from 'type-fest';
+import type { Merge, Simplify } from 'type-fest';
 import type { createUse } from 'hooks/use';
 import type { createFn } from 'hooks/useFn';
 import type { createRun } from 'hooks/useRun';
-import type { RuntimeContext, RuntimeInstance } from 'utils/context';
 
 export const RUNTIME_PROP = '__runtimes';
 export const COMPONENT_PROP = '__component';
@@ -24,9 +24,30 @@ export type Config = {
   debug: boolean;
   postUnmountTTL: number;
   env: 'prod' | 'dev'; // Environment config
+  id: string;
+  fresh: boolean; // Freshness config
+  disposeStrategy: 'unmount' | 'dispose'; // Disposal strategy
 };
 
-type RuntimeConfigFn<
+export type RuntimeContext<T> = React.Context<
+  RuntimeInstance<T> | undefined
+> & {
+  layer: Layer.Layer<T>;
+  isDisposed?: boolean;
+  config: Partial<Config>;
+};
+
+export type RuntimeInstance<R> = ManagedRuntime.ManagedRuntime<R, never> & {
+  config: Config;
+  isDisposed?: boolean;
+  id: string;
+};
+export type RuntimeType<T> =
+  T extends React.Context<infer U> ? NonNullable<U> : never;
+
+export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
+
+export type RuntimeConfigFn<
   R,
   C extends React.FC<any>,
   TProps = Record<PropertyKey, any>,
@@ -35,7 +56,7 @@ type RuntimeConfigFn<
     configure: (config?: Partial<Config>) => RuntimeApi<R>;
     runtime: RuntimeApi<R>;
   },
-  props: Simplify<Partial<React.ComponentProps<C>>>
+  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
 ) => TProps | undefined;
 
 export type RuntimeEntry<R, C extends React.FC<any>> = {

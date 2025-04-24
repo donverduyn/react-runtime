@@ -6,5 +6,5 @@ export const reference = () => Foo;
 
 export const context = pipe(
   Layer.scopedDiscard(Console.log('Hello world!')),
-  createRuntimeContext
+  createRuntimeContext({})
 );

@@ -10,5 +10,5 @@ export class Foo extends Context.Tag('Child/Foo')<Foo, string>() {}
 export const context = pipe(
   Layer.succeed(Tags.Name, 'world'),
   Layer.merge(Layer.succeed(Foo, 'foo')),
-  createRuntimeContext
+  createRuntimeContext({})
 );

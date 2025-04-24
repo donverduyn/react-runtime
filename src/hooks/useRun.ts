@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Effect, Scope, Exit } from 'effect';
-import { RuntimeContext, RuntimeInstance } from 'utils/context';
+import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import {
   getDeps,
   getEffect,

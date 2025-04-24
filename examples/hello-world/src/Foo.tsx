@@ -6,7 +6,7 @@ export const Foo = pipe(
   FooView,
   withRuntime(FooRuntime, ({ configure }) => {
     const runtime = configure();
-    console.log('FooRuntime', runtime.runtime.id);
+    // console.log('FooRuntime', runtime.runtime.id);
   })
 );
 

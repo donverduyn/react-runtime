@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Effect, ManagedRuntime } from 'effect';
-import { RuntimeContext, RuntimeInstance } from 'utils/context';
+import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import { isReactContext } from 'utils/react';
 
 export type Fallback<T, U> = [T, U] extends [infer A, infer B]

@@ -3,7 +3,7 @@ import { pipe, Layer, Effect, Stream, Context, Schedule } from 'effect';
 import { action, type ObservableMap } from 'mobx';
 import { App } from './App';
 import { createStore } from './utils/store';
-import { random } from './utils/string';
+import { randomString } from './utils/string';
 
 export const reference = () => App;
 
@@ -12,7 +12,7 @@ const messageToggler = Effect.gen(function* () {
   yield* pipe(
     Stream.fromSchedule(Schedule.fixed(1000)),
     Stream.mapEffect((i) =>
-      Effect.sync(action(() => store.set('message', random(i))))
+      Effect.sync(action(() => store.set('message', randomString(i))))
     ),
     Stream.runDrain
   );
@@ -26,5 +26,5 @@ export class Store extends Context.Tag('App/Store')<
 export const context = pipe(
   Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
   Layer.provideMerge(Layer.effect(Store, Effect.sync(createStore))),
-  createRuntimeContext
+  createRuntimeContext({})
 );
