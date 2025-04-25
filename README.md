@@ -56,7 +56,7 @@ import { App } from './App';
 import * as Tags from './App.tags';
 import { createStore } from './store';
 
-export const reference = () => ({ App })
+export const reference = () => App
 
 export const context = pipe(
     Layer.effect(Tags.Store, Effect.sync(createStore)),
