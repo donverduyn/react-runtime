@@ -60,7 +60,7 @@ export const reference = () => ({ App })
 
 export const context = pipe(
     Layer.effect(Tags.Store, Effect.sync(createStore)),
-    createRuntimeContext
+    createRuntimeContext({})
 )
 
 // src/store.ts
