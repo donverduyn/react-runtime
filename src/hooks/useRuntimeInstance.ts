@@ -138,7 +138,7 @@ class Store {
   private createInstance<T>(layer: Layer.Layer<T>, config: Config) {
     this.log(config, `instantiating runtime ${config.id}`);
     return Object.assign(ManagedRuntime.make(layer), {
-      id: uuid(),
+      id: config.id,
       config,
     });
   }
@@ -151,15 +151,15 @@ class Store {
       update: false,
     }
   ) {
-    const existingId = this.contextToId.get(context);
+    const idFromContext = this.contextToId.get(context);
     this.updateTimeout(config);
 
-    if (existingId) {
-      const existingInstance = this.instances.get(existingId);
+    if (idFromContext && idFromContext !== config.id) {
+      const existingInstance = this.instances.get(idFromContext);
       if (config.fresh && existingInstance && !existingInstance.isDisposed) {
         this.log(
           config,
-          `creating runtime with fresh:true for ${config.id}, replacing ${existingId}`
+          `creating runtime with fresh:true for ${config.id}, replacing ${idFromContext}`
         );
         const newInstance = this.createInstance(context.layer, config);
 
@@ -169,13 +169,13 @@ class Store {
             void existingInstance.dispose();
             existingInstance.isDisposed = true;
           }, 0);
-
-          this.log(config, `disposed previous instance ${existingId}`);
+          this.instances.set(config.id, newInstance);
+          this.contextToId.set(context, config.id);
+          this.log(config, `disposed previous instance ${idFromContext}`);
         }
-        this.instances.set(config.id, newInstance);
-        this.contextToId.set(context, newInstance.id);
+
       } else if (options.update) {
-        this.log(config, `reused existing runtime for ${existingId}`);
+        this.log(config, `reused existing runtime for ${idFromContext}`);
         this.updateInstance(config.id, config);
       }
     }
@@ -274,6 +274,12 @@ export const useRuntimeInstance = <T>(
 ): RuntimeInstance<T> => {
   const configRef = React.useRef(config);
   const shouldUpdateRef = React.useRef(false);
+
+  if (!store) {
+    throw new Error(
+      `[useRuntimeInstance] Store is not initialized.`
+    );
+  }
 
   React.useEffect(() => {
     if (shouldUpdateRef.current) {

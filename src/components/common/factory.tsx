@@ -166,10 +166,10 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             if (entry.level < previousLevel) mergedFromConfigs = {};
             previousLevel = entry.level;
 
-            const baseConfig: Config = Object.assign({}, defaultConfig, {
+            const baseConfig: Config = Object.assign({}, defaultConfig, {      
+              ...entry.context.context.config,
               componentName: getDisplayName(target, 'Runtime'),
               id: entry.level === 0 ? (props.id ?? entry.id) : entry.id,
-              ...entry.context.context.config,
             });
 
             // const { layer } = entry.context.context as unknown as {
