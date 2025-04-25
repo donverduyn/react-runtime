@@ -46,7 +46,7 @@ In the examples we use `mobx` for write only reactive stores, but you can use an
 
 ### Defining a Runtime
 
-Create a `App.runtime.ts` file to define a runtime context and a registry of components. `context` and `references` are expected to be exported from every runtime file.
+Create a `App.runtime.ts` file to define a runtime context and a registry of components. `context` and `reference` are expected to be exported from every runtime file.
 
 ```tsx
 // src/App.runtime.ts
@@ -56,7 +56,7 @@ import { App } from './App';
 import * as Tags from './App.tags';
 import { createStore } from './store';
 
-export const references = () => ({ App })
+export const reference = () => ({ App })
 
 export const context = pipe(
     Layer.effect(Tags.Store, Effect.sync(createStore)),
