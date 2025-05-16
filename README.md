@@ -73,21 +73,27 @@ Use `withRuntime` to define a component that requires a runtime context. This HO
 
 ```tsx
 // src/App.tsx
-import { withRuntime } from '@donverduyn/react-runtime';
-import * as AppRuntime from './App.runtime'; 
-import { AppComponent } from './App';
-import { pipe } from 'effect';
+import { withRuntime } from "@donverduyn/react-runtime";
+import * as AppRuntime from "./App.runtime";
+import { pipe } from "effect";
+import { Child } from "./components/Child";
 
 export const App = pipe(
-    AppView,
-    withRuntime(AppRuntime, ({ runtime }) => ({
-        store: runtime.use(AppRuntime.Store)
-    }))
-)
+  AppView,
+  withRuntime(AppRuntime, ({ runtime }) => ({
+    store: runtime.use(AppRuntime.Store),
+  })),
+);
 
 const AppView = () => {
-    return <h1>Hello world!</h1>;
-}
+  return (
+    <div>
+      <h1>Hello World!</h1>
+      <Child />
+    </div>
+  );
+};
+
 ```
 
 ### Using `withUpstream`
@@ -96,23 +102,24 @@ Use `withUpstream` to define dependencies for downstream components.
 
 ```tsx
 // src/components/Child.tsx
-import { withUpstream } from '@donverduyn/react-runtime';
-import * as ChildRuntime from './Child.runtime';
-import * as AppRuntime from './../App.runtime';
+import { withUpstream } from "@donverduyn/react-runtime";
+import * as ChildRuntime from "./Child.runtime";
+import * as AppRuntime from "./../App.runtime";
 
 export const Child = pipe(
-    ChildView,
-    withUpstream(AppRuntime, ({ runtime }) => ({
-        store: runtime.use(AppRuntime.Store)
-    }))
-)
+  ChildView,
+  withUpstream(AppRuntime, ({ runtime }) => ({
+    store: runtime.use(AppRuntime.Store),
+  })),
+);
 
 const ChildView = () => {
-    return <div>
-        <h1>Hello child!</h1>
-        <
-    </div>;
-}
+  return (
+    <div>
+      <h2>Hello child!</h2>
+    </div>
+  );
+};
 ```
 
 ### Dependency Injection
@@ -124,26 +131,25 @@ Resolve and inject dependencies automatically, using proxy based and lazy instan
 
 ```tsx
 // src/components/Child.tsx
-import React from 'react';
-import { observer } from 'mobx-react-lite';
-import * as AppRuntime from '../App.runtime';
+import React from "react";
+import { observer } from "mobx-react-lite";
+import * as AppRuntime from "../App.runtime";
 
 type Props = {
-    store: Map<string, any>;
+  store: Map<string, any>;
 };
 
 export const Child = pipe(
-    ChildView,
-    withUpstream(AppRuntime, ({ runtime }) => ({
-        store: runtime.use(AppRuntime.Store)
-    }))
-)
+  ChildView,
+  withUpstream(AppRuntime, ({ runtime }) => ({
+    store: runtime.use(AppRuntime.Store),
+  })),
+);
 
 const ChildView: React.FC<Props> = observer(({ store }) => {
-    return (
-        <div>{store.get('message')}</div>
-    );
+  return <div>{store.get("message")}</div>;
 });
+
 ```
 
 ## How It Works
