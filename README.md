@@ -67,7 +67,7 @@ export const context = pipe(
 export const reference = () => App;
 ```
 
-### using `withRuntime`
+### Using `withRuntime`
 
 Use `withRuntime` to define a component that requires a runtime context. This HOC will automatically inject the runtime context into the component:
 
@@ -126,9 +126,6 @@ const ChildView = () => {
 ### Dependency Injection
 
 Resolve and inject dependencies automatically, using proxy based and lazy instantiation, ensuring that all required runtimes are initialized in the correct order and available through props.
-
-## Example
-
 
 ```tsx
 // src/components/Child.tsx
