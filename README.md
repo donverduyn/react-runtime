@@ -102,7 +102,7 @@ Use `withUpstream` to define dependencies for downstream components.
 
 ```tsx
 // src/components/Child.tsx
-import { withUpstream } from "@donverduyn/react-runtime";
+import { withUpstream, withRuntime } from "@donverduyn/react-runtime";
 import * as ChildRuntime from "./Child.runtime";
 import * as AppRuntime from "./../App.runtime";
 
@@ -111,6 +111,7 @@ export const Child = pipe(
   withUpstream(AppRuntime, ({ runtime }) => ({
     store: runtime.use(AppRuntime.Store),
   })),
+  withRuntime(ChildRuntime)
 );
 
 const ChildView = () => {
