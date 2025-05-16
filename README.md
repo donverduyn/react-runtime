@@ -42,7 +42,7 @@ npm install @donverduyn/react-runtime
 
 ## Usage
 
-In the examples we use `mobx` for write only reactive stores, but you can use any other store or state management library. We also assume you are using `effect`, `react` and `react-dom` in your project.
+We assume you are using `effect`, `react` and `react-dom` in your project. In the examples we use `mobx` , but this is optional. 
 
 ### Defining a Runtime
 
@@ -50,76 +50,74 @@ Create a `App.runtime.ts` file to define a runtime context and a registry of com
 
 ```tsx
 // src/App.runtime.ts
-import { createRuntimeContext, withRuntime } from 'react-runtime';
+import { createRuntimeContext, withRuntime } from '@donverduyn/react-runtime';
 import { pipe, Layer } from 'effect';
 import { App } from './App';
-import * as Tags from './App.tags';
 import { createStore } from './store';
 
-export const reference = () => App
+export class Store extends Effect.Service<Store>()('App/Store', {
+  effect: Effect.sync(createStore),
+}) {}
 
 export const context = pipe(
-    Layer.effect(Tags.Store, Effect.sync(createStore)),
-    createRuntimeContext({})
-)
+  Store.Default,
+  createRuntimeContext({})
+);
 
-// src/store.ts
-import { observable } from 'mobx';
-export const createStore = () => {
-    const store = observable.map<string, any>();
-    return { add: store.set }
-}
-
+export const reference = () => App;
 ```
 
-### `using withRuntime`
+### using `withRuntime`
 
 Use `withRuntime` to define a component that requires a runtime context. This HOC will automatically inject the runtime context into the component:
 
 ```tsx
 // src/App.tsx
-import { withRuntime } from 'react-runtime';
+import { withRuntime } from '@donverduyn/react-runtime';
 import * as AppRuntime from './App.runtime'; 
 import { AppComponent } from './App';
 import { pipe } from 'effect';
 
 export const App = pipe(
     AppView,
-    withRuntime(AppRuntime)
+    withRuntime(AppRuntime, ({ runtime }) => ({
+        store: runtime.use(AppRuntime.Store)
+    }))
 )
 
-const AppView = (props) => {
+const AppView = () => {
     return <h1>Hello world!</h1>;
 }
 ```
 
 ### Using `withUpstream`
 
-Use `withUpstream` to define dependencies for downstream components, for portable components in storybook and integration tests:
+Use `withUpstream` to define dependencies for downstream components.
 
 ```tsx
 // src/components/Child.tsx
-import { withUpstream } from 'react-runtime';
+import { withUpstream } from '@donverduyn/react-runtime';
 import * as ChildRuntime from './Child.runtime';
 import * as AppRuntime from './../App.runtime';
-import * as AppTags from './../App.tags';
 
 export const Child = pipe(
     ChildView,
-    withUpstream(AppRuntime, ({ runtime }) => {
-        const store = runtime.use(AppTags.Store);
-        return { store }
-    }),
+    withUpstream(AppRuntime, ({ runtime }) => ({
+        store: runtime.use(AppRuntime.Store)
+    }))
 )
 
-const ChildView = ({ store }) => {
-    return <div>{store.size}</div>;
+const ChildView = () => {
+    return <div>
+        <h1>Hello child!</h1>
+        <
+    </div>;
 }
 ```
 
 ### Dependency Injection
 
-The HOCs automatically resolve and inject dependencies using proxy based and lazy instantiation, ensuring that all required runtimes are initialized in the correct order.
+Resolve and inject dependencies automatically, using proxy based and lazy instantiation, ensuring that all required runtimes are initialized in the correct order and available through props.
 
 ## Example
 
@@ -127,31 +125,30 @@ The HOCs automatically resolve and inject dependencies using proxy based and laz
 ```tsx
 // src/components/Child.tsx
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import * as AppRuntime from '../App.runtime';
-import * as AppTags from '../App.tags';
-
-export const Child = pipe(
-    ChildView,
-    withUpstream(AppRuntime, ({ runtime }) => {
-        const store = runtime.use(AppTags.Store);
-        return { store }
-    }),
-)
 
 type Props = {
     store: Map<string, any>;
 };
 
-const ChildView: React.FC<Props> = ({ store }) => {
+export const Child = pipe(
+    ChildView,
+    withUpstream(AppRuntime, ({ runtime }) => ({
+        store: runtime.use(AppRuntime.Store)
+    }))
+)
+
+const ChildView: React.FC<Props> = observer(({ store }) => {
     return (
-        <div>Items: {store.size}</div>
+        <div>{store.get('message')}</div>
     );
-};
+});
 ```
 
 ## How It Works
 
-1. **Runtime Definition:** Each `.runtime.ts` file exports a runtime context and a reference to the component in which it is used by `withRuntime`. We currently assume, a runtime is only used in one component, because it shadows itself in the dependency tree. We might change this in the future.
+1. **Runtime Definition:** Each `.runtime.ts` file exports a runtime context which is a named export called **context** and a reference to the component, which is a named export called **reference**, which are used by `withRuntime`. We currently assume, a runtime is only used in one component, because it shadows itself in the dependency tree. We might change this in the future.
 
 2. **Upstream Dependencies:** Components define their dependencies using `withUpstream(SomeRuntime)`. During testing or storybook, they will inject the upstream runtime context directly into the component.
 
