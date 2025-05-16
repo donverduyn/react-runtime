@@ -79,7 +79,7 @@ Use `withRuntime` to define a component that requires a runtime context. This HO
 ```tsx
 // src/App.tsx
 import { withRuntime } from 'react-runtime';
-import { AppRuntime } from './App.runtime'; 
+import * as AppRuntime from './App.runtime'; 
 import { AppComponent } from './App';
 import { pipe } from 'effect';
 
