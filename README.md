@@ -80,17 +80,10 @@ import { Child } from "./components/Child";
 
 export const App = pipe(
   AppView,
-  withRuntime(AppRuntime, ({ runtime }) => ({
     store: runtime.use(AppRuntime.Store),
   })),
 );
 
-const AppView = () => {
-  return (
-    <div>
-      <h1>Hello World!</h1>
-      <Child />
-    </div>
   );
 };
 

@@ -1,5 +1,6 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type React from 'react';
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
 import type { Merge, Simplify } from 'type-fest';
@@ -25,6 +26,7 @@ export type Config = {
   postUnmountTTL: number;
   env: 'prod' | 'dev'; // Environment config
   id: string;
+  componentId: string; // Component ID
   fresh: boolean; // Freshness config
   disposeStrategy: 'unmount' | 'dispose'; // Disposal strategy
 };
@@ -35,6 +37,15 @@ export type RuntimeContext<T> = React.Context<
   layer: Layer.Layer<T>;
   isDisposed?: boolean;
   config: Partial<Config>;
+};
+
+export type PreparedRuntimeContext<T> = React.Context<
+  RuntimeInstance<T> | undefined
+> & {
+  layer: Layer.Layer<T>;
+  level: number;
+  isDisposed?: boolean;
+  config: Config;
 };
 
 export type RuntimeInstance<R> = ManagedRuntime.ManagedRuntime<R, never> & {

@@ -6,7 +6,10 @@ import { v4 as uuid } from 'uuid';
 import { createUse } from 'hooks/use';
 import { createFn } from 'hooks/useFn';
 import { createRun } from 'hooks/useRun';
-import { useRuntimeInstance } from 'hooks/useRuntimeInstance';
+import {
+  useRuntimeStore,
+  useRuntimeStoreSubscription,
+} from 'hooks/useRuntimeInstance';
 import {
   createElement,
   extractMeta,
@@ -29,16 +32,18 @@ import {
   type RuntimeContext,
   type RuntimeInstance,
   type RuntimeConfigFn,
+  type PreparedRuntimeContext,
 } from './types';
 
 export const defaultConfig: Config = {
   componentName: 'Runtime',
-  debug: false,
+  debug: true,
   postUnmountTTL: 1000,
   env: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
-  disposeStrategy: 'unmount', // only used with fresh: true
+  disposeStrategy: 'unmount',
   fresh: false,
   id: uuid(),
+  componentId: '', // <-- default, will be injected
 };
 
 const getStaticRegistry = <C extends React.FC<any>, R>(
@@ -133,12 +138,15 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
       });
 
       const Wrapper: React.FC<Partial<React.ComponentProps<C>>> = (props) => {
+        const componentId = React.useMemo(
+          () => (props.id as string | undefined) ?? uuid(),
+          [props.id]
+        );
         const entries = collectRuntimeEntries(Component, entry);
         const runtimeInstances = new Map<
           RuntimeContext<any>,
           RuntimeInstance<any>
         >();
-
         const upstreamContexts = new Map<
           RuntimeContext<any>,
           RuntimeInstance<any>
@@ -154,8 +162,11 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             }
           });
 
+        const preparedEntries: PreparedRuntimeContext<any>[] = [];
         let mergedFromConfigs = {};
         let previousLevel = 0;
+
+        const store = useRuntimeStore();
 
         entries
           .filter((entry) => {
@@ -166,23 +177,24 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             if (entry.level < previousLevel) mergedFromConfigs = {};
             previousLevel = entry.level;
 
-            const baseConfig: Config = Object.assign({}, defaultConfig, {      
+            const baseConfig: Config = Object.assign({}, defaultConfig, {
               ...entry.context.context.config,
               componentName: getDisplayName(target, 'Runtime'),
               id: entry.level === 0 ? (props.id ?? entry.id) : entry.id,
+              componentId,
             });
 
-            // const { layer } = entry.context.context as unknown as {
-            //   layer: Layer.Layer<R>;
-            // };
             const factory = (overrides?: Partial<Config>) => {
               const config = Object.assign({}, baseConfig, overrides ?? {});
-              const runtime =
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                useRuntimeInstance(entry.context.context, config);
-              runtimeInstances.set(context.context, runtime);
-              // contextToId.set(context, runtime.id); // Store the context to ID mapping
 
+              const prepared = Object.assign({}, entry.context.context, {
+                config,
+                level: entry.level,
+              });
+              preparedEntries.push(prepared);
+              // const runtime = useRuntimeInstance(entry.context.context, config);
+              const runtime = store.register(prepared, componentId);
+              runtimeInstances.set(context.context, runtime);
               return {
                 runtime,
                 use: createUse(context.context, runtimeInstances),
@@ -194,15 +206,16 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
             if (type === 'upstream' && baseConfig.env !== 'prod') {
               const upstream = runtimeInstances.get(context.context);
               if (!upstream) {
-                // Fallback to useRuntimeInstance if not found
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                const fallbackRuntime = useRuntimeInstance(
-                  entry.context.context,
-                  baseConfig
-                );
+                const prepared = Object.assign({}, entry.context.context, {
+                  config: baseConfig,
+                  level: entry.level,
+                });
+                preparedEntries.push(prepared);
+                const fallbackRuntime = store.register(prepared, componentId);
                 runtimeInstances.set(context.context, fallbackRuntime);
               }
             }
+
             if (configFn) {
               const proxyArg = new Proxy(
                 {},
@@ -220,13 +233,13 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
                 mergedFromConfigs,
                 entry.level === 0 ? props : {}
               );
+
               const propsProxy = new Proxy(currentProps, {
                 get(target, prop: string) {
                   const value = target[prop as keyof typeof target];
                   if (!(prop in currentProps)) {
                     console.warn(noUpstreamMessage(name, prop));
                   }
-
                   return value;
                 },
               });
@@ -244,10 +257,10 @@ export const hocFactory = (type: 'runtime' | 'upstream', name: string) => {
               }
             } else if (type === 'runtime') {
               factory();
-              // const instance = factory();
-              // runtimeInstances.set(context.context, instance.runtime);
             }
           });
+
+        useRuntimeStoreSubscription(preparedEntries, componentId);
 
         const mergedProps = Object.assign(mergedFromConfigs, props);
         const children =

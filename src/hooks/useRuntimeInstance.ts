@@ -1,8 +1,10 @@
+// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Layer, ManagedRuntime } from 'effect';
-import { v4 as uuid } from 'uuid';
 import type {
   Config,
+  PreparedRuntimeContext,
   RuntimeContext,
   RuntimeInstance,
 } from 'components/common/types';
@@ -89,7 +91,6 @@ This is both compatible with strict mode and fast refresh. 🚀
 
 class Store {
   constructor() {
-    // this.log(null, 'initialized');
     console.log('Store initialized');
   }
 
@@ -97,25 +98,20 @@ class Store {
     return new Store();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private instances = new Map<string, RuntimeInstance<any>>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private contextToId = new Map<RuntimeContext<any>, string>();
+  // private contextToId = new Map<string, string>();
   private disposalTimeouts = new Map<string, NodeJS.Timeout>();
-  private listeners = new Map<string, () => void>();
-  private loggers = new Map<string, (msg: string) => void>();
+  private listeners = new WeakMap<
+    RuntimeContext<any>,
+    Map<string, Map<string, Set<() => void>>>
+  >();
+  private subscriptionsByComponentId = new Map<string, RuntimeContext<any>[]>();
 
   private log(config: Config, message: string) {
     if (config.debug) {
       console.log(`[${config.componentName}] ${message}`);
     }
   }
-
-  // private setLogger(config: Config) {
-  // const logger = config.debug
-  //   ? (msg: string) => console.log(`[${config.componentName}] ${msg}`)
-  //   : () => {};
-  //   this.loggers.set(config.id, logger);
 
   private updateTimeout(config: Config) {
     const timeoutId = this.disposalTimeouts.get(config.id);
@@ -151,163 +147,292 @@ class Store {
       update: false,
     }
   ) {
-    const idFromContext = this.contextToId.get(context);
+    // const idFromContext = this.contextToId.get(context.config.id!);
     this.updateTimeout(config);
 
-    if (idFromContext && idFromContext !== config.id) {
-      const existingInstance = this.instances.get(idFromContext);
+    if (context.config.id === config.id) {
+      const existingInstance = this.instances.get(context.config.id);
       if (config.fresh && existingInstance && !existingInstance.isDisposed) {
         this.log(
           config,
-          `creating runtime with fresh:true for ${config.id}, replacing ${idFromContext}`
+          `creating runtime with fresh:true for ${config.id}, replacing ${context.config.id}`
         );
         const newInstance = this.createInstance(context.layer, config);
-
-        if (options.notify) this.notifyById(config.id);
         if (config.disposeStrategy === 'dispose') {
           setTimeout(() => {
             void existingInstance.dispose();
             existingInstance.isDisposed = true;
           }, 0);
           this.instances.set(config.id, newInstance);
-          this.contextToId.set(context, config.id);
-          this.log(config, `disposed previous instance ${idFromContext}`);
+          // this.contextToId.set(context.config.id, config.id);
+          this.log(config, `disposed previous instance ${context.config.id}`);
         }
-
       } else if (options.update) {
-        this.log(config, `reused existing runtime for ${idFromContext}`);
+        this.log(config, `reused existing runtime for ${context.config.id}`);
         this.updateInstance(config.id, config);
       }
     }
-
+    console.log('instances', this.instances.keys().toArray());
     if (!this.instances.has(config.id)) {
       this.log(config, `creating new runtime for ${config.id}`);
       const instance = this.createInstance(context.layer, config);
       this.instances.set(config.id, instance);
-      this.contextToId.set(context, config.id);
-      // if (options.notify) this.notifyById(config.id);
+      // this.contextToId.set(context, config.id);
+    }
+
+    if (options.notify) {
+      for (const [
+        componentId,
+        contexts,
+      ] of this.subscriptionsByComponentId.entries()) {
+        for (const ctx of contexts) {
+          if (ctx === context || ctx.config.id === config.id) {
+            const byConfig = this.listeners.get(ctx);
+            byConfig?.forEach((byComponentId) => {
+              const listeners = byComponentId.get(componentId);
+              listeners?.forEach((fn) => fn());
+            });
+          }
+        }
+      }
     }
   }
 
-  public onUnmount<T>(_: RuntimeContext<T>, config: Config) {
+  public onUnmount<T>(context: RuntimeContext<T>, config: Config) {
     const instance = this.instances.get(config.id);
     if (!instance) return;
+
+    const byConfigId = this.listeners.get(context);
+    const byComponentId = byConfigId?.get(config.id);
+
+    if (byComponentId) {
+      byComponentId.delete(config.componentId);
+      if (byComponentId.size === 0) byConfigId?.delete(config.id);
+      if (byConfigId?.size === 0) this.listeners.delete(context);
+    }
+
     this.log(config, `scheduled disposal for ${config.id}`);
     this.createTimeout(config, instance);
   }
 
   public updateInstance(id: string, config: Config) {
     const instance = this.instances.get(id);
-    if (instance) {
+    if (instance && !deepEqual(instance.config, config)) {
       instance.config = config;
       this.log(config, `updated config for ${id}`);
     }
   }
 
-  public subscribe<T>(context: RuntimeContext<T>, config: Config) {
-    const existing = this.instances.get(config.id);
-    if (!existing) this.onMount(context, config, { notify: false });
+  public register<T>(
+    context: PreparedRuntimeContext<T>,
+    componentId: string
+  ): RuntimeInstance<T> {
+    if (!this.subscriptionsByComponentId.has(componentId)) {
+      this.subscriptionsByComponentId.set(componentId, []);
+    }
+    this.subscriptionsByComponentId.get(componentId)!.push(context);
+
+    this.onMount(context, context.config, { notify: false });
+    return this.instances.get(context.config.id) as RuntimeInstance<T>;
+  }
+
+  public subscribe(
+    contexts: PreparedRuntimeContext<any>[],
+    componentId: string
+  ) {
+    for (const ctx of contexts) {
+      const { id } = ctx.config;
+
+      // const existing = this.instances.get(id);
+      // if (!existing) this.onMount(ctx, ctx.config, { notify: false });
+
+      if (!this.listeners.has(ctx)) this.listeners.set(ctx, new Map());
+      const byConfigId = this.listeners.get(ctx)!;
+      if (!byConfigId.has(id)) byConfigId.set(id, new Map());
+      const byComponentId = byConfigId.get(id)!;
+      if (!byComponentId.has(componentId))
+        byComponentId.set(componentId, new Set());
+    }
 
     return (listener: () => void) => {
-      this.log(config, `subscribed ${config.id}`);
-      this.listeners.set(config.id, listener);
+      for (const ctx of contexts) {
+        const { id } = ctx.config;
+        const byComponentId = this.listeners
+          .get(ctx)
+          ?.get(id)
+          ?.get(componentId);
+        byComponentId?.add(listener);
+
+        console.log(`Subscribing to ${id} for component ${componentId}`);
+      }
 
       return () => {
-        this.listeners.delete(config.id);
-        this.log(config, `unsubscribed ${config.id}`);
+        for (const ctx of contexts) {
+          const { id } = ctx.config;
+          const byConfigId = this.listeners.get(ctx);
+          const byComponentId = byConfigId?.get(id);
+          const set = byComponentId?.get(componentId);
+          console.log(`Unsubscribing from ${id} for component ${componentId}`);
+
+          set?.delete(listener);
+          if (set?.size === 0) byComponentId?.delete(componentId);
+          if (byComponentId?.size === 0) byConfigId?.delete(id);
+          if (byConfigId?.size === 0) this.listeners.delete(ctx);
+        }
       };
     };
   }
 
-  public getSnapshot(id: string) {
-    return () => {
-      // this.log(id, `snapshot read for ${id}`);
-      return this.instances.get(id);
-    };
-  }
+  public notify(context: RuntimeContext<any>) {}
 
   public getByInstanceId(id: string) {
-    // this.log(id, `get instance by id ${id}`);
     return this.instances.get(id);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public getByRuntimeCtx(ctx: RuntimeContext<any>) {
-    const id = this.contextToId.get(ctx);
-    // if (id) this.log(id, `get instance by context`);
-    return id ? this.instances.get(id) : undefined;
-  }
+  private lastSnapshots = new Map<
+    string,
+    { keys: string[]; value: RuntimeInstance<any>[] }
+  >();
 
-  private notifyById(id: string) {
-    const listener = this.listeners.get(id);
-    if (listener) {
-      // this.log(id, `notify listener for ${id}`);
-      listener();
+  public getSnapshot(contexts: PreparedRuntimeContext<any>[]) {
+    // Create a cache key based on context IDs
+    const key = contexts.map((ctx) => ctx.config.id).join('|');
+    const prev = this.lastSnapshots.get(key);
+    const currentKeys = contexts.map((ctx) => ctx.config.id);
+    const currentInstances = contexts.map(
+      (ctx) => this.instances.get(ctx.config.id)!
+    );
+
+    // Compare previous and current instance references
+    if (
+      prev &&
+      prev.keys.length === currentKeys.length &&
+      prev.keys.every((k, i) => k === currentKeys[i]) &&
+      prev.value.every((inst, i) => inst === currentInstances[i])
+    ) {
+      return () => prev.value;
     }
+
+    this.lastSnapshots.set(key, { keys: currentKeys, value: currentInstances });
+    return () => currentInstances;
   }
 
-  private notifyAll() {
-    // this.log(null, `notifying all listeners`);
-    this.listeners.forEach((listener) => listener());
-  }
+  // public getByRuntimeCtx(ctx: RuntimeContext<any>) {
+  //   const id = this.contextToId.get(ctx.config.id);
+  //   return id ? this.instances.get(id) : undefined;
+  // }
 
   public disposeAll() {
-    // this.log(null, `disposing all runtimes`);
     this.instances.forEach((instance) => {
       void instance.dispose();
-      // this.log(null, `disposed ${id}`);
     });
     this.instances.clear();
-    this.contextToId.clear();
-    this.listeners.clear();
+    // this.contextToId.clear();
+    this.listeners = new WeakMap();
+    this.subscriptionsByComponentId.clear();
     this.disposalTimeouts.forEach(clearTimeout);
     this.disposalTimeouts.clear();
   }
 }
 
-// considered private
-const store = Store.of();
+let sharedStore: Store | null = null;
 
-export const useRuntimeInstance = <T>(
-  context: RuntimeContext<T>,
-  config: Config
-): RuntimeInstance<T> => {
-  const configRef = React.useRef(config);
-  const shouldUpdateRef = React.useRef(false);
+export function useRuntimeStore(): Store {
+  const ref = React.useRef<Store | null>(null);
 
-  if (!store) {
-    throw new Error(
-      `[useRuntimeInstance] Store is not initialized.`
-    );
+  if (ref.current === null) {
+    if (!sharedStore) sharedStore = Store.of();
+    ref.current = sharedStore;
   }
 
-  React.useEffect(() => {
-    if (shouldUpdateRef.current) {
-      store.onMount(context, config, { notify: true, update: false });
-      shouldUpdateRef.current = false;
-    }
+  return ref.current;
+}
 
-    return () => {
-      store.onUnmount(context, config);
-      shouldUpdateRef.current = true;
-    };
-  }, [context]);
+export const useRuntimeStoreSubscription = <T>(
+  contexts: PreparedRuntimeContext<T>[],
+  componentId: string
+): RuntimeInstance<T>[] => {
+  const store = useRuntimeStore();
+  // const instances = new Map<RuntimeContext<T>, RuntimeInstance<T>>();
+  // const previous = React.useRef(new Map<string, Config>());
 
-  if (!deepEqual(configRef.current, config)) {
-    store.updateInstance(config.id, config);
-    configRef.current = config;
-  }
+  // const contextKeys = JSON.stringify(
+  //   contexts.map(({ config }) => ({
+  //     id: config.id,
+  //     hash: JSON.stringify(config),
+  //   }))
+  // );
 
-  const instance = React.useSyncExternalStore(
-    store.subscribe(context, configRef.current),
-    store.getSnapshot(configRef.current.id)
+  // React.useEffect(() => {
+  //   const prevMap = previous.current;
+  //   const currentMap = new Map<string, Config>();
+  //   const seen = new Set<string>();
+
+  //   for (const context of contexts) {
+  //     const prevConfig = prevMap.get(context.config.id);
+  //     seen.add(context.config.id);
+
+  //     if (!prevConfig || !deepEqual(prevConfig, context.config)) {
+  //       // store.onUnmount(context, prevConfig ?? context.config); // unmount old if different
+  //       store.onMount(context, context.config, { notify: true }); // and mount new
+  //     } else {
+  //       store.updateInstance(context.config.id, context.config); // safe to call
+  //     }
+
+  //     currentMap.set(context.config.id, context.config);
+  //   }
+
+  //   for (const [id, oldConfig] of prevMap.entries()) {
+  //     if (!seen.has(id)) {
+  //       const context = contexts.find((r) => r.config.id === id);
+  //       if (context) {
+  //         store.onUnmount(context, oldConfig);
+  //       }
+  //     }
+  //   }
+
+  //   previous.current = currentMap;
+  //   return () => {
+  //     for (const context of contexts) {
+  //       store.onUnmount(context, context.config);
+  //     }
+  //   };
+  // }, [contextKeys]);
+
+  const liveInstances = React.useSyncExternalStore(
+    store.subscribe(contexts, componentId),
+    store.getSnapshot(contexts)
   );
-
-  if (!instance) {
-    throw new Error(
-      `[useRuntimeInstance] Runtime for ID "${config.id}" could not be initialized.`
-    );
-  }
-
-  return instance;
+  return liveInstances;
 };
+
+// export const useRuntimeStoreSubscription = <T>(
+//   contexts: PreparedRuntimeContext<T>[]
+// ): RuntimeInstance<T> => {
+//   // const configRef = React.useRef(config);
+//   const shouldUpdateRef = React.useRef(false);
+//   const store = useRuntimeStore();
+
+// React.useEffect(() => {
+//   if (shouldUpdateRef.current) {
+//     store.onMount(context, config, { notify: true, update: false });
+//     shouldUpdateRef.current = false;
+//   }
+
+//   return () => {
+//     store.onUnmount(context, config);
+//     shouldUpdateRef.current = true;
+//   };
+// }, [context]);
+
+// if (!deepEqual(configRef.current, config)) {
+//   configRef.current = config;
+// }
+
+//   const instance = React.useSyncExternalStore(
+//     store.subscribe(contexts, configRef.current),
+//     store.getSnapshot(configRef.current.id)
+//   );
+
+//   return instance;
+// };
