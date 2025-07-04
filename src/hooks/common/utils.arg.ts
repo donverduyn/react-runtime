@@ -53,14 +53,34 @@ export const getRuntime = <R, R1>(
   }
 };
 
-export const getEffectFn = <T>(input: any, fnOrDeps: any) =>
-  (!ManagedRuntime.isManagedRuntime(input) &&
-  !Effect.isEffect(input) &&
-  !isReactContext(input)
-    ? input
-    : typeof fnOrDeps === 'function'
-      ? fnOrDeps
-      : () => Effect.void) as T;
+// type EffectFn<Args extends any[], R> = (...args: Args) => R;
+
+export const getEffectFn = <Args extends unknown[], Result>(
+  input: unknown,
+  fnOrDeps: unknown
+): ((...args: Args) => Result) => {
+  if (
+    !ManagedRuntime.isManagedRuntime(input) &&
+    !Effect.isEffect(input) &&
+    !isReactContext(input)
+  ) {
+    return input as (...args: Args) => Result;
+  }
+
+  if (typeof fnOrDeps === 'function') {
+    return fnOrDeps as (...args: Args) => Result;
+  }
+
+  return (() => Effect.void as unknown as Result) as (...args: Args) => Result;
+};
+// export const getEffectFn = <T>(input: any, fnOrDeps: any) =>
+//   (!ManagedRuntime.isManagedRuntime(input) &&
+//   !Effect.isEffect(input) &&
+//   !isReactContext(input)
+//     ? input
+//     : typeof fnOrDeps === 'function'
+//       ? fnOrDeps
+//       : () => Effect.void) as T;
 
 export const getEffect = <T>(input: any, effectOrDeps: any) =>
   (Effect.isEffect(input) && !ManagedRuntime.isManagedRuntime(input)
