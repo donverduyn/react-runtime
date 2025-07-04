@@ -29,7 +29,7 @@ export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
-  Simplify<Omit<React.ComponentProps<C>, keyof TProps>>
+  Simplify<Omit<React.ComponentProps<C> & { id?: string }, keyof TProps>>
 > &
   Merge<
     ExtractMeta<C>,

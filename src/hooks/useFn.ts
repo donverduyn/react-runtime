@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
-import type { IsUnknown } from 'type-fest';
 import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
 import {
@@ -30,12 +29,38 @@ type Sanitize<T> = T extends InvalidShapes
     ? [Sanitize<Head>, ...Sanitize<Tail>]
     : T;
 
-export const createFn =
-  <R>(
-    localContext: RuntimeContext<R>,
-    instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
-  ) =>
-  <T extends unknown[], T1 extends unknown[], A, A1, E, E1, R1>(
+// --- Helper types
+type InferArgs<F> = F extends (...args: infer A) => any ? A : never;
+type InferReturn<F> = F extends (...args: any[]) => infer R ? R : never;
+
+export function createFn<R>(
+  localContext: RuntimeContext<R>,
+  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+): {
+  <Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
+    target: Fn
+  ): (
+    ...args: InferArgs<Fn>
+  ) => Promise<
+    InferReturn<Fn> extends Effect.Effect<infer A, any, any> ? A : never
+  >;
+
+  <R1, Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
+    target: RuntimeContext<R1> | RuntimeInstance<R1>,
+    fn: Fn,
+    deps?: React.DependencyList
+  ): (
+    ...args: InferArgs<Fn>
+  ) => Promise<
+    InferReturn<Fn> extends Effect.Effect<infer A, any, any> ? A : never
+  >;
+};
+
+export function createFn<R>(
+  localContext: RuntimeContext<R>,
+  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+) {
+  return <T extends unknown[], T1 extends unknown[], A, A1, E, E1, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
       | RuntimeContext<R1>
@@ -47,21 +72,23 @@ export const createFn =
   ) => {
     const finalDeps = getDeps(fnOrDeps, deps);
     const effectFn = getEffectFn<
-      (...args: Sanitize<T> | T1) => Effect.Effect<A | A1, E | E1, R | R1>
+      Fallback2<T1, Sanitize<T>>,
+      Effect.Effect<A | A1, E | E1, R | R1>
     >(targetOrEffect, fnOrDeps);
 
     const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
+    const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const fnRef = React.useRef(effectFn);
 
     React.useEffect(() => {
       fnRef.current = effectFn;
-    }, [instances, runtime, effectFn, ...finalDeps]);
+    }, [instanceDeps, runtime, effectFn, ...finalDeps]);
 
     const emitter = React.useMemo(
-      () => new EventEmitter<[...(Sanitize<T> | T1)], A | A1>(),
-
-      [instances, runtime, ...finalDeps]
+      () => new EventEmitter<[...Fallback2<T1, Sanitize<T>>], A | A1>(),
+      [instanceDeps, runtime, ...finalDeps]
     );
+
     const stream = React.useMemo(
       () =>
         pipe(
@@ -74,8 +101,7 @@ export const createFn =
           ),
           Stream.runDrain
         ),
-
-      [instances, runtime, ...finalDeps]
+      [instanceDeps, runtime, ...finalDeps]
     );
 
     React.useEffect(() => {
@@ -84,9 +110,12 @@ export const createFn =
       return () => {
         runtime.runFork(Scope.close(scope, Exit.void));
       };
-    }, [instances, runtime, emitter, ...finalDeps]);
+    }, [instanceDeps, runtime, emitter, ...finalDeps]);
 
-    return emitter.emit as IsUnknown<Fallback<T1, Sanitize<T>>> extends true
-      ? () => Promise<Fallback<A1, A>>
-      : (...args: Fallback2<T1, Sanitize<T>>) => Promise<Fallback<A1, A>>;
+    // Return function with preserved param names
+    type Args = Fallback2<T1, Sanitize<T>>;
+    type Result = Promise<Fallback<A1, A>>;
+
+    return emitter.emit as (...args: Args) => Result;
   };
+}

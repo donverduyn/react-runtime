@@ -291,6 +291,7 @@ module.exports = {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',
         'react/require-default-props': 'off',
+        'react/jsx-tag-spacing': 'warn'
       },
       settings: { react: { version: 'detect' } },
     },

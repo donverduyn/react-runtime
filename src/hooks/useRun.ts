@@ -35,7 +35,7 @@ export const createRun =
       effectOrDeps
     );
     const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
-
+    const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const hasRun = React.useRef(false);
     const scope = React.useRef<Scope.CloseableScope>(null as never);
 
@@ -58,5 +58,5 @@ export const createRun =
         runtime.runFork(Scope.close(scope.current, Exit.void));
         hasRun.current = false;
       };
-    }, [instances, runtime, ...finalDeps]);
+    }, [instanceDeps, runtime, ...finalDeps]);
   };

@@ -1,11 +1,9 @@
 import { createRuntimeContext } from '@donverduyn/react-runtime';
-import { pipe, Layer, Effect, Stream, Context, Schedule } from 'effect';
-import { action, type ObservableMap } from 'mobx';
+import { pipe, Layer, Effect, Stream, Schedule } from 'effect';
+import { action } from 'mobx';
 import { App } from './App';
 import { createStore } from './utils/store';
 import { randomString } from './utils/string';
-
-export const reference = () => App;
 
 const messageToggler = Effect.gen(function* () {
   const store = yield* Store;
@@ -18,13 +16,14 @@ const messageToggler = Effect.gen(function* () {
   );
 });
 
-export class Store extends Context.Tag('App/Store')<
-  Store,
-  ObservableMap<string, string>
->() {}
+export class Store extends Effect.Service<Store>()('App/Store2', {
+  effect: Effect.sync(createStore),
+}) {}
+
+export const reference = () => App;
 
 export const context = pipe(
   Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
-  Layer.provideMerge(Layer.effect(Store, Effect.sync(createStore))),
+  Layer.provideMerge(Store.Default),
   createRuntimeContext({})
 );

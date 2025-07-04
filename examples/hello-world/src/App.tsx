@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
-import { pipe, type Context } from 'effect';
-import * as SomeRuntime from './Some.runtime';
+import { withRuntime } from '@donverduyn/react-runtime';
+import { pipe } from 'effect';
 import { Child } from './components/Child/Child';
 import { Observer } from 'mobx-react-lite';
 import * as AppRuntime from './App.runtime';
@@ -13,9 +12,9 @@ import './App.css';
 const withLogger = <C extends React.FC<Props>>(component: C) =>
   pipe(
     component,
-    withUpstream(SomeRuntime, ({ runtime }) => {
-      console.log('SomeRuntime', runtime.runtime.id);
-    }),
+    // withUpstream(SomeRuntime, ({ runtime }) => {
+    //   console.log('SomeRuntime', runtime.runtime.id);
+    // }),
     withRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
       return { store: runtime.use(AppRuntime.Store) };
@@ -25,7 +24,7 @@ const withLogger = <C extends React.FC<Props>>(component: C) =>
 export const App = pipe(AppView, withLogger);
 
 type Props = {
-  readonly store: Context.Tag.Service<AppRuntime.Store>;
+  readonly store: AppRuntime.Store;
 };
 
 export function AppView({ store }: Props) {
@@ -59,8 +58,7 @@ export function AppView({ store }: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
-        {}
-        <Child />
+        {count % 2 === 0 ? <Child id='2' /> : null}
         <Observer render={() => <h2>{store.get('message')}</h2>} />
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

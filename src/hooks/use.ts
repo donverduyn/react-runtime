@@ -28,9 +28,9 @@ export const createUse =
       effectOrDeps
     );
     const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
-
+    const instanceDeps = Array.from(instances.values()).filter(Boolean);
     return React.useMemo(
       () => runtime.runSync(effect),
-      [instances, runtime, ...finalDeps]
+      [instanceDeps, runtime, ...finalDeps]
     );
   };
