@@ -1,6 +1,78 @@
 import * as React from 'react';
 import { isPlainObject } from './object';
 
+export function isReactNode(value: unknown): value is React.ReactNode {
+  // Fast path for primitives and null/undefined
+  const type = typeof value;
+
+  if (
+    type === 'string' ||
+    type === 'number' ||
+    type === 'bigint' ||
+    type === 'boolean' ||
+    value === null ||
+    value === undefined
+  ) {
+    return true;
+  }
+
+  // React Element
+  if (React.isValidElement(value)) return true;
+
+  // React Portal
+  if (isReactPortal(value)) return true;
+
+  // Promise (React 19 async rendering support)
+  if (isPromise(value)) return true;
+
+  // Array (fast path for common case)
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      if (!isReactNode(value[i])) return false;
+    }
+    return true;
+  }
+
+  // Generic Iterable<ReactNode>
+  if (isIterable(value)) {
+    for (const item of value) {
+      if (!isReactNode(item)) return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+function isPromise(value: unknown): value is Promise<unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (value as { then: () => any }).then === 'function' &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (value as { catch: () => any }).catch === 'function'
+  );
+}
+
+function isIterable(value: unknown): value is Iterable<unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function'
+  );
+}
+
+function isReactPortal(value: unknown): value is React.ReactPortal {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { key: unknown }).key !== 'undefined' &&
+    typeof (value as { children: unknown }).children !== 'undefined' &&
+    typeof (value as { containerInfo: unknown }).containerInfo !== 'undefined'
+  );
+}
+
 export function isReactContext2<T>(
   variable: unknown
 ): variable is React.Context<T> {
@@ -103,6 +175,15 @@ export const extractMeta = <C extends React.FC<any>>(Component: C) =>
       {} as ExtractMeta<C>
     );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isFunctionalComponent = (fn: React.FC<any>) => {
+  try {
+    const result = fn({});
+    return isReactNode(result);
+  } catch {
+    return false;
+  }
+};
 /**
  * Throws if called outside a React render phase.
  * Use this in runtime-level helpers like `useFn`, `useRun`, etc.

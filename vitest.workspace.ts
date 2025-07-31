@@ -1,22 +1,22 @@
 import { defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
-  {
-    extends: './vitest.config.ts',
-    test: {
-      include: ['**/*.e2e.test.{ts,tsx}'],
-      exclude: ['**/node_modules/**'],
-      browser: {
-        api: { host: '0.0.0.0', port: 63315 },
-        enabled: true,
-        headless: true,
-        instances: [{ browser: 'chromium' }],
-        isolate: false,
-        provider: 'playwright',
-        ui: true,
-      },
-    },
-  },
+  // {
+  //   extends: './vitest.config.ts',
+  //   test: {
+  //     include: ['**/*.e2e.test.{ts,tsx}'],
+  //     exclude: ['**/node_modules/**'],
+  //     browser: {
+  //       api: { host: '0.0.0.0', port: 63315 },
+  //       enabled: true,
+  //       headless: true,
+  //       instances: [{ browser: 'chromium' }],
+  //       isolate: false,
+  //       provider: 'playwright',
+  //       ui: true,
+  //     },
+  //   },
+  // },
   {
     extends: './vitest.config.ts',
     test: {

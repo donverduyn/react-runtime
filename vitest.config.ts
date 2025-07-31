@@ -3,6 +3,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  server: {
+    host: '0.0.0.0',
+  },
   test: {
     coverage: { provider: 'v8', reporter: 'html' },
     css: false,

@@ -6,6 +6,7 @@ import type { Merge, Simplify } from 'type-fest';
 import type { createUse } from 'hooks/use';
 import type { createFn } from 'hooks/useFn';
 import type { createRun } from 'hooks/useRun';
+import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
 
 export const RUNTIME_PROP = '__runtimes';
 export const COMPONENT_PROP = '__component';
@@ -20,32 +21,39 @@ export type RuntimeApi<R> = {
 };
 
 export type Config = {
-  componentName: string;
   debug: boolean;
   postUnmountTTL: number;
   env: 'prod' | 'dev'; // Environment config
-  id: string;
-  fresh: boolean; // Freshness config
-  disposeStrategy: 'unmount' | 'dispose'; // Disposal strategy
+  replace: boolean; // Freshness config
+  cleanupPolicy: 'onUnmount' | 'immediate'; // Disposal strategy
 };
 
-export type RuntimeContext<T> = React.Context<
-  RuntimeInstance<T> | undefined
-> & {
+export type RuntimeModule<R, C extends React.FC<any> = React.FC<any>> = {
+  context: RuntimeContext<R>;
+  reference: () => C;
+};
+
+export type RuntimeContext<T> = {
+  key: RuntimeKey;
   layer: Layer.Layer<T>;
-  isDisposed?: boolean;
+};
+
+export type RuntimePayload<R> = {
+  entryId: string;
+  context: RuntimeContext<R>;
   config: Partial<Config>;
 };
 
-export type RuntimeInstance<R> = ManagedRuntime.ManagedRuntime<R, never> & {
+export type RuntimeInstance<R> = {
+  runtime: ManagedRuntime.ManagedRuntime<R, never>;
   config: Config;
-  isDisposed?: boolean;
-  id: string;
 };
-export type RuntimeType<T> =
-  T extends React.Context<infer U> ? NonNullable<U> : never;
 
-export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
+// export type RuntimeInstance
+// export type RuntimeType<T> =
+//   T extends React.Context<infer U> ? NonNullable<U> : never;
+
+// export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
 
 export type RuntimeConfigFn<
   R,
@@ -59,19 +67,11 @@ export type RuntimeConfigFn<
   props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
 ) => TProps | undefined;
 
-export type RuntimeEntry<R, C extends React.FC<any>> = {
+export type RuntimeHocEntry<R, C extends React.FC<any>> = {
   id: string;
   type: 'runtime' | 'upstream';
-  context: RuntimeContextReference<R, C>;
+  module: RuntimeModule<R, C>;
   configFn?: RuntimeConfigFn<R, C> | undefined;
-};
-
-export type RuntimeContextReference<
-  R,
-  C extends React.FC<any> = React.FC<any>,
-> = {
-  context: RuntimeContext<R>;
-  reference: () => C;
 };
 
 export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
@@ -80,7 +80,7 @@ export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
     : never
   : T;
 
-export type ExtractStaticRuntimes<T> = T extends { [RUNTIME_PROP]: infer R }
+export type ExtractStaticHocEntries<T> = T extends { [RUNTIME_PROP]: infer R }
   ? R extends unknown[]
     ? R
     : never
@@ -138,6 +138,15 @@ type PushUnique<T extends readonly unknown[], V> =
 
 type Reverse<T> = Call<Tuples.Reverse, T>;
 
+type Unique<T extends any[], Acc extends any[] = []> = T extends [
+  infer Head,
+  ...infer Tail,
+]
+  ? Head extends Acc[number]
+    ? Unique<Tail, Acc>
+    : Unique<Tail, [...Acc, Head]>
+  : Acc;
+
 export type CollectRuntimes<
   Component,
   Seen extends unknown[] = [],
@@ -161,12 +170,3 @@ export type CollectRuntimes<
     : Acc;
 
 export type TraverseDeps<T> = Reverse<Unique<CollectRuntimes<T>>>;
-
-type Unique<T extends any[], Acc extends any[] = []> = T extends [
-  infer Head,
-  ...infer Tail,
-]
-  ? Head extends Acc[number]
-    ? Unique<Tail, Acc>
-    : Unique<Tail, [...Acc, Head]>
-  : Acc;

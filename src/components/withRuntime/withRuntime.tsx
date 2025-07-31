@@ -3,12 +3,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Simplify, Merge } from 'type-fest';
-import { hocFactory } from 'components/common/factory';
+import { providerFactory } from 'components/common/providerFactory';
 import type {
-  RuntimeContextReference,
+  RuntimeModule,
   RuntimeApi,
   RUNTIME_PROP,
-  ExtractStaticRuntimes,
+  ExtractStaticHocEntries,
   COMPONENT_PROP,
   ExtractStaticComponent,
   Config,
@@ -20,11 +20,11 @@ import type {
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
-const withRuntimeImpl = hocFactory('runtime', 'withRuntime');
+const withRuntimeImpl = providerFactory('runtime', 'withRuntime');
 
 export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
-  Context: TContext & RuntimeContextReference<R>,
-  getSource: (
+  Context: TContext & RuntimeModule<R>,
+  getSource?: (
     api: {
       configure: (config?: Partial<Config>) => RuntimeApi<R>;
       runtime: RuntimeApi<R>;
@@ -32,13 +32,13 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
-  Simplify<Omit<React.ComponentProps<C> & { id?: string }, keyof TProps>>
+  Simplify<{ id: string } & Omit<React.ComponentProps<C>, keyof TProps>>
 > &
   Merge<
     ExtractMeta<C>,
     {
       [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [RUNTIME_PROP]: [...ExtractStaticRuntimes<C>, Down<TContext>];
+      [RUNTIME_PROP]: [...ExtractStaticHocEntries<C>, Down<TContext>];
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
       [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }
@@ -92,7 +92,7 @@ export function withRuntime<
   R,
   TProps extends Record<string, unknown> | undefined,
 >(
-  Context: RuntimeContextReference<R>,
+  Context: RuntimeModule<R>,
   getSource?: (
     api: {
       configure: (config?: Partial<Config>) => RuntimeApi<R>;

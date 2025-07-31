@@ -1,3 +1,5 @@
+// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 export function isPlainObject(
   value: unknown
 ): value is Record<string, unknown> {
@@ -45,3 +47,32 @@ export function deepEqual(
 
   return false;
 }
+
+export const isShallowEqual = <T>(
+  a: React.PropsWithChildren<T> | undefined | null,
+  b: React.PropsWithChildren<T> | undefined | null
+): boolean => {
+  if (a === b) return true;
+  if (
+    typeof a !== 'object' ||
+    a === null ||
+    typeof b !== 'object' ||
+    b === null
+  )
+    return false;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+
+    // Skip 'children' comparison (optional: tweak this behavior if needed)
+    if (key === 'children') continue;
+
+    if (a[key as keyof typeof a] !== b[key as keyof typeof b]) return false;
+  }
+
+  return true;
+};

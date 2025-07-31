@@ -2,15 +2,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
-import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
+import type {
+  RuntimeContext,
+  RuntimeInstance,
+  RuntimeModule,
+} from 'components/common/types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
 import {
   getDeps,
   getEffectFn,
-  getRuntime,
+  getRuntimeInstance,
   type Fallback,
   type Fallback2,
 } from './common/utils.arg';
+import type { RuntimeKey } from './useRuntimeProvider/types';
 
 /*
 This hook returns a function that can be called to trigger an effect.
@@ -35,7 +40,7 @@ type InferReturn<F> = F extends (...args: any[]) => infer R ? R : never;
 
 export function createFn<R>(
   localContext: RuntimeContext<R>,
-  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  instances: Map<RuntimeKey, RuntimeInstance<any>>
 ): {
   <Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
     target: Fn
@@ -46,7 +51,7 @@ export function createFn<R>(
   >;
 
   <R1, Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
-    target: RuntimeContext<R1> | RuntimeInstance<R1>,
+    target: RuntimeModule<R1> | RuntimeInstance<R1>,
     fn: Fn,
     deps?: React.DependencyList
   ): (
@@ -58,12 +63,12 @@ export function createFn<R>(
 
 export function createFn<R>(
   localContext: RuntimeContext<R>,
-  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  instances: Map<RuntimeKey, RuntimeInstance<any>>
 ) {
   return <T extends unknown[], T1 extends unknown[], A, A1, E, E1, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
-      | RuntimeContext<R1>
+      | RuntimeModule<R1>
       | ((...args: T) => Effect.Effect<A, E, R | Scope.Scope>),
     fnOrDeps?:
       | ((...args: T1) => Effect.Effect<A1, E1, Fallback<R1, R> | Scope.Scope>)
@@ -76,17 +81,21 @@ export function createFn<R>(
       Effect.Effect<A | A1, E | E1, R | R1>
     >(targetOrEffect, fnOrDeps);
 
-    const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
+    const instance = getRuntimeInstance<R, R1>(
+      targetOrEffect,
+      localContext,
+      instances
+    );
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const fnRef = React.useRef(effectFn);
 
     React.useEffect(() => {
       fnRef.current = effectFn;
-    }, [instanceDeps, runtime, effectFn, ...finalDeps]);
+    }, [instanceDeps, instance, effectFn, ...finalDeps]);
 
     const emitter = React.useMemo(
       () => new EventEmitter<[...Fallback2<T1, Sanitize<T>>], A | A1>(),
-      [instanceDeps, runtime, ...finalDeps]
+      [instanceDeps, instance, ...finalDeps]
     );
 
     const stream = React.useMemo(
@@ -101,16 +110,18 @@ export function createFn<R>(
           ),
           Stream.runDrain
         ),
-      [instanceDeps, runtime, ...finalDeps]
+      [instanceDeps, instance, ...finalDeps]
     );
 
     React.useEffect(() => {
       const scope = Effect.runSync(Scope.make());
-      runtime.runFork(stream.pipe(Effect.forkScoped, Scope.extend(scope)));
+      instance.runtime.runFork(
+        stream.pipe(Effect.forkScoped, Scope.extend(scope))
+      );
       return () => {
-        runtime.runFork(Scope.close(scope, Exit.void));
+        instance.runtime.runFork(Scope.close(scope, Exit.void));
       };
-    }, [instanceDeps, runtime, emitter, ...finalDeps]);
+    }, [instanceDeps, instance, emitter, ...finalDeps]);
 
     // Return function with preserved param names
     type Args = Fallback2<T1, Sanitize<T>>;

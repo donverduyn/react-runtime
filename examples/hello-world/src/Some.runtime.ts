@@ -1,6 +1,6 @@
 import { pipe, Layer, Console } from 'effect';
 import type { RuntimeContext } from '../../../src/components/common/types';
-import { createRuntimeContext } from '../../../src/utils/context';
+import { createRuntimeContext } from '../../../src/utils/runtime';
 import { Some } from './Some';
 
 export const reference = () => Some;

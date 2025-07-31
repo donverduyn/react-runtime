@@ -1,12 +1,17 @@
 import * as React from 'react';
 import { Effect, Scope, Exit } from 'effect';
-import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
+import type {
+  RuntimeContext,
+  RuntimeInstance,
+  RuntimeModule,
+} from 'components/common/types';
 import {
   getDeps,
   getEffect,
-  getRuntime,
+  getRuntimeInstance,
   type Fallback,
 } from './common/utils.arg';
+import type { RuntimeKey } from './useRuntimeProvider/types';
 
 /*
 This hook is used to run an effect in a runtime.
@@ -17,12 +22,12 @@ export const createRun =
   <R>(
     localContext: RuntimeContext<R>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+    instances: Map<RuntimeKey, RuntimeInstance<any>>
   ) =>
   <A, E, R1>(
     targetOrEffect:
       | RuntimeInstance<R1>
-      | RuntimeContext<R1>
+      | RuntimeModule<R1>
       | Effect.Effect<A, E, R | Scope.Scope>,
     effectOrDeps?:
       | Effect.Effect<A, E, Fallback<R1, R> | Scope.Scope>
@@ -34,14 +39,18 @@ export const createRun =
       targetOrEffect,
       effectOrDeps
     );
-    const runtime = getRuntime<R, R1>(targetOrEffect, localContext, instances);
+    const instance = getRuntimeInstance<R, R1>(
+      targetOrEffect,
+      localContext,
+      instances
+    );
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const hasRun = React.useRef(false);
     const scope = React.useRef<Scope.CloseableScope>(null as never);
 
     if (!hasRun.current) {
       scope.current = Effect.runSync(Scope.make());
-      runtime.runFork(
+      instance.runtime.runFork(
         effect.pipe(Effect.forkScoped, Scope.extend(scope.current))
       );
       hasRun.current = true;
@@ -50,13 +59,13 @@ export const createRun =
     React.useEffect(() => {
       if (!hasRun.current) {
         scope.current = Effect.runSync(Scope.make());
-        runtime.runFork(
+        instance.runtime.runFork(
           effect.pipe(Effect.forkScoped, Scope.extend(scope.current))
         );
       }
       return () => {
-        runtime.runFork(Scope.close(scope.current, Exit.void));
+        instance.runtime.runFork(Scope.close(scope.current, Exit.void));
         hasRun.current = false;
       };
-    }, [instanceDeps, runtime, ...finalDeps]);
+    }, [instanceDeps, instance, ...finalDeps]);
   };

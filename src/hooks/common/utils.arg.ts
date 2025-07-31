@@ -3,7 +3,9 @@
 import * as React from 'react';
 import { Effect, ManagedRuntime } from 'effect';
 import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
+import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
 import { isReactContext } from 'utils/react';
+import { isRuntimeInstance, isRuntimeModule } from 'utils/runtime';
 
 export type Fallback<T, U> = [T, U] extends [infer A, infer B]
   ? unknown extends A
@@ -31,19 +33,19 @@ export const getDeps = (input: any, deps: React.DependencyList) =>
       ? input
       : deps) as React.DependencyList;
 
-export const getRuntime = <R, R1>(
+export const getRuntimeInstance = <R, R1>(
   input: any,
   localContext: RuntimeContext<any>,
-  instances: Map<RuntimeContext<any>, RuntimeInstance<any>>
+  instances: Map<RuntimeKey, RuntimeInstance<any>>
 ) => {
   const result = (
-    isReactContext<RuntimeContext<R1>>(input)
-      ? input !== localContext
-        ? React.use(input)
-        : instances.get(input)
-      : ManagedRuntime.isManagedRuntime(input)
-        ? input
-        : instances.get(localContext)
+    isRuntimeInstance(input)
+      ? input
+      : isRuntimeModule(input)
+        ? instances.get(input.key)
+        : Effect.isEffect(input)
+          ? instances.get(localContext.key)
+          : undefined
   ) as RuntimeInstance<R | R1> | undefined;
 
   if (result === undefined) {

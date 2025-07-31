@@ -19,7 +19,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "test": "vitest ./",
+    "test": "vitest ./ --ui",
     "lint": "eslint ./src",
     "build": "rollup -c",
     "playwright:install": "yarn playwright install --with-deps --only-shell chromium"

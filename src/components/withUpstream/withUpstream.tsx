@@ -3,12 +3,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Simplify, Merge } from 'type-fest';
-import { hocFactory } from 'components/common/factory';
+import { providerFactory } from 'components/common/providerFactory';
 import type {
-  RuntimeContextReference,
+  RuntimeModule,
   RuntimeApi,
   RUNTIME_PROP,
-  ExtractStaticRuntimes,
+  ExtractStaticHocEntries,
   COMPONENT_PROP,
   ExtractStaticComponent,
   PROPS_PROP,
@@ -20,26 +20,31 @@ import type {
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
-const withUpstreamImpl = hocFactory('upstream', 'withUpstream');
+const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
 
 export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
-  Context: TContext & RuntimeContextReference<R>,
+  Context: TContext & RuntimeModule<R>,
   getSource: (
     api: { runtime: RuntimeApi<R> },
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
-  Simplify<Omit<React.ComponentProps<C> & { id?: string }, keyof TProps>>
+  Simplify<
+    { id: string } & Omit<
+      React.ComponentProps<C> & { id: string },
+      keyof TProps
+    >
+  >
 > &
   Merge<
     ExtractMeta<C>,
     {
       [UPSTREAM_PROP]: TraverseDeps<{
         [RUNTIME_PROP]: KeepUpstream<
-          [...ExtractStaticRuntimes<C>, Up<TContext>]
+          [...ExtractStaticHocEntries<C>, Up<TContext>]
         >;
       }>;
-      [RUNTIME_PROP]: [...ExtractStaticRuntimes<C>, Up<TContext>];
+      [RUNTIME_PROP]: [...ExtractStaticHocEntries<C>, Up<TContext>];
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
       [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }
@@ -50,7 +55,7 @@ export function withUpstream<
   R,
   TProps extends Record<string, unknown> | undefined,
 >(
-  Context: RuntimeContextReference<R>,
+  Context: RuntimeModule<R>,
   getSource?: (
     api: { runtime: RuntimeApi<R> },
     props: Merge<React.ComponentProps<C>, ExtractStaticProps<C>>

@@ -17,8 +17,8 @@ export class EventEmitter<T extends unknown[], A> {
       resolver = resolve;
     });
     this.eventQueue.push({ data: args, eventId });
-    this.notifyListeners();
     this.resolvers.set(eventId, resolver!);
+    this.notifyListeners();
     return promise;
   };
 
