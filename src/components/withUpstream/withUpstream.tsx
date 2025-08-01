@@ -24,7 +24,7 @@ const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
 
 export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
   Context: TContext & RuntimeModule<R>,
-  getSource: (
+  getSource?: (
     api: { runtime: RuntimeApi<R> },
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps

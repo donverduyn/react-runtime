@@ -2,7 +2,6 @@ import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
 import { pipe, Console } from 'effect';
 import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
-import * as Tags from './Child.tags';
 
 type Props = {
   readonly name: string;
@@ -11,16 +10,13 @@ type Props = {
 
 export const Child = pipe(
   ChildView,
-  withUpstream(AppRuntime, () => ({
-    foo: true,
-  })),
-  withRuntime(ChildRuntime, ({ configure }) => {
+  withUpstream(AppRuntime, () => ({ foo: true })),
+  withRuntime(ChildRuntime, ({ configure }, props) => {
     const runtime = configure({ debug: true });
-
-    const log = runtime.useFn((value: string) =>
-      Console.log('Child mounted', value)
-    );
-    return { log, name: runtime.use(Tags.Name) };
+    const log = runtime.useFn((value: string) => {
+      return Console.log('Child mounted', value);
+    });
+    return { log, name: runtime.use(ChildRuntime.Name) };
   })
 );
 

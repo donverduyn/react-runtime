@@ -8,13 +8,13 @@ import type { createFn } from 'hooks/useFn';
 import type { createRun } from 'hooks/useRun';
 import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
 
-export const RUNTIME_PROP = '__runtimes';
-export const COMPONENT_PROP = '__component';
-export const PROPS_PROP = '__props';
-export const UPSTREAM_PROP = '__upstream';
+export const RUNTIME_PROP = '_runtimes';
+export const COMPONENT_PROP = '_component';
+export const PROPS_PROP = '_props';
+export const UPSTREAM_PROP = '_upstream';
 
 export type RuntimeApi<R> = {
-  runtime: RuntimeInstance<R>;
+  instance: RuntimeInstance<R>['runtime'];
   use: ReturnType<typeof createUse<R>>;
   useFn: ReturnType<typeof createFn<R>>;
   useRun: ReturnType<typeof createRun<R>>;
@@ -96,7 +96,7 @@ export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }
     : never
   : [];
 
-export type UnwrapRuntime<T> = T extends { __runtime: infer R } ? R : T;
+export type UnwrapRuntime<T> = T extends { _runtime: infer R } ? R : T;
 
 type ExtractReference<T> =
   UnwrapRuntime<T> extends { reference: () => infer R } ? R : never;
@@ -122,7 +122,7 @@ export type Down<T> = T & DownstreamBrand;
 
 export type FilterReference<T> = Call<Tuples.Map<Objects.Get<'type'>>, T>;
 
-type ExtractRuntimes<T> = T extends { __runtimes?: infer R } ? R : never;
+type ExtractRuntimes<T> = T extends { _runtimes?: infer R } ? R : never;
 
 type Includes<T extends readonly unknown[], V> = T extends [
   infer Head,
@@ -156,16 +156,16 @@ export type CollectRuntimes<
     ? ExtractReference<Head> extends infer Ref
       ? Ref extends object
         ? Ref extends Seen[number]
-          ? CollectRuntimes<{ __runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
+          ? CollectRuntimes<{ _runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
           : CollectRuntimes<
-              { __runtimes?: Tail },
+              { _runtimes?: Tail },
               [...Seen, Ref],
               PushUnique<
                 [...Acc, ...CollectRuntimes<Ref, [...Seen, Ref], Acc>],
                 Head
               >
             >
-        : CollectRuntimes<{ __runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
+        : CollectRuntimes<{ _runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
       : Acc
     : Acc;
 

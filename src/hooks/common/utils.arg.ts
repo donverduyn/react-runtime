@@ -33,7 +33,7 @@ export const getDeps = (input: any, deps: React.DependencyList) =>
       ? input
       : deps) as React.DependencyList;
 
-export const getRuntimeInstance = <R, R1>(
+export const getRuntimeInstance = <R>(
   input: any,
   localContext: RuntimeContext<any>,
   instances: Map<RuntimeKey, RuntimeInstance<any>>
@@ -46,7 +46,7 @@ export const getRuntimeInstance = <R, R1>(
         : Effect.isEffect(input)
           ? instances.get(localContext.key)
           : undefined
-  ) as RuntimeInstance<R | R1> | undefined;
+  ) as RuntimeInstance<R> | undefined;
 
   if (result === undefined) {
     throw new Error(noRuntimeMessage);

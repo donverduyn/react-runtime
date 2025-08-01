@@ -189,24 +189,28 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
             if (entry.level < previousLevel) mergedFromConfigs = {};
             previousLevel = entry.level;
 
-            const factory = (overrides: Partial<Config> = {}) => {
-              const instance = runtimeProvider.register(
-                props.id as ComponentId,
-                {
-                  entryId: entry.id,
-                  context: module.context,
-                  config: overrides,
-                }
-              );
+            const runtimeFactory =
+              (options: { returnOnly: boolean } = { returnOnly: false }) =>
+              (overrides: Partial<Config> = {}) => {
+                if (!options.returnOnly) {
+                  const instance = runtimeProvider.register(
+                    props.id as ComponentId,
+                    {
+                      entryId: entry.id,
+                      context: module.context,
+                      config: overrides,
+                    }
+                  );
 
-              runtimeInstances.set(module.context.key, instance);
-              return {
-                runtime: instance,
-                use: createUse(module.context, runtimeInstances),
-                useFn: createFn(module.context, runtimeInstances),
-                useRun: createRun(module.context, runtimeInstances),
+                  runtimeInstances.set(module.context.key, instance);
+                }
+                return {
+                  instance: runtimeInstances.get(module.context.key)!.runtime,
+                  use: createUse(module.context, runtimeInstances),
+                  useFn: createFn(module.context, runtimeInstances),
+                  useRun: createRun(module.context, runtimeInstances),
+                };
               };
-            };
 
             if (configFn) {
               // we provide two ways to use a runtime. An imperative api to provide configurations and direct use based on default configurations.
@@ -215,8 +219,19 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
                 {},
                 {
                   get(_, prop) {
-                    if (prop === 'configure') return factory;
-                    if (prop === 'runtime') return factory();
+                    const isAvailableUpstream = upstreamKeys.has(
+                      module.context.key
+                    );
+                    const factoryOptions = {
+                      returnOnly: type === 'upstream' && isAvailableUpstream,
+                    };
+                    if (prop === 'configure') {
+                      return runtimeFactory(factoryOptions);
+                    }
+                    if (prop === 'runtime') {
+                      return runtimeFactory(factoryOptions)();
+                    }
+
                     throw new Error(invalidDestructure(name, prop));
                   },
                 }
@@ -246,27 +261,21 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
 
               // we check here wether the instance is available upstream. If it is not available we reconstruct it inside the component.
 
-              const isAvailableUpstream = upstreamKeys.has(module.context.key);
-              if (
-                type === 'runtime' ||
-                (process.env.NODE_ENV === 'development' && !isAvailableUpstream)
-              ) {
-                const maybeProps = configFn(
-                  proxyArg as {
-                    runtime: RuntimeApi<R>;
-                    configure: typeof factory;
-                  },
-                  propsProxy
-                );
+              const maybeProps = configFn(
+                proxyArg as {
+                  runtime: RuntimeApi<R>;
+                  configure: ReturnType<typeof runtimeFactory>;
+                },
+                propsProxy
+              );
 
-                // configFn optionally returns new props. We merge these props
-                if (maybeProps) {
-                  Object.assign(mergedFromConfigs, maybeProps);
-                }
+              // configFn optionally returns new props. We merge these props
+              if (maybeProps) {
+                Object.assign(mergedFromConfigs, maybeProps);
               }
             } else if (type === 'runtime') {
               // when withRuntime is used without a configFn, we still need to call factory to ensure the runtime is registered
-              factory();
+              runtimeFactory()();
             }
           });
 

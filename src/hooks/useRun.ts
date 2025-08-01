@@ -1,16 +1,7 @@
 import * as React from 'react';
 import { Effect, Scope, Exit } from 'effect';
-import type {
-  RuntimeContext,
-  RuntimeInstance,
-  RuntimeModule,
-} from 'components/common/types';
-import {
-  getDeps,
-  getEffect,
-  getRuntimeInstance,
-  type Fallback,
-} from './common/utils.arg';
+import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
+import { getRuntimeInstance } from './common/utils.arg';
 import type { RuntimeKey } from './useRuntimeProvider/types';
 
 /*
@@ -24,26 +15,11 @@ export const createRun =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     instances: Map<RuntimeKey, RuntimeInstance<any>>
   ) =>
-  <A, E, R1>(
-    targetOrEffect:
-      | RuntimeInstance<R1>
-      | RuntimeModule<R1>
-      | Effect.Effect<A, E, R | Scope.Scope>,
-    effectOrDeps?:
-      | Effect.Effect<A, E, Fallback<R1, R> | Scope.Scope>
-      | React.DependencyList,
+  <A, E>(
+    effect: Effect.Effect<A, E, R | Scope.Scope>,
     deps: React.DependencyList = []
   ) => {
-    const finalDeps = getDeps(effectOrDeps, deps);
-    const effect = getEffect<Effect.Effect<A, E, R | R1>>(
-      targetOrEffect,
-      effectOrDeps
-    );
-    const instance = getRuntimeInstance<R, R1>(
-      targetOrEffect,
-      localContext,
-      instances
-    );
+    const instance = getRuntimeInstance<R>(effect, localContext, instances);
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const hasRun = React.useRef(false);
     const scope = React.useRef<Scope.CloseableScope>(null as never);
@@ -67,5 +43,5 @@ export const createRun =
         instance.runtime.runFork(Scope.close(scope.current, Exit.void));
         hasRun.current = false;
       };
-    }, [instanceDeps, instance, ...finalDeps]);
+    }, [instanceDeps, instance, ...deps]);
   };
