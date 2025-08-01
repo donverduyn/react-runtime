@@ -5,30 +5,21 @@ import * as React from 'react';
 import type { Simplify, Merge } from 'type-fest';
 import { providerFactory } from 'components/common/providerFactory';
 import type {
-  RuntimeModule,
-  RuntimeApi,
   PROVIDERS_PROP,
-  ExtractStaticHocEntries,
+  ExtractStaticHocEntries as ExtractStaticProviders,
   COMPONENT_PROP,
   ExtractStaticComponent,
-  Config,
   PROPS_PROP,
   ExtractStaticProps,
   UPSTREAM_PROP,
   ExtractStaticUpstream,
-  Down,
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
-const withRuntimeImpl = providerFactory('runtime', 'withRuntime');
+const withPropsImpl = providerFactory('props', 'withProps');
 
-export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
-  Context: TContext & RuntimeModule<R>,
-  configFn?: (
-    api: {
-      configure: (config?: Partial<Config>) => RuntimeApi<R>;
-      runtime: RuntimeApi<R>;
-    },
+export function withProps<TProps, C extends React.FC<any>>(
+  configFn: (
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ): (Component: C) => React.FC<
@@ -38,13 +29,13 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
     ExtractMeta<C>,
     {
       [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: [...ExtractStaticHocEntries<C>, Down<TContext>];
+      [PROVIDERS_PROP]: ExtractStaticProviders<C>;
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
       [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }
   >;
 
-// export function withRuntime<TTarget, C extends React.FC<any>>(
+// export function withProps<TTarget, C extends React.FC<any>>(
 //   Context: RuntimeContextReference<TTarget>,
 //   getSource?: (
 //     api: {
@@ -72,7 +63,6 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
  * @template TContext A branded runtime context reference
  * @template R The effect runtime environment type
  *
- * @param Context A runtime context reference with a `.context` and `.reference()` method
  * @param configFn A function that receives runtime API + configure and returns props
  * @returns A higher-order component that wraps `C`, injects props, and manages runtime
  *
@@ -80,26 +70,19 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
  * ```tsx
  * export const Child = pipe(
  *   ChildView,
- *   withRuntime(UserRuntime, ({ configure }) => {
- *     const user = configure().runtime.use(UserTags.CurrentUser);
- *     return { user };
- *   })
+ *   withProps((props) => ({
+ *      foo: props.bar
+ *   }))
  * );
  * ```
  */
-export function withRuntime<
+export function withProps<
   C extends React.FC<any>,
-  R,
   TProps extends Record<string, unknown> | undefined,
 >(
-  Context: RuntimeModule<R>,
-  configFn?: (
-    api: {
-      configure: (config?: Partial<Config>) => RuntimeApi<R>;
-      runtime: RuntimeApi<R>;
-    },
+  configFn: (
     props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
   ) => TProps
 ) {
-  return withRuntimeImpl(Context, configFn);
+  return withPropsImpl(configFn);
 }

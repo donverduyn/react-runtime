@@ -42,7 +42,7 @@ export const getRuntimeInstance = <R>(
     isRuntimeInstance(input)
       ? input
       : isRuntimeModule(input)
-        ? instances.get(input.key)
+        ? instances.get(input.context.key)
         : Effect.isEffect(input)
           ? instances.get(localContext.key)
           : undefined

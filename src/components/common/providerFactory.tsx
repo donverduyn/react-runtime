@@ -1,12 +1,12 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Merge } from 'type-fest';
+import type { IsEqual, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
-import { createUse } from 'hooks/use';
-import { createFn } from 'hooks/useFn';
-import { createRun } from 'hooks/useRun';
+import { createUse } from 'hooks/useRuntimeApi/use';
+import { createFn } from 'hooks/useRuntimeApi/useFn';
+import { createRun } from 'hooks/useRuntimeApi/useRun';
 import { useComponentMap } from 'hooks/useRuntimeProvider/hooks/useComponentMap';
 import type {
   ComponentId,
@@ -20,21 +20,23 @@ import {
   copyStaticProperties,
   extractMeta,
 } from 'utils/react';
+import { isRuntimeModule } from 'utils/runtime';
 import {
   type ExtractStaticComponent,
-  type ExtractStaticHocEntries,
+  type ExtractStaticHocEntries as ExtractStaticProviders,
   type RuntimeApi,
   type RuntimeModule,
-  type RuntimeHocEntry,
+  type ProviderHocEntry as ProviderEntry,
   type Config,
   type PROPS_PROP,
   type ExtractStaticProps,
   COMPONENT_PROP,
-  RUNTIME_PROP,
+  PROVIDERS_PROP,
   type UPSTREAM_PROP,
   type TraverseDeps,
   type RuntimeInstance,
-  type RuntimeConfigFn,
+  type ProviderConfigFn,
+  type PropsConfigFn,
 } from './types';
 
 export const defaultConfig = {
@@ -45,9 +47,9 @@ export const defaultConfig = {
   replace: false,
 } satisfies Partial<Config>;
 
-const getStaticRuntimeHocEntryList = <C extends React.FC<any>, R>(
-  component: C & { [RUNTIME_PROP]?: RuntimeHocEntry<R, C>[] }
-) => component[RUNTIME_PROP] ?? ([] as RuntimeHocEntry<R, C>[]);
+const getStaticProviderList = <C extends React.FC<any>, R>(
+  component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] }
+) => component[PROVIDERS_PROP] ?? ([] as ProviderEntry<R, C>[]);
 
 const getStaticComponent = <C extends React.FC<any>>(
   component: C & { [COMPONENT_PROP]?: React.FC<any> }
@@ -63,37 +65,40 @@ const hoistOriginalComponent = <
   Wrapper[COMPONENT_PROP] = target;
 };
 
-const hoistEntryList = <C extends React.FC<any>, R>(
-  Wrapper: C & { [RUNTIME_PROP]?: RuntimeHocEntry<R, C>[] },
-  entries: RuntimeHocEntry<R, C>[]
+const hoistProviderList = <C extends React.FC<any>, R>(
+  Wrapper: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] },
+  entries: ProviderEntry<R, C>[]
 ) => {
-  Wrapper[RUNTIME_PROP] = entries as ExtractStaticHocEntries<C>;
+  Wrapper[PROVIDERS_PROP] = entries as ExtractStaticProviders<C>;
 };
 
-function collectEntriesUpstream<C extends React.FC<any>, R>(
+function collectUpstreamProviders<C extends React.FC<any>, R>(
   component: C,
-  entry: RuntimeHocEntry<R, C>
+  entry: ProviderEntry<R, C>
 ) {
-  const graph: (RuntimeHocEntry<any, any> & {
+  const graph: (ProviderEntry<any, any> & {
     level: number;
     index: number;
   })[] = [];
   const visited = new Set<React.FC<any>>();
 
   function dfs(
-    comp: C & { [RUNTIME_PROP]?: RuntimeHocEntry<R, C>[] },
+    comp: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] },
     level: number
   ) {
     if (visited.has(comp)) return;
     visited.add(comp);
 
-    const entries = getStaticRuntimeHocEntryList<C, R>(comp);
+    const entries = getStaticProviderList<C, R>(comp);
     const appendedRegistry =
       comp === component ? entries.concat(entry) : entries;
 
     appendedRegistry.forEach((item, index) => {
       graph.push(Object.assign({}, item, { level, index }));
 
+      if (item.type === 'props' || entry.type === 'props') {
+        return;
+      }
       const ref =
         item.module !== entry.module ? item.module.reference() : undefined;
       // we currently only support a single reference (assuming a single withRuntime usage for a runtime)
@@ -108,40 +113,61 @@ function collectEntriesUpstream<C extends React.FC<any>, R>(
   });
 }
 
-const createRuntimeHocEntry = <R, C extends React.FC<any>>(
-  entry: RuntimeHocEntry<R, C>
-) => entry;
+const createProviderHocEntry = <R, C extends React.FC<any>>(
+  entry: ProviderEntry<R, C>
+): ProviderEntry<R, C> => entry;
 
-export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
-  function createHoc<
-    C extends React.FC<any>,
+export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
+  type: Type,
+  name: string
+) => {
+  const create = <
     R,
+    C extends React.FC<any>,
     TProps extends Record<string, unknown> | undefined,
   >(
-    Module: RuntimeModule<R>,
-    getSource?: (
-      api: {
-        configure: (config?: Partial<Config>) => RuntimeApi<R>;
-        runtime: RuntimeApi<R>;
-      },
-      props: Merge<React.ComponentProps<C>, ExtractStaticProps<C>>
-    ) => TProps
+    moduleOrFn: RuntimeModule<R> | PropsConfigFn<C, TProps>,
+    configFn?: ProviderConfigFn<R, C, TProps>
+  ) => {
+    const isModuleFirst = isRuntimeModule<R>(moduleOrFn);
+    const module = isModuleFirst ? moduleOrFn : undefined;
+    const fn = !isModuleFirst ? moduleOrFn : configFn;
+    return HOC<R, C, TProps>(module, fn);
+  };
+
+  function HOC<
+    R,
+    C extends React.FC<any>,
+    TProps extends Record<string, unknown> | undefined,
+  >(
+    module: RuntimeModule<R> | undefined,
+    configFn?: ProviderConfigFn<R, C, TProps> | PropsConfigFn<C, TProps>
   ) {
     return (Component: C) => {
       const target = getStaticComponent(Component) ?? Component;
-      const entries = getStaticRuntimeHocEntryList<C, R>(Component);
+      const entries = getStaticProviderList<C, R>(Component);
       const hocId = uuid();
-      const entry = createRuntimeHocEntry<R, C>({
-        module: Module as RuntimeModule<R, C>,
-        configFn: getSource as RuntimeConfigFn<R, C>,
-        id: hocId,
-        type,
-      });
+      const entry = (() => {
+        if (type === 'props') {
+          return createProviderHocEntry<R, C>({
+            id: hocId,
+            type: 'props',
+            configFn: configFn as PropsConfigFn<C>,
+          });
+        } else {
+          return createProviderHocEntry<R, C>({
+            id: hocId,
+            type,
+            module: module as RuntimeModule<R, C>,
+            configFn: configFn as ProviderConfigFn<R, C>,
+          });
+        }
+      })();
 
       const Wrapper: React.FC<
         { readonly id: string } & Partial<React.ComponentProps<C>>
       > = (props) => {
-        const entries = collectEntriesUpstream(Component, entry);
+        const entries = collectUpstreamProviders(Component, entry);
         const componentMap = useComponentMap();
 
         // check what the difference is between target and Component for displayName -> is displayName propagated from target?
@@ -155,22 +181,25 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
         });
 
         const runtimeProvider = useRuntimeProvider(props.id as ComponentId);
-
-        const runtimeInstances = new Map<RuntimeKey, RuntimeInstance<any>>();
-
+        const instances = new Map<RuntimeKey, RuntimeInstance<any>>();
         const upstreamKeys = new Set<RuntimeKey>();
+
+        //* We need a method that takes a set of runtime keys and returns a map with runtime instances, using useSyncExternalStore. This way we can compare runtime ids, between getSnapshot calls, to return a stable map. When ids change, the component will re-render, which allows upstream fast refresh, to update downstream components that depend on upstream runtimes. In order to make this happen, runtimeRegistry, should use this method to register the component id under each runtime id associated with the provided key.
 
         entries
           // in normal scenarios, we pull in all upstream dependencies here, but in portable scenarios, we reconstruct the upstream dependencies at the root, when they are missing.
           .filter((item) => item.type === 'runtime' && item.level !== 0)
           .forEach((entry) => {
-            const runtimeKey = entry.module.context.key;
+            const { module } = entry as ProviderEntry<any, any> & {
+              type: 'runtime';
+            };
+            const runtimeKey = module.context.key;
             const instance = runtimeProvider.getByKey(
               props.id as ComponentId,
               runtimeKey
             );
             if (instance) {
-              runtimeInstances.set(runtimeKey, instance);
+              instances.set(runtimeKey, instance);
               upstreamKeys.add(runtimeKey);
             }
           });
@@ -181,10 +210,31 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
         entries
           .filter((entry) => {
             // here we filter out upstream runtime entries (if they are provided)
-            const runtimeKey = entry.module.context.key;
-            return !upstreamKeys.has(runtimeKey);
+            if (entry.type === 'runtime') {
+              const runtimeKey = entry.module.context.key;
+              return !upstreamKeys.has(runtimeKey);
+            } else {
+              return runtimeProvider.isRoot();
+              // this makes sure that in portable scenarios, we keep including type props/upstream entries at the root, so they can be reconstructed there. In normal situations, there are no upstream entries at the root so this comes without extra costs.
+
+              // in downstream components, we only include runtime entries, since everything is provided from upstream or root.
+            }
           })
           .forEach((entry) => {
+            if (entry.type === 'props') {
+              // props entries are not registered in the runtime provider, but are used to provide props to the component
+              const currentProps = Object.assign(
+                {},
+                mergedFromConfigs,
+                entry.level === 0 ? props : {}
+              );
+
+              Object.assign(
+                mergedFromConfigs,
+                entry.configFn?.(currentProps) ?? {}
+              );
+              return;
+            }
             const { module, configFn, type } = entry;
             if (entry.level < previousLevel) mergedFromConfigs = {};
             previousLevel = entry.level;
@@ -202,13 +252,14 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
                     }
                   );
 
-                  runtimeInstances.set(module.context.key, instance);
+                  // we copy the instance over into the instances map, so it can be used by the next provider in the chain.
+                  instances.set(module.context.key, instance);
                 }
                 return {
-                  instance: runtimeInstances.get(module.context.key)!.runtime,
-                  use: createUse(module.context, runtimeInstances),
-                  useFn: createFn(module.context, runtimeInstances),
-                  useRun: createRun(module.context, runtimeInstances),
+                  instance: instances.get(module.context.key)!.runtime,
+                  use: createUse(module.context, instances),
+                  useFn: createFn(module.context, instances),
+                  useRun: createRun(module.context, instances),
                 };
               };
 
@@ -298,19 +349,21 @@ export const providerFactory = (type: 'runtime' | 'upstream', name: string) => {
 
       copyStaticProperties(meta, Memo);
       hoistOriginalComponent(Memo, target);
-      hoistEntryList(Memo, entries.concat(entry) as React.ComponentProps<C>);
+      hoistProviderList(Memo, entries.concat(entry) as React.ComponentProps<C>);
 
       return Memo as typeof Memo & {
         [UPSTREAM_PROP]: TraverseDeps<{
-          [RUNTIME_PROP]: [...ExtractStaticHocEntries<C>, typeof Module];
+          [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, typeof module];
         }>;
-        [RUNTIME_PROP]: [...ExtractStaticHocEntries<C>, typeof Module];
+        [PROVIDERS_PROP]: IsEqual<typeof type, 'props'> extends true
+          ? ExtractStaticProviders<C>
+          : [...ExtractStaticProviders<C>, typeof module];
         [COMPONENT_PROP]: ExtractStaticComponent<C>;
         [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
       };
     };
   }
-  return createHoc;
+  return create;
 };
 
 function noUpstreamMessage(name: string, prop: unknown) {

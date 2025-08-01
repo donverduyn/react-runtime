@@ -3,12 +3,12 @@
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
 import type { Merge, Simplify } from 'type-fest';
-import type { createUse } from 'hooks/use';
-import type { createFn } from 'hooks/useFn';
-import type { createRun } from 'hooks/useRun';
+import type { createUse } from 'hooks/useRuntimeApi/use';
+import type { createFn } from 'hooks/useRuntimeApi/useFn';
+import type { createRun } from 'hooks/useRuntimeApi/useRun';
 import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
 
-export const RUNTIME_PROP = '_runtimes';
+export const PROVIDERS_PROP = '_providers';
 export const COMPONENT_PROP = '_component';
 export const PROPS_PROP = '_props';
 export const UPSTREAM_PROP = '_upstream';
@@ -55,24 +55,47 @@ export type RuntimeInstance<R> = {
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
 
-export type RuntimeConfigFn<
+export type ProviderConfigFn<
   R,
   C extends React.FC<any>,
-  TProps = Record<PropertyKey, any>,
+  TProps extends Record<string, unknown> | undefined =
+    | Record<string, unknown>
+    | undefined,
 > = (
   api: {
     configure: (config?: Partial<Config>) => RuntimeApi<R>;
     runtime: RuntimeApi<R>;
   },
   props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-) => TProps | undefined;
+) => TProps;
 
-export type RuntimeHocEntry<R, C extends React.FC<any>> = {
-  id: string;
-  type: 'runtime' | 'upstream';
-  module: RuntimeModule<R, C>;
-  configFn?: RuntimeConfigFn<R, C> | undefined;
-};
+export type PropsConfigFn<
+  C extends React.FC<any>,
+  TProps extends Record<string, unknown> | undefined =
+    | Record<string, unknown>
+    | undefined,
+> = (
+  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
+) => TProps;
+
+export type ProviderHocEntry<R, C extends React.FC<any>> =
+  | {
+      id: string;
+      type: 'runtime';
+      module: RuntimeModule<R, C>;
+      configFn?: ProviderConfigFn<R, C>;
+    }
+  | {
+      id: string;
+      type: 'upstream';
+      module: RuntimeModule<R, C>;
+      configFn?: ProviderConfigFn<R, C>;
+    }
+  | {
+      id: string;
+      type: 'props';
+      configFn?: PropsConfigFn<C>;
+    };
 
 export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
   ? C extends (props: infer P) => any
@@ -80,14 +103,14 @@ export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
     : never
   : T;
 
-export type ExtractStaticHocEntries<T> = T extends { [RUNTIME_PROP]: infer R }
+export type ExtractStaticHocEntries<T> = T extends { [PROVIDERS_PROP]: infer R }
   ? R extends unknown[]
     ? R
     : never
   : [];
 
 export type ExtractStaticProps<T> = T extends { [PROPS_PROP]: infer P }
-  ? P
+  ? { id: string } & P
   : Record<never, never>;
 
 export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }

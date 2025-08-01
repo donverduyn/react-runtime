@@ -1,3 +1,4 @@
+import moize from 'moize';
 import type { RuntimeInstance } from 'components/common/types';
 import { useRuntimeRegistry as useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 import { useTreeMap } from './hooks/useTreeMap';
@@ -30,7 +31,8 @@ export const useRuntimeProvider = (id: ComponentId) => {
   return {
     getByKey,
     register: registry.register.bind(registry),
-    unregister: registry.unregister.bind(registry),
+    unregister: () => registry.unregister(id, () => treeMap.unregister(id)),
+    isRoot: moize(() => treeMap.isRoot(id)),
   };
 };
 

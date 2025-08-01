@@ -27,6 +27,7 @@ type TreeMapStore = {
   register: (id: ComponentId, parentId: ParentId) => void;
   unregister: (id: ComponentId) => void;
   getParent: (id: ComponentId) => ParentId | null;
+  isRoot: (id: ComponentId) => boolean;
   // emitById: (id: string) => void;
 };
 
@@ -138,10 +139,15 @@ function createTreeMap(): TreeMapStore {
     return childToParent.get(id) ?? null;
   }
 
+  function isRoot(id: ComponentId): boolean {
+    return getParent(id) === '__ROOT__';
+  }
+
   return {
     subscribe,
     getSnapshot,
     register,
+    isRoot,
     unregister,
     getParent,
     // emitById,
@@ -164,16 +170,21 @@ export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
   const parentId = useParentId();
   const parentNode = treeMap.getParent(id);
 
-  // one time register on mount, skip at root when parentId is null
-  if (parentId && parentNode === null) {
-    treeMap.register(id, parentId);
-  }
+  // one time register on mount, at the root (first registration), parentId is __ROOT__,
+  // afterwards, we pull parentId from context
 
-  React.useEffect(() => {
-    const parentNode = treeMap.getParent(id);
+  const register = React.useCallback(() => {
     if (parentId && parentNode === null) {
       treeMap.register(id, parentId);
     }
+  }, [id, parentId, parentNode, treeMap]);
+
+  // register synchronously
+  register();
+
+  React.useEffect(() => {
+    register();
+    // register again on remount or if parentId changes
 
     return () => treeMap.unregister(id);
   }, [id, parentId]);

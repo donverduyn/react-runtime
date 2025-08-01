@@ -176,9 +176,9 @@ export const extractMeta = <C extends React.FC<any>>(Component: C) =>
     );
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isFunctionalComponent = (fn: React.FC<any>) => {
+export const isFunctionalComponent = (fn: (...args: any[]) => any) => {
   try {
-    const result = fn({});
+    const result = fn({}) as unknown;
     return isReactNode(result);
   } catch {
     return false;

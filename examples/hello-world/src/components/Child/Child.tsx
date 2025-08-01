@@ -11,7 +11,7 @@ type Props = {
 export const Child = pipe(
   ChildView,
   withUpstream(AppRuntime, () => ({ foo: true })),
-  withRuntime(ChildRuntime, ({ configure }, props) => {
+  withRuntime(ChildRuntime, ({ configure }) => {
     const runtime = configure({ debug: true });
     const log = runtime.useFn((value: string) => {
       return Console.log('Child mounted', value);
@@ -26,6 +26,7 @@ function ChildView({ name, log }: Props) {
       <h1>Hello, {name}!</h1>
       <button
         type='button'
+        // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
         onClick={() => {
           log('Hello from Child');
         }}

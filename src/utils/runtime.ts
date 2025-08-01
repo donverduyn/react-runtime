@@ -1,11 +1,12 @@
-import * as React from 'react';
 import { Effect, identity, Layer, ManagedRuntime, pipe } from 'effect';
 import type {
   Config,
   RuntimeContext,
   RuntimeInstance,
+  RuntimeModule,
 } from 'components/common/types';
-import { isFunctionalComponent } from './react';
+
+export const connect = pipe;
 
 export const isRuntimeContext = <T>(
   input: unknown
@@ -23,19 +24,16 @@ export const isRuntimeContext = <T>(
 
 export const isRuntimeModule = <T>(
   input: unknown
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): input is RuntimeContext<T> & { reference: () => React.FC<any> } => {
+): input is RuntimeModule<T> => {
   return (
     typeof input === 'object' &&
     input !== null &&
     'context' in input &&
     'reference' in input &&
-    isRuntimeContext((input as { context: RuntimeContext<T> }).context) &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    typeof (input as { reference: () => React.FC<any> }).reference ===
-      'function' &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isFunctionalComponent((input.reference as () => React.FC<any>)())
+    isRuntimeContext(input.context) &&
+    typeof input.reference === 'function'
+
+    // isFunctionalComponent((input.reference as () => React.FC<any>)())
   );
 };
 
@@ -71,8 +69,8 @@ export const isRuntimeInstance = <T>(
 };
 
 export const createRuntimeContext =
-  <R = never>() =>
-  (layer: Layer.Layer<R>) => {
+  () =>
+  <R = never>(layer: Layer.Layer<R>) => {
     const context: RuntimeContext<R> = {
       key: Symbol('RuntimeContext'),
       layer,

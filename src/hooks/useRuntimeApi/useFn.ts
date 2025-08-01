@@ -4,8 +4,8 @@ import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
 import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
-import { getRuntimeInstance } from './common/utils.arg';
-import type { RuntimeKey } from './useRuntimeProvider/types';
+import { getRuntimeInstance } from '../common/utils.arg';
+import type { RuntimeKey } from '../useRuntimeProvider/types';
 
 /*
 This hook returns a function that can be called to trigger an effect.
