@@ -8,12 +8,12 @@ describe('withReactId', () => {
       __reactid?: string;
     };
     function Tip(props: Props) {
-      console.log('Tip props:', props);
+      // console.log('Tip props:', props);
       return <span>tip</span>;
     }
     const TipCmp = withReactId(Tip);
     function Leaf(props: Props) {
-      console.log('Leaf props:', props);
+      // console.log('Leaf props:', props);
       return (
         <div>
           <span>leaf</span>;
@@ -23,7 +23,7 @@ describe('withReactId', () => {
     }
     const LeafCmp = withReactId(Leaf);
     function Branch(props: Props) {
-      console.log('Branch props:', props);
+      // console.log('Branch props:', props);
       return (
         <div>
           <LeafCmp />
@@ -44,14 +44,14 @@ describe('withReactId', () => {
     }
 
     const Component = withReactId(Root);
-    const { debug } = render(<Component />);
-    debug();
+    // const { debug } = render(<Component />);
+    // debug();
 
     const node = Component({});
     type TestProps = { __reactid?: string; children?: React.ReactNode };
     const element = React.isValidElement<TestProps>(node) ? node : null;
     const ids = collectReactIds(element);
-    console.log('Collected IDs:', ids);
+    // console.log('Collected IDs:', ids);
     // The root div should have __reactid
     expect(element?.props.__reactid).toBeDefined();
     // The children (Leaf) should also have __reactid
@@ -85,8 +85,8 @@ describe('withReactId', () => {
     const node2 = Component({ show: false });
     const element2 = React.isValidElement<TestProps>(node2) ? node2 : null;
     const ids2 = collectReactIds(element2);
-    console.log('ids1:', ids1);
-    console.log('ids2:', ids2);
+    // console.log('ids1:', ids1);
+    // console.log('ids2:', ids2);
   });
 });
 

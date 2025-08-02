@@ -58,24 +58,34 @@ export type RuntimeInstance<R> = {
 export type ProviderConfigFn<
   R,
   C extends React.FC<any>,
-  TProps extends Record<string, unknown> | undefined =
-    | Record<string, unknown>
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined =
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
     | undefined,
 > = (
   api: {
     configure: (config?: Partial<Config>) => RuntimeApi<R>;
     runtime: RuntimeApi<R>;
   },
-  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
+  props: Merge<
+    Partial<React.ComponentProps<C>>,
+    ExtractStaticProps<C> & { id: string }
+  >
 ) => TProps;
 
 export type PropsConfigFn<
   C extends React.FC<any>,
-  TProps extends Record<string, unknown> | undefined =
-    | Record<string, unknown>
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined =
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
     | undefined,
 > = (
-  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
+  props: Merge<
+    Partial<React.ComponentProps<C>>,
+    ExtractStaticProps<C> & { id: string }
+  >
 ) => TProps;
 
 export type ProviderHocEntry<R, C extends React.FC<any>> =
@@ -110,7 +120,7 @@ export type ExtractStaticHocEntries<T> = T extends { [PROVIDERS_PROP]: infer R }
   : [];
 
 export type ExtractStaticProps<T> = T extends { [PROPS_PROP]: infer P }
-  ? { id: string } & P
+  ? P
   : Record<never, never>;
 
 export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }

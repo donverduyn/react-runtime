@@ -73,7 +73,6 @@ describe('strict mode/hooks', () => {
     }> = ({ id, children }) => {
       renderFn(id);
 
-      console.log(this);
       // useState
       React.useState(() => stateInitFn(id));
 

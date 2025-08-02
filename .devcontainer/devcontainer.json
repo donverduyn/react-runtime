@@ -28,7 +28,9 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"vitest.explorer"
+				"vitest.explorer",
+				"dakara.dakara-foldplus",
+				"Gruntfuggly.todo-tree"
 			]
 		}
 	}

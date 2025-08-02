@@ -6,7 +6,6 @@ import type { Simplify, Merge } from 'type-fest';
 import { providerFactory } from 'components/common/providerFactory';
 import type {
   RuntimeModule,
-  RuntimeApi,
   PROVIDERS_PROP,
   ExtractStaticHocEntries,
   COMPONENT_PROP,
@@ -17,17 +16,22 @@ import type {
   TraverseDeps,
   KeepUpstream,
   Up,
+  ProviderConfigFn,
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
 const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
 
-export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
+export function withUpstream<
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+  C extends React.FC<any>,
+  TContext,
+  R,
+>(
   Context: TContext & RuntimeModule<R>,
-  configFn?: (
-    api: { runtime: RuntimeApi<R> },
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
+  configFn?: ProviderConfigFn<R, C, TProps>
 ): (Component: C) => React.FC<
   Simplify<{ id: string } & Omit<React.ComponentProps<C>, keyof TProps>>
 > &
@@ -48,13 +52,9 @@ export function withUpstream<TProps, C extends React.FC<any>, TContext, R>(
 export function withUpstream<
   C extends React.FC<any>,
   R,
-  TProps extends Record<string, unknown> | undefined,
->(
-  Context: RuntimeModule<R>,
-  configFn?: (
-    api: { runtime: RuntimeApi<R> },
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
-) {
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+>(Context: RuntimeModule<R>, configFn?: ProviderConfigFn<R, C, TProps>) {
   return withUpstreamImpl(Context, configFn);
 }

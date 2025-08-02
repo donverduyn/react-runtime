@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
 import type { RuntimeContext, RuntimeInstance } from 'components/common/types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
-import { getRuntimeInstance } from '../common/utils.arg';
 import type { RuntimeKey } from '../useRuntimeProvider/types';
 
 /*
@@ -47,7 +46,7 @@ export function createFn<R>(
     fn: (...args: T) => Effect.Effect<A, E, R | Scope.Scope>,
     deps: React.DependencyList = []
   ) => {
-    const instance = getRuntimeInstance<R>(fn, localContext, instances);
+    const instance = instances.get(localContext.key)!;
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const fnRef = React.useRef(fn);
 

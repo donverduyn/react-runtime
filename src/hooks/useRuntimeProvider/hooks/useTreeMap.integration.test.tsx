@@ -13,7 +13,7 @@ const TestComponent: React.FC<{
 
   return (
     <ParentIdContext.Provider value={id as ParentId}>
-      <p>{`id: ${id}, parent: ${parentId ?? 'none'}`}</p>
+      <p>{`id: ${id}, parent: ${parentId}`}</p>
       {children}
     </ParentIdContext.Provider>
   );
@@ -47,7 +47,7 @@ describe('useTreeMap', () => {
     const screen = render(<TestRootComponent id='root' />);
     // screen.debug();
     // Use screen.getByText to check for each id and parent
-    expect(screen.getByText('id: root, parent: none')).toBeInTheDocument();
+    expect(screen.getByText('id: root, parent: __ROOT__')).toBeInTheDocument();
     expect(screen.getByText('id: child, parent: root')).toBeInTheDocument();
     expect(
       screen.getByText('id: grandchild, parent: child')

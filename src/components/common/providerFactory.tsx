@@ -214,8 +214,8 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
               const runtimeKey = entry.module.context.key;
               return !upstreamKeys.has(runtimeKey);
             } else {
-              return runtimeProvider.isRoot();
-              // this makes sure that in portable scenarios, we keep including type props/upstream entries at the root, so they can be reconstructed there. In normal situations, there are no upstream entries at the root so this comes without extra costs.
+              return runtimeProvider.isRoot() || entry.level === 0;
+              // this makes sure that in portable scenarios, we keep including type props/upstream entries at the root from upstream components, so they can be reconstructed here. In normal situations, there are no upstream entries at the root so this comes without extra costs.
 
               // in downstream components, we only include runtime entries, since everything is provided from upstream or root.
             }
@@ -228,6 +228,8 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
                 mergedFromConfigs,
                 entry.level === 0 ? props : {}
               );
+
+              //* if level is > 0, we don't have access to the props, which is a bit fucked up, so we need to find a way in portable scenarios to mock the props to reconstruct the runtime. One thing we can do, is check which props are used in the configFn together with id, and then show a warning when any of them is missing. This way, users can provide mocked props to reconstruct the runtime. I'm not sure where we should do this, because we don't want to pollute the config. Maybe we can swap the implementation of configure, such that it takes the additional props as the second argument, where these props are injected using withProps, before withRuntime or withUpstream is used.
 
               Object.assign(
                 mergedFromConfigs,
@@ -276,11 +278,11 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
                     const factoryOptions = {
                       returnOnly: type === 'upstream' && isAvailableUpstream,
                     };
-                    if (prop === 'configure') {
-                      return runtimeFactory(factoryOptions);
-                    }
                     if (prop === 'runtime') {
                       return runtimeFactory(factoryOptions)();
+                    }
+                    if (prop === 'configure' && type === 'runtime') {
+                      return runtimeFactory(factoryOptions);
                     }
 
                     throw new Error(invalidDestructure(name, prop));

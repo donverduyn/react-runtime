@@ -6,31 +6,31 @@ import type { Simplify, Merge } from 'type-fest';
 import { providerFactory } from 'components/common/providerFactory';
 import type {
   RuntimeModule,
-  RuntimeApi,
   PROVIDERS_PROP,
   ExtractStaticHocEntries,
   COMPONENT_PROP,
   ExtractStaticComponent,
-  Config,
   PROPS_PROP,
   ExtractStaticProps,
   UPSTREAM_PROP,
   ExtractStaticUpstream,
   Down,
+  ProviderConfigFn,
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
 const withRuntimeImpl = providerFactory('runtime', 'withRuntime');
 
-export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
+export function withRuntime<
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+  C extends React.FC<any>,
+  TContext,
+  R,
+>(
   Context: TContext & RuntimeModule<R>,
-  configFn?: (
-    api: {
-      configure: (config?: Partial<Config>) => RuntimeApi<R>;
-      runtime: RuntimeApi<R>;
-    },
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
+  configFn?: ProviderConfigFn<R, C, TProps>
 ): (Component: C) => React.FC<
   Simplify<{ id: string } & Omit<React.ComponentProps<C>, keyof TProps>>
 > &
@@ -90,16 +90,9 @@ export function withRuntime<TProps, C extends React.FC<any>, TContext, R>(
 export function withRuntime<
   C extends React.FC<any>,
   R,
-  TProps extends Record<string, unknown> | undefined,
->(
-  Context: RuntimeModule<R>,
-  configFn?: (
-    api: {
-      configure: (config?: Partial<Config>) => RuntimeApi<R>;
-      runtime: RuntimeApi<R>;
-    },
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
-) {
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+>(Context: RuntimeModule<R>, configFn?: ProviderConfigFn<R, C, TProps>) {
   return withRuntimeImpl(Context, configFn);
 }

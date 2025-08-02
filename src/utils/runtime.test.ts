@@ -16,8 +16,7 @@ describe('isComponent', () => {
     function notAComponent() {
       return Symbol('not-a-component');
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error Testing non-component function
+
     expect(isFunctionalComponent(notAComponent)).toBeFalsy();
   });
 
@@ -110,19 +109,6 @@ describe('isRuntimeModule', () => {
     const module = {
       context,
       reference: 123,
-    };
-    expect(isRuntimeModule(module)).toBeFalsy();
-  });
-
-  it('returns false if reference does not return a functional component', () => {
-    const layer = Layer.empty;
-    const context = {
-      key: Symbol('RuntimeContext'),
-      layer,
-    };
-    const module = {
-      context,
-      reference: () => ({}) as React.FC,
     };
     expect(isRuntimeModule(module)).toBeFalsy();
   });

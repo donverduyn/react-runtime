@@ -13,15 +13,19 @@ import type {
   ExtractStaticProps,
   UPSTREAM_PROP,
   ExtractStaticUpstream,
+  PropsConfigFn,
 } from 'components/common/types';
 import { type ExtractMeta } from 'utils/react';
 
 const withPropsImpl = providerFactory('props', 'withProps');
 
-export function withProps<TProps, C extends React.FC<any>>(
-  configFn: (
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
+export function withProps<
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+  C extends React.FC<any>,
+>(
+  configFn: PropsConfigFn<C, TProps>
 ): (Component: C) => React.FC<
   Simplify<{ id: string } & Omit<React.ComponentProps<C>, keyof TProps>>
 > &
@@ -78,11 +82,9 @@ export function withProps<TProps, C extends React.FC<any>>(
  */
 export function withProps<
   C extends React.FC<any>,
-  TProps extends Record<string, unknown> | undefined,
->(
-  configFn: (
-    props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C>>
-  ) => TProps
-) {
+  TProps extends
+    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+    | undefined,
+>(configFn: PropsConfigFn<C, TProps>) {
   return withPropsImpl(configFn);
 }
