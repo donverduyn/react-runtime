@@ -28,6 +28,7 @@ type TreeMapStore = {
   unregister: (id: ComponentId) => void;
   getParent: (id: ComponentId) => ParentId | null;
   isRoot: (id: ComponentId) => boolean;
+  getRoot: () => ComponentId | null;
   // emitById: (id: string) => void;
 };
 
@@ -54,7 +55,7 @@ export function createTreeMapNode(
 function createTreeMap(): TreeMapStore {
   const nodeMap: Map<string, TreeMapNode | null> = new Map();
   const childToParent: Map<ComponentId, ParentId> = new Map();
-  const parentToChildren: Map<ParentId, Set<ComponentId>> = new Map();
+  const parentToChildren: Map<ParentId, ComponentId[]> = new Map();
   const listeners: Map<string, () => void> = new Map();
 
   function register(id: ComponentId, parentId: ParentId) {
@@ -65,9 +66,9 @@ function createTreeMap(): TreeMapStore {
       childToParent.set(id, parentId);
     }
     if (!parentToChildren.has(parentId)) {
-      parentToChildren.set(parentId, new Set());
+      parentToChildren.set(parentId, []);
     }
-    parentToChildren.get(parentId)!.add(id);
+    parentToChildren.get(parentId)!.push(id);
   }
 
   function dispose(id: ComponentId) {
@@ -79,7 +80,10 @@ function createTreeMap(): TreeMapStore {
     // Remove from parent's set of children
     if (parentId && parentToChildren.has(parentId)) {
       const children = parentToChildren.get(parentId)!;
-      children.delete(id);
+      parentToChildren.set(
+        parentId,
+        children.filter((child) => child !== id)
+      );
     }
 
     // Remove listener
@@ -139,8 +143,16 @@ function createTreeMap(): TreeMapStore {
     return childToParent.get(id) ?? null;
   }
 
+  function getChildren(id: ParentId): ComponentId[] {
+    return parentToChildren.get(id) ?? [];
+  }
+
   function isRoot(id: ComponentId): boolean {
     return getParent(id) === '__ROOT__';
+  }
+
+  function getRoot(): ComponentId | null {
+    return getChildren('__ROOT__' as ParentId)[0] ?? null;
   }
 
   return {
@@ -148,6 +160,7 @@ function createTreeMap(): TreeMapStore {
     getSnapshot,
     register,
     isRoot,
+    getRoot,
     unregister,
     getParent,
     // emitById,
@@ -160,20 +173,13 @@ function createTreeMap(): TreeMapStore {
  */
 const useTreeMapInstance = createSingletonHook(createTreeMap);
 
-export const useTreeMap = (
-  id: ComponentId,
-  isDryRun: boolean
-): TreeMapStore => {
+export const useTreeMap = (id: ComponentId): TreeMapStore => {
   const instance = useTreeMapInstance();
-  useTreeMapBinding(id, instance, isDryRun);
+  useTreeMapBinding(id, instance);
   return instance;
 };
 
-export const useTreeMapBinding = (
-  id: ComponentId,
-  treeMap: TreeMapStore,
-  isDryRun: boolean
-) => {
+export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
   const parentId = useParentId();
   const parentNode = treeMap.getParent(id);
 
@@ -186,10 +192,8 @@ export const useTreeMapBinding = (
     }
   }, [id, parentId, parentNode, treeMap]);
 
-  if (!isDryRun) {
-    // register synchronously
-    register();
-  }
+  // register synchronously
+  register();
 
   React.useEffect(() => {
     register();

@@ -3,7 +3,7 @@ import type {
   Config,
   RuntimeInstance,
   RuntimePayload,
-} from 'components/common/types';
+} from 'components/common/providerFactory/types';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 import type { RuntimeKey, ComponentId, RuntimeId, ParentId } from '../types';
 

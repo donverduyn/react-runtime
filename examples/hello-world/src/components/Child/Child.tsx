@@ -1,4 +1,4 @@
-import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
+import { withRuntime, withUpstream, connect } from '@donverduyn/react-runtime';
 import { pipe, Console } from 'effect';
 import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
@@ -8,16 +8,16 @@ type Props = {
   readonly log: (value: string) => void;
 };
 
-export const Child = pipe(
+export const Child = connect(
   ChildView,
   withUpstream(AppRuntime, () => ({ foo: true })),
-  withRuntime(ChildRuntime, ({ configure }) => {
-    const runtime = configure({ debug: true });
-    const log = runtime.useFn((value: string) => {
-      return Console.log('Child mounted', value);
-    });
-    return { log, name: runtime.use(ChildRuntime.Name) };
-  })
+  // withRuntime(ChildRuntime, ({ configure }) => {
+  //   const runtime = configure({ debug: true });
+  //   const log = runtime.useFn((value: string) => {
+  //     return Console.log('Child mounted', value);
+  //   });
+  //   return { log, name: runtime.use(ChildRuntime.Name) };
+  // })
 );
 
 function ChildView({ name, log }: Props) {

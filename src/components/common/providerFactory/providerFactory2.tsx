@@ -1,10 +1,10 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import { useComponentMap } from 'hooks/useComponentLookup/useComponentLookup';
 import type { IsEqual, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
+import { useComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
@@ -37,7 +37,7 @@ import {
   type RuntimeInstance,
   type ProviderConfigFn,
   type PropsConfigFn,
-} from './types';
+} from '../types';
 
 export const defaultConfig = {
   debug: false,
@@ -148,7 +148,10 @@ function useUpstreamDependencies(
 
   // This should use useSyncExternalStore to watch for upstream changes
   entries
-    .filter((item) => item.type === 'runtime' && item.level !== 0)
+    .filter(
+      (item): item is { type: 'runtime'; level: number } =>
+        item.type === 'runtime' && item.level !== 0
+    )
     .forEach((entry) => {
       const { module } = entry;
       const runtimeKey = module.context.key;
@@ -333,7 +336,7 @@ const ProviderContextWrapper: React.FC<{
   readonly target: React.FC<any>;
   readonly children: React.ReactNode;
 }> = ({ id, target, children }) => {
-  const componentMap = useComponentMap();
+  const componentMap = useComponentRegistry();
 
   componentMap.register(id as ComponentId, {
     name: getDisplayName(target),

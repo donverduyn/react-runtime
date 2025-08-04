@@ -2,8 +2,8 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge } from 'type-fest';
-import { providerFactory } from 'components/common/providerFactory';
+import type { Simplify, Merge, SetOptional } from 'type-fest';
+import { providerFactory } from 'components/common/providerFactory/providerFactory';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
@@ -17,7 +17,7 @@ import type {
   KeepUpstream,
   Up,
   ProviderConfigFn,
-} from 'components/common/types';
+} from 'components/common/providerFactory/types';
 import { type ExtractMeta } from 'utils/react';
 
 const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
@@ -33,7 +33,7 @@ export function withUpstream<
   Context: TContext & RuntimeModule<R>,
   configFn?: ProviderConfigFn<R, C, TProps>
 ): (Component: C) => React.FC<
-  Simplify<{ id: string } & Omit<React.ComponentProps<C>, keyof TProps>>
+  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
 > &
   Merge<
     ExtractMeta<C>,

@@ -4,7 +4,7 @@ import type {
   RuntimeContext,
   RuntimeInstance,
   RuntimeModule,
-} from 'components/common/types';
+} from 'components/common/providerFactory/types';
 
 export const connect = pipe;
 

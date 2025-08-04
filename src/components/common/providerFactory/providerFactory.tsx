@@ -5,7 +5,7 @@ import type { IsEqual, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
 import { useComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
-import { useProviderEntries } from 'hooks/useProviderEntries/useProviderEntries';
+import { useUpstreamProviders } from 'hooks/useProviderEntries/useUpstreamProviders';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import type {
   ComponentId,
@@ -37,6 +37,7 @@ import {
   type ProviderConfigFn,
   type PropsConfigFn,
 } from './types';
+import { typeTags } from 'effect/Match';
 
 const getStaticProviderList = <C extends React.FC<any>, R>(
   component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] }
@@ -63,10 +64,6 @@ const hoistProviderList = <C extends React.FC<any>, R>(
   Wrapper[PROVIDERS_PROP] = entries as ExtractStaticProviders<C>;
 };
 
-const createProviderEntry = <R, C extends React.FC<any>>(
-  entry: ProviderEntry<R, C>
-): ProviderEntry<R, C> => entry;
-
 export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
   type: Type,
   name: string
@@ -74,72 +71,71 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
   const create = <
     R,
     C extends React.FC<any>,
+    CRef extends React.FC<any>,
     TProps extends
       | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
       | undefined,
   >(
-    moduleOrFn: RuntimeModule<R> | PropsConfigFn<C, TProps>,
+    moduleOrFn: RuntimeModule<R, CRef> | PropsConfigFn<C, TProps>,
     configFn?: ProviderConfigFn<R, C, TProps>
   ) => {
     const isModuleFirst = isRuntimeModule<R>(moduleOrFn);
     const module = isModuleFirst ? moduleOrFn : undefined;
     const fn = !isModuleFirst ? moduleOrFn : configFn;
-    return HOC<R, C, TProps>(module, fn);
+    return HOC<R, C, CRef, TProps>(module, fn);
   };
 
   function HOC<
     R,
     C extends React.FC<any>,
+    CRef extends React.FC<any>,
     TProps extends
       | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
       | undefined,
   >(
-    module: RuntimeModule<R> | undefined,
+    module: RuntimeModule<R, CRef> | undefined,
     configFn?: ProviderConfigFn<R, C, TProps> | PropsConfigFn<C, TProps>
   ) {
     return (Component: C) => {
       const target = getStaticComponent(Component) ?? Component;
-      const entries = getStaticProviderList<C, R>(Component);
+      const localProviders = getStaticProviderList<C, R>(Component);
       const hocId = uuid();
-      const entry = (() => {
+      const provider = (() => {
         if (type === 'props') {
-          return createProviderEntry<R, C>({
+          return {
             id: hocId,
             type: 'props',
             configFn: configFn as PropsConfigFn<C>,
-          });
+          };
         } else {
-          return createProviderEntry<R, C>({
+          return {
             id: hocId,
             type,
-            module: module as RuntimeModule<R, C>,
+            module: module!,
             configFn: configFn as ProviderConfigFn<R, C>,
-          });
+          };
         }
       })();
 
       const Wrapper: React.FC<
         { readonly id: string } & Partial<React.ComponentProps<C>>
       > = (props) => {
-        const entries = useProviderEntries(Component, entry);
-        const componentMap = useComponentRegistry();
+        const entries = useUpstreamProviders(Component, provider);
+        const componentRegistry = useComponentRegistry();
         const runtimeApi = useRuntimeApi();
 
         // check what the difference is between target and Component for displayName -> is displayName propagated from target?
-        componentMap.register(props.id as ComponentId, {
+        componentRegistry.register(props.id as ComponentId, {
           name: getDisplayName(target),
         });
 
         // maybe keep this in useComponentMap with a single hook, but think about who needs this data. if we want to use this data inside runtimeRegistry (which we do), we might want to avoid implicit coupling, and let runtimeRegistry call callback arguments instead.
         React.useEffect(() => () => {
-          componentMap.dispose(props.id as ComponentId);
+          componentRegistry.dispose(props.id as ComponentId);
         });
 
         // we inject the _dryRun prop when we traverse downstream, to avoid polluting the treeMap, because in a dry run, everything runs in the same component render (without the intermediate context providers shadowing the previous parent ids).
-        const runtimeProvider = useRuntimeProvider(
-          props.id as ComponentId,
-          props._dryRun as boolean
-        );
+        const runtimeProvider = useRuntimeProvider(props.id as ComponentId);
         const instances = new Map<RuntimeKey, RuntimeInstance<any>>();
         const upstreamKeys = new Set<RuntimeKey>();
 
@@ -308,7 +304,10 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
 
       copyStaticProperties(meta, Memo);
       hoistOriginalComponent(Memo, target);
-      hoistProviderList(Memo, entries.concat(entry) as React.ComponentProps<C>);
+      hoistProviderList(
+        Memo,
+        localProviders.concat(provider) as React.ComponentProps<C>
+      );
 
       return Memo as typeof Memo & {
         [UPSTREAM_PROP]: TraverseDeps<{

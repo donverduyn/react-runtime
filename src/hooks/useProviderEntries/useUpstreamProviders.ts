@@ -1,13 +1,14 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ProviderEntry } from 'components/common/types';
-import { PROVIDERS_PROP } from 'components/common/types';
+import type React from 'react';
+import type { ProviderEntry } from 'components/common/providerFactory/types';
+import { PROVIDERS_PROP } from 'components/common/providerFactory/types';
 
-const getStaticProviderList = <C extends React.FC<any>, R>(
-  component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] }
-) => component[PROVIDERS_PROP] ?? ([] as ProviderEntry<R, C>[]);
+const getStaticProviderList = <R, C extends React.FC<any>>(
+  component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, any>[] }
+) => component[PROVIDERS_PROP] ?? ([] as ProviderEntry<R, any>[]);
 
-export function useProviderEntries<C extends React.FC<any>, R>(
+export function useUpstreamProviders<C extends React.FC<any>, R>(
   component: C,
   entry: ProviderEntry<R, C>
 ) {
@@ -17,16 +18,16 @@ export function useProviderEntries<C extends React.FC<any>, R>(
   })[] = [];
   const visited = new Set<React.FC<any>>();
 
-  function dfs(
-    comp: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] },
+  function dfs<C1 extends React.FC<any>>(
+    component: C1 & { [PROVIDERS_PROP]?: ProviderEntry<R, C1>[] },
     level: number
   ) {
-    if (visited.has(comp)) return;
-    visited.add(comp);
+    if (visited.has(component)) return;
+    visited.add(component);
 
-    const entries = getStaticProviderList<C, R>(comp);
+    const entries = getStaticProviderList<R, C1>(component);
     const appendedRegistry =
-      comp === component ? entries.concat(entry) : entries;
+      component === component ? entries.concat(entry) : entries;
 
     appendedRegistry.forEach((item, index) => {
       graph.push(Object.assign({}, item, { level, index }));

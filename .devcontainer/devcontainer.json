@@ -30,7 +30,8 @@
 			"extensions": [
 				"vitest.explorer",
 				"dakara.dakara-foldplus",
-				"Gruntfuggly.todo-tree"
+				"Gruntfuggly.todo-tree",
+				"YoavBls.pretty-ts-errors"
 			]
 		}
 	}
