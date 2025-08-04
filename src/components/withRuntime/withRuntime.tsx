@@ -7,7 +7,7 @@ import { providerFactory } from 'components/common/providerFactory';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
-  ExtractStaticHocEntries,
+  ExtractStaticProviders,
   COMPONENT_PROP,
   ExtractStaticComponent,
   PROPS_PROP,
@@ -38,7 +38,7 @@ export function withRuntime<
     ExtractMeta<C>,
     {
       [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: [...ExtractStaticHocEntries<C>, Down<TContext>];
+      [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TContext>];
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
       [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }

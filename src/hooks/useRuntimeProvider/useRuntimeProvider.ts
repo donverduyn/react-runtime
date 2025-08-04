@@ -1,12 +1,12 @@
 import moize from 'moize';
 import type { RuntimeInstance } from 'components/common/types';
+import { useTreeMap } from '../useTreeMap/useTreeMap';
 import { useRuntimeRegistry as useRuntimeRegistry } from './hooks/useRuntimeRegistry';
-import { useTreeMap } from './hooks/useTreeMap';
 import type { ComponentId, RuntimeKey } from './types';
 
 // provides an endpoint to obtain runtimes imperatively
-export const useRuntimeProvider = (id: ComponentId) => {
-  const treeMap = useTreeMap(id);
+export const useRuntimeProvider = (id: ComponentId, isDryRun: boolean) => {
+  const treeMap = useTreeMap(id, isDryRun);
   const registry = useRuntimeRegistry();
 
   function getByKey(

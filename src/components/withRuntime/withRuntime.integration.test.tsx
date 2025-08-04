@@ -20,13 +20,14 @@ describe('withRuntime', () => {
     const Runtime = mockRuntimeModule(Tag, '')(() => Component);
     const Component = connect(TextView, withRuntime(Runtime));
 
-    const { getByText, debug } = render(<Component id='test' text={value} />);
-    debug();
-    expect(getByText(value)).toBeDefined();
+    const screen = render(<Component id='test' text={value} />);
+    screen.debug();
+    expect(screen.getByText(value)).toBeDefined();
   });
 
   it('should allow component to use its own runtime if provided', () => {
     const Runtime = mockRuntimeModule(Tag, value)(() => Component);
+    
     const Component = connect(
       TextView,
       withRuntime(Runtime, ({ runtime }) => ({
@@ -34,7 +35,8 @@ describe('withRuntime', () => {
       }))
     );
 
-    const { getByText } = render(<Component id='component' />);
+    const { getByText, debug } = render(<Component id='component' />);
+    debug();
     expect(getByText(value)).toBeDefined();
   });
 

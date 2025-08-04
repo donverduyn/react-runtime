@@ -3,9 +3,9 @@
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
 import type { Merge, Simplify } from 'type-fest';
-import type { createUse } from 'hooks/useRuntimeApi/use';
-import type { createFn } from 'hooks/useRuntimeApi/useFn';
-import type { createRun } from 'hooks/useRuntimeApi/useRun';
+import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
+import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
+import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
 import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
 
 export const PROVIDERS_PROP = '_providers';
@@ -88,7 +88,7 @@ export type PropsConfigFn<
   >
 ) => TProps;
 
-export type ProviderHocEntry<R, C extends React.FC<any>> =
+export type ProviderEntry<R, C extends React.FC<any>> =
   | {
       id: string;
       type: 'runtime';
@@ -113,7 +113,7 @@ export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
     : never
   : T;
 
-export type ExtractStaticHocEntries<T> = T extends { [PROVIDERS_PROP]: infer R }
+export type ExtractStaticProviders<T> = T extends { [PROVIDERS_PROP]: infer R }
   ? R extends unknown[]
     ? R
     : never

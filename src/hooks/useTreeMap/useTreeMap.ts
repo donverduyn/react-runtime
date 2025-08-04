@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useParentId } from 'hooks/common/useParentId';
-import { createSingletonHook } from '../../common/factories/SingletonFactory';
-import type { ComponentId, LookupTable, ParentId } from '../types';
+import { createSingletonHook } from '../common/factories/SingletonFactory';
+import type { ComponentId, ParentId } from '../useRuntimeProvider/types';
 
 /**
  * Represents a node in the TreeMap.
@@ -23,7 +23,7 @@ type TreeMapMeta = {
  */
 type TreeMapStore = {
   subscribe: (id: ComponentId) => (callback: () => void) => () => void;
-  getSnapshot: () => LookupTable<string, TreeMapNode | null>;
+  getSnapshot: () => Map<string, TreeMapNode | null>;
   register: (id: ComponentId, parentId: ParentId) => void;
   unregister: (id: ComponentId) => void;
   getParent: (id: ComponentId) => ParentId | null;
@@ -52,9 +52,9 @@ export function createTreeMapNode(
  * @returns {TreeMapStore} The created TreeMapStore instance.
  */
 function createTreeMap(): TreeMapStore {
-  const nodeMap: LookupTable<string, TreeMapNode | null> = new Map();
-  const childToParent: LookupTable<ComponentId, ParentId> = new Map();
-  const parentToChildren: LookupTable<ParentId, Set<ComponentId>> = new Map();
+  const nodeMap: Map<string, TreeMapNode | null> = new Map();
+  const childToParent: Map<ComponentId, ParentId> = new Map();
+  const parentToChildren: Map<ParentId, Set<ComponentId>> = new Map();
   const listeners: Map<string, () => void> = new Map();
 
   function register(id: ComponentId, parentId: ParentId) {
@@ -160,13 +160,20 @@ function createTreeMap(): TreeMapStore {
  */
 const useTreeMapInstance = createSingletonHook(createTreeMap);
 
-export const useTreeMap = (id: ComponentId): TreeMapStore => {
+export const useTreeMap = (
+  id: ComponentId,
+  isDryRun: boolean
+): TreeMapStore => {
   const instance = useTreeMapInstance();
-  useTreeMapBinding(id, instance);
+  useTreeMapBinding(id, instance, isDryRun);
   return instance;
 };
 
-export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
+export const useTreeMapBinding = (
+  id: ComponentId,
+  treeMap: TreeMapStore,
+  isDryRun: boolean
+) => {
   const parentId = useParentId();
   const parentNode = treeMap.getParent(id);
 
@@ -179,8 +186,10 @@ export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
     }
   }, [id, parentId, parentNode, treeMap]);
 
-  // register synchronously
-  register();
+  if (!isDryRun) {
+    // register synchronously
+    register();
+  }
 
   React.useEffect(() => {
     register();

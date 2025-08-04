@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { useParentId, ParentIdContext } from '../../common/useParentId';
-import type { ComponentId, ParentId } from '../types';
+import { useParentId, ParentIdContext } from '../common/useParentId';
+import type { ComponentId, ParentId } from '../useRuntimeProvider/types';
 import { useTreeMap } from './useTreeMap';
 
 const TestComponent: React.FC<{

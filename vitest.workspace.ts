@@ -24,7 +24,7 @@ export default defineWorkspace([
       include: ['**/*.integration.test.{ts,tsx}'],
       exclude: ['**/node_modules/**'],
       name: 'integration',
-      setupFiles: ['./test/setup.node.ts'],
+      setupFiles: ['./tests/setup.node.ts'],
     },
   },
   {
@@ -38,7 +38,7 @@ export default defineWorkspace([
       ],
       include: ['**/*.test.{ts,tsx}'],
       name: 'unit',
-      setupFiles: ['./test/setup.node.ts'],
+      setupFiles: ['./tests/setup.node.ts'],
     },
   },
 ]);

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { renderHook, act, render } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
+import { withProps } from 'components/withProps/withProps';
 import { withReactId, useStableId, collectReactIds } from './useAncestryId';
 
 describe('withReactId', () => {
@@ -65,13 +66,15 @@ describe('withReactId', () => {
 
   it('injects __reactid only for rendered elements when using ternary/null', () => {
     function Leaf() {
+      console.log('hello leaf');
       return <span>leaf</span>;
     }
+    const Leaf2 = withProps(() => ({ foo: 'bar' }))(Leaf);
     function TestComponent({ show }: { readonly show: boolean }) {
       return (
         <div>
-          {show ? <Leaf /> : null}
-          <Leaf />
+          {show ? <Leaf2 id='1' /> : null}
+          <Leaf2 id='2' />
         </div>
       );
     }

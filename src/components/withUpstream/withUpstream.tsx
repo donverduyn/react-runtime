@@ -7,7 +7,7 @@ import { providerFactory } from 'components/common/providerFactory';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
-  ExtractStaticHocEntries,
+  ExtractStaticProviders,
   COMPONENT_PROP,
   ExtractStaticComponent,
   PROPS_PROP,
@@ -40,10 +40,10 @@ export function withUpstream<
     {
       [UPSTREAM_PROP]: TraverseDeps<{
         [PROVIDERS_PROP]: KeepUpstream<
-          [...ExtractStaticHocEntries<C>, Up<TContext>]
+          [...ExtractStaticProviders<C>, Up<TContext>]
         >;
       }>;
-      [PROVIDERS_PROP]: [...ExtractStaticHocEntries<C>, Up<TContext>];
+      [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Up<TContext>];
       [COMPONENT_PROP]: ExtractStaticComponent<C>;
       [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
     }

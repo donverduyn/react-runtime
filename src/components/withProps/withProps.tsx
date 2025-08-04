@@ -6,7 +6,7 @@ import type { Simplify, Merge } from 'type-fest';
 import { providerFactory } from 'components/common/providerFactory';
 import type {
   PROVIDERS_PROP,
-  ExtractStaticHocEntries as ExtractStaticProviders,
+  ExtractStaticProviders as ExtractStaticProviders,
   COMPONENT_PROP,
   ExtractStaticComponent,
   PROPS_PROP,

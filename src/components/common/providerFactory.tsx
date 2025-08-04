@@ -4,10 +4,9 @@ import * as React from 'react';
 import type { IsEqual, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
-import { createUse } from 'hooks/useRuntimeApi/use';
-import { createFn } from 'hooks/useRuntimeApi/useFn';
-import { createRun } from 'hooks/useRuntimeApi/useRun';
-import { useComponentMap } from 'hooks/useRuntimeProvider/hooks/useComponentMap';
+import { useComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
+import { useProviderEntries } from 'hooks/useProviderEntries/useProviderEntries';
+import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import type {
   ComponentId,
   ParentId,
@@ -23,10 +22,10 @@ import {
 import { isRuntimeModule } from 'utils/runtime';
 import {
   type ExtractStaticComponent,
-  type ExtractStaticHocEntries as ExtractStaticProviders,
+  type ExtractStaticProviders,
   type RuntimeApi,
   type RuntimeModule,
-  type ProviderHocEntry as ProviderEntry,
+  type ProviderEntry as ProviderEntry,
   type Config,
   type PROPS_PROP,
   type ExtractStaticProps,
@@ -38,14 +37,6 @@ import {
   type ProviderConfigFn,
   type PropsConfigFn,
 } from './types';
-
-export const defaultConfig = {
-  debug: false,
-  postUnmountTTL: 1000,
-  env: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
-  cleanupPolicy: 'onUnmount', // only used with replace: true
-  replace: false,
-} satisfies Partial<Config>;
 
 const getStaticProviderList = <C extends React.FC<any>, R>(
   component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] }
@@ -72,48 +63,7 @@ const hoistProviderList = <C extends React.FC<any>, R>(
   Wrapper[PROVIDERS_PROP] = entries as ExtractStaticProviders<C>;
 };
 
-function collectUpstreamProviders<C extends React.FC<any>, R>(
-  component: C,
-  entry: ProviderEntry<R, C>
-) {
-  const graph: (ProviderEntry<any, any> & {
-    level: number;
-    index: number;
-  })[] = [];
-  const visited = new Set<React.FC<any>>();
-
-  function dfs(
-    comp: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] },
-    level: number
-  ) {
-    if (visited.has(comp)) return;
-    visited.add(comp);
-
-    const entries = getStaticProviderList<C, R>(comp);
-    const appendedRegistry =
-      comp === component ? entries.concat(entry) : entries;
-
-    appendedRegistry.forEach((item, index) => {
-      graph.push(Object.assign({}, item, { level, index }));
-
-      if (item.type === 'props' || entry.type === 'props') {
-        return;
-      }
-      const ref =
-        item.module !== entry.module ? item.module.reference() : undefined;
-      // we currently only support a single reference (assuming a single withRuntime usage for a runtime)
-      if (ref) dfs(ref, level + 1);
-    });
-  }
-
-  dfs(component, 0);
-  return graph.sort((a, b) => {
-    if (a.level !== b.level) return b.level - a.level;
-    return a.index - b.index;
-  });
-}
-
-const createProviderHocEntry = <R, C extends React.FC<any>>(
+const createProviderEntry = <R, C extends React.FC<any>>(
   entry: ProviderEntry<R, C>
 ): ProviderEntry<R, C> => entry;
 
@@ -124,7 +74,9 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
   const create = <
     R,
     C extends React.FC<any>,
-    TProps extends Record<string, unknown> | undefined,
+    TProps extends
+      | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+      | undefined,
   >(
     moduleOrFn: RuntimeModule<R> | PropsConfigFn<C, TProps>,
     configFn?: ProviderConfigFn<R, C, TProps>
@@ -138,7 +90,9 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
   function HOC<
     R,
     C extends React.FC<any>,
-    TProps extends Record<string, unknown> | undefined,
+    TProps extends
+      | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
+      | undefined,
   >(
     module: RuntimeModule<R> | undefined,
     configFn?: ProviderConfigFn<R, C, TProps> | PropsConfigFn<C, TProps>
@@ -149,13 +103,13 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
       const hocId = uuid();
       const entry = (() => {
         if (type === 'props') {
-          return createProviderHocEntry<R, C>({
+          return createProviderEntry<R, C>({
             id: hocId,
             type: 'props',
             configFn: configFn as PropsConfigFn<C>,
           });
         } else {
-          return createProviderHocEntry<R, C>({
+          return createProviderEntry<R, C>({
             id: hocId,
             type,
             module: module as RuntimeModule<R, C>,
@@ -167,8 +121,9 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
       const Wrapper: React.FC<
         { readonly id: string } & Partial<React.ComponentProps<C>>
       > = (props) => {
-        const entries = collectUpstreamProviders(Component, entry);
-        const componentMap = useComponentMap();
+        const entries = useProviderEntries(Component, entry);
+        const componentMap = useComponentRegistry();
+        const runtimeApi = useRuntimeApi();
 
         // check what the difference is between target and Component for displayName -> is displayName propagated from target?
         componentMap.register(props.id as ComponentId, {
@@ -180,7 +135,11 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
           componentMap.dispose(props.id as ComponentId);
         });
 
-        const runtimeProvider = useRuntimeProvider(props.id as ComponentId);
+        // we inject the _dryRun prop when we traverse downstream, to avoid polluting the treeMap, because in a dry run, everything runs in the same component render (without the intermediate context providers shadowing the previous parent ids).
+        const runtimeProvider = useRuntimeProvider(
+          props.id as ComponentId,
+          props._dryRun as boolean
+        );
         const instances = new Map<RuntimeKey, RuntimeInstance<any>>();
         const upstreamKeys = new Set<RuntimeKey>();
 
@@ -205,7 +164,7 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
           });
 
         let mergedFromConfigs = {};
-        let previousLevel = 0;
+        let previousLevel = entries[0].level;
 
         entries
           .filter((entry) => {
@@ -225,11 +184,11 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
               // props entries are not registered in the runtime provider, but are used to provide props to the component
               const currentProps = Object.assign(
                 {},
-                mergedFromConfigs,
-                entry.level === 0 ? props : {}
+                entry.level === 0 || runtimeProvider.isRoot() ? props : {},
+                mergedFromConfigs
               );
 
-              //* if level is > 0, we don't have access to the props, which is a bit fucked up, so we need to find a way in portable scenarios to mock the props to reconstruct the runtime. One thing we can do, is check which props are used in the configFn together with id, and then show a warning when any of them is missing. This way, users can provide mocked props to reconstruct the runtime. I'm not sure where we should do this, because we don't want to pollute the config. Maybe we can swap the implementation of configure, such that it takes the additional props as the second argument, where these props are injected using withProps, before withRuntime or withUpstream is used.
+              //* we should use withMock to mock props in tests, by providing a reference to the component and a function that returns the props to be mocked.
 
               Object.assign(
                 mergedFromConfigs,
@@ -238,8 +197,11 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
               return;
             }
             const { module, configFn, type } = entry;
-            if (entry.level < previousLevel) mergedFromConfigs = {};
-            previousLevel = entry.level;
+            // when we change component during reconstruction
+            if (entry.level < previousLevel) {
+              mergedFromConfigs = {};
+              previousLevel = entry.level;
+            }
 
             const runtimeFactory =
               (options: { returnOnly: boolean } = { returnOnly: false }) =>
@@ -257,12 +219,7 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
                   // we copy the instance over into the instances map, so it can be used by the next provider in the chain.
                   instances.set(module.context.key, instance);
                 }
-                return {
-                  instance: instances.get(module.context.key)!.runtime,
-                  use: createUse(module.context, instances),
-                  useFn: createFn(module.context, instances),
-                  useRun: createRun(module.context, instances),
-                };
+                return runtimeApi.create(module, instances);
               };
 
             if (configFn) {
@@ -294,8 +251,8 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
 
               const currentProps = Object.assign(
                 {},
-                mergedFromConfigs,
-                entry.level === 0 ? props : {}
+                entry.level === 0 || runtimeProvider.isRoot() ? props : {},
+                mergedFromConfigs
               );
 
               // we use this proxy to show a warning, when reconstructed upstream dependencies miss props. This is important to know, because props can be used to construct dependencies, and if they are not provided, the runtime may not behave as expected.

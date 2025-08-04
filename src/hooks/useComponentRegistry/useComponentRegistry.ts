@@ -1,9 +1,9 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { ComponentId, ComponentMeta } from '../types';
+import type { ComponentId, ComponentMeta } from '../useRuntimeProvider/types';
 
 type ComponentMap = Map<ComponentId, ComponentMeta>;
 
-const createComponentMap = () => {
+const createComponentRegistry = () => {
   const map: ComponentMap = new Map();
 
   function getById(id: ComponentId) {
@@ -27,9 +27,11 @@ const createComponentMap = () => {
   };
 };
 
-const useMapInstance = createSingletonHook(createComponentMap);
+const useComponentRegistryInstance = createSingletonHook(
+  createComponentRegistry
+);
 
-export const useComponentMap = () => {
-  const instance = useMapInstance();
+export const useComponentRegistry = () => {
+  const instance = useComponentRegistryInstance();
   return instance;
 };
