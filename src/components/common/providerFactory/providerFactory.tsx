@@ -153,7 +153,7 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
 
         const reconstructionThreshold = Math.max(
           ...reconstructionLevels.values()
-        )
+        );
 
         const needsLateReconstruction =
           !treeMap.isRoot(componentId) &&

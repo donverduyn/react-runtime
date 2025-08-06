@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import type { ParentId } from 'hooks/useRuntimeProvider/types';
+import type { ParentId } from 'types';
 import { ParentIdContext, useParentId } from './useParentId';
 
 describe('useParentId', () => {

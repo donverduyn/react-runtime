@@ -1,10 +1,6 @@
 import * as React from 'react';
 import { Effect } from 'effect';
-import type {
-  RuntimeContext,
-  RuntimeInstance,
-} from 'types';
-import type { RuntimeKey } from '../../useRuntimeProvider/types';
+import type { RuntimeContext, RuntimeInstance, RuntimeKey } from 'types';
 
 export const createUse =
   <R>(

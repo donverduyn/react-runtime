@@ -40,7 +40,7 @@ describe('withRuntime', () => {
 
   it('should allow component to use its own runtime if provided', () => {
     const Runtime = mockRuntimeModule(Tag, value)(() => Component);
-    
+
     const Component = connect(
       TextView,
       withRuntime(Runtime, ({ runtime }) => ({

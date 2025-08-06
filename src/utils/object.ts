@@ -1,5 +1,3 @@
-// eslint-disable-next-line eslint-comments/disable-enable-pair
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 export function isPlainObject(
   value: unknown
 ): value is Record<string, unknown> {

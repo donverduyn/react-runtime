@@ -1,5 +1,5 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { ComponentId, ComponentMeta } from '../useRuntimeProvider/types';
+import type { ComponentId, ComponentMeta } from 'types';
 
 type ComponentMap = Map<ComponentId, ComponentMeta>;
 
