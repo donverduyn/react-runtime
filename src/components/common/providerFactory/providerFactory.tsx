@@ -4,11 +4,11 @@ import * as React from 'react';
 import type { IsEqual, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
-import { useComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
-import { useUpstreamProviders } from 'hooks/useProviderEntries/useUpstreamProviders';
+import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
 import { useTreeMap } from 'hooks/useTreeMap/useTreeMap';
+import { useUpstreamProviders } from 'hooks/useUpstreamProviders/useUpstreamProviders';
 import {
   ComponentId,
   ParentId,
@@ -29,6 +29,8 @@ import {
   type ProviderConfigFn,
   type PropsConfigFn,
   type ProviderId,
+  ID_PROP,
+  type DeclarationId,
 } from 'types';
 import {
   createElement,
@@ -45,6 +47,17 @@ const getStaticProviderList = <C extends React.FC<any>, R>(
 const getStaticComponent = <C extends React.FC<any>>(
   component: C & { [COMPONENT_PROP]?: React.FC<any> }
 ) => component[COMPONENT_PROP];
+
+const getStaticDeclarationId = <C extends React.FC<any>>(
+  component: C & { [ID_PROP]?: string }
+): string | undefined => component[ID_PROP];
+
+const hoistDeclarationId = <C extends React.FC<any>>(
+  Wrapper: C & { [ID_PROP]?: string },
+  id: string
+) => {
+  Wrapper[ID_PROP] = id;
+};
 
 const hoistOriginalComponent = <
   C extends React.FC<any>,
@@ -83,9 +96,14 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
     const configFn = !isModuleFirst ? moduleOrFn : fn;
 
     return (Component: C) => {
+      const declarationId = (getStaticDeclarationId(Component) ??
+        uuid()) as DeclarationId;
+      const hocId = uuid();
+
       const target = getStaticComponent(Component) ?? Component;
       const localProviders = getStaticProviderList<C, R>(Component);
-      const hocId = uuid();
+      const componentRegistry = getComponentRegistry();
+
       const provider: ProviderEntry<R, C> = (() => {
         if (type === 'props') {
           return {
@@ -110,16 +128,8 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
 
         const componentId = props.id as ComponentId;
         const entries = useUpstreamProviders(Component, provider);
-        const componentRegistry = useComponentRegistry();
+        // const componentRegistry = useComponentRegistry();
         const runtimeApi = useRuntimeApi();
-
-        componentRegistry.register(componentId, {
-          name: getDisplayName(target),
-        });
-
-        React.useEffect(() => () => {
-          componentRegistry.dispose(componentId);
-        });
 
         const treeMap = useTreeMap(componentId);
         const runtimeProvider = useRuntimeProvider(componentId, treeMap);
@@ -276,11 +286,13 @@ export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
 
       copyStaticProperties(meta, Memo);
       hoistOriginalComponent(Memo, target);
+      hoistDeclarationId(Memo, declarationId);
       hoistProviderList(
         Memo,
         localProviders.concat(provider) as React.ComponentProps<C>
       );
 
+      componentRegistry.register(declarationId, Memo);
       return Memo as typeof Memo & {
         [UPSTREAM_PROP]: TraverseDeps<{
           [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, typeof module];

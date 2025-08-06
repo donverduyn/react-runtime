@@ -1,22 +1,21 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { ComponentId, ComponentMeta } from 'types';
+import type { DeclarationId, ComponentMeta } from 'types';
 
-type ComponentMap = Map<ComponentId, ComponentMeta>;
+type ComponentMap = Map<DeclarationId, ComponentMeta>;
 
 const createComponentRegistry = () => {
   const map: ComponentMap = new Map();
 
-  function getById(id: ComponentId) {
+  function getById(id: DeclarationId) {
     return map.get(id) ?? null;
   }
 
-  function register(id: ComponentId, meta: ComponentMeta) {
-    if (!map.has(id)) {
-      map.set(id, meta);
-    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function register(id: DeclarationId, component: React.ComponentType<any>) {
+    map.set(id, component);
   }
 
-  function dispose(id: ComponentId) {
+  function dispose(id: DeclarationId) {
     map.delete(id);
   }
 
@@ -34,4 +33,8 @@ const useComponentRegistryInstance = createSingletonHook(
 export const useComponentRegistry = () => {
   const instance = useComponentRegistryInstance();
   return instance;
+};
+
+export const getComponentRegistry = () => {
+  return useComponentRegistryInstance();
 };
