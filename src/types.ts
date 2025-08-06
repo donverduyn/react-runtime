@@ -2,11 +2,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
-import type { Merge, Simplify } from 'type-fest';
+import type { Merge, Simplify, Tagged } from 'type-fest';
 import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
-import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
+
+export type ComponentId = Tagged<string, 'ComponentId'>;
+export type ParentId = Tagged<string, 'ParentId'>;
+export type RuntimeKey = symbol;
+export type RuntimeId = Tagged<string, 'RuntimeId'>;
+export type ProviderId = Tagged<string, 'ProviderId'>;
+
+export type ComponentMeta = {
+  name: string;
+};
 
 export const PROVIDERS_PROP = '_providers';
 export const COMPONENT_PROP = '_component';
@@ -88,21 +97,22 @@ export type PropsConfigFn<
   >
 ) => TProps;
 
+export type ProviderEntryType = 'runtime' | 'upstream' | 'props';
 export type ProviderEntry<R, C extends React.FC<any>> =
   | {
-      id: string;
+      id: ProviderId;
       type: 'runtime';
       module: RuntimeModule<R>;
       configFn?: ProviderConfigFn<R, C>;
     }
   | {
-      id: string;
+      id: ProviderId;
       type: 'upstream';
       module: RuntimeModule<R>;
       configFn?: ProviderConfigFn<R, C>;
     }
   | {
-      id: string;
+      id: ProviderId;
       type: 'props';
       configFn?: PropsConfigFn<C>;
     };
@@ -129,7 +139,7 @@ export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }
     : never
   : [];
 
-export type UnwrapRuntime<T> = T extends { _runtime: infer R } ? R : T;
+export type UnwrapRuntime<T> = T extends { module: infer R } ? R : T;
 
 type ExtractReference<T> =
   UnwrapRuntime<T> extends { reference: () => infer R } ? R : never;
@@ -155,7 +165,7 @@ export type Down<T> = T & DownstreamBrand;
 
 export type FilterReference<T> = Call<Tuples.Map<Objects.Get<'type'>>, T>;
 
-type ExtractRuntimes<T> = T extends { _runtimes?: infer R } ? R : never;
+type ExtractProviders<T> = T extends { [PROVIDERS_PROP]?: infer R } ? R : never;
 
 type Includes<T extends readonly unknown[], V> = T extends [
   infer Head,
@@ -180,26 +190,34 @@ type Unique<T extends any[], Acc extends any[] = []> = T extends [
     : Unique<Tail, [...Acc, Head]>
   : Acc;
 
-export type CollectRuntimes<
+export type CollectProviders<
   Component,
   Seen extends unknown[] = [],
   Acc extends unknown[] = [],
 > =
-  ExtractRuntimes<Component> extends readonly [infer Head, ...infer Tail]
+  ExtractProviders<Component> extends readonly [infer Head, ...infer Tail]
     ? ExtractReference<Head> extends infer Ref
       ? Ref extends object
         ? Ref extends Seen[number]
-          ? CollectRuntimes<{ _runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
-          : CollectRuntimes<
-              { _runtimes?: Tail },
+          ? CollectProviders<
+              { [PROVIDERS_PROP]?: Tail },
+              Seen,
+              PushUnique<Acc, Head>
+            >
+          : CollectProviders<
+              { [PROVIDERS_PROP]?: Tail },
               [...Seen, Ref],
               PushUnique<
-                [...Acc, ...CollectRuntimes<Ref, [...Seen, Ref], Acc>],
+                [...Acc, ...CollectProviders<Ref, [...Seen, Ref], Acc>],
                 Head
               >
             >
-        : CollectRuntimes<{ _runtimes?: Tail }, Seen, PushUnique<Acc, Head>>
+        : CollectProviders<
+            { [PROVIDERS_PROP]?: Tail },
+            Seen,
+            PushUnique<Acc, Head>
+          >
       : Acc
     : Acc;
 
-export type TraverseDeps<T> = Reverse<Unique<CollectRuntimes<T>>>;
+export type TraverseDeps<T> = Reverse<Unique<CollectProviders<T>>>;

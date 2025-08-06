@@ -25,6 +25,19 @@ describe('withRuntime', () => {
     expect(screen.getByText(value)).toBeDefined();
   });
 
+  it('should render with two withRuntime HOCs', () => {
+    const Runtime1 = mockRuntimeModule(Tag, value)(() => Component);
+    const Runtime2 = mockRuntimeModule(Tag, value)(() => Component);
+    const Component = connect(
+      TextView,
+      withRuntime(Runtime1),
+      withRuntime(Runtime2)
+    );
+
+    const { getByText } = render(<Component id='test' text={value} />);
+    expect(getByText(value)).toBeDefined();
+  });
+
   it('should allow component to use its own runtime if provided', () => {
     const Runtime = mockRuntimeModule(Tag, value)(() => Component);
     

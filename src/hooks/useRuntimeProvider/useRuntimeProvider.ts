@@ -1,12 +1,9 @@
-import moize from 'moize';
-import type { RuntimeInstance } from 'components/common/providerFactory/types';
-import { useTreeMap } from '../useTreeMap/useTreeMap';
+import type { ComponentId, RuntimeInstance, RuntimeKey } from 'types';
+import { type TreeMapStore } from '../useTreeMap/useTreeMap';
 import { useRuntimeRegistry as useRuntimeRegistry } from './hooks/useRuntimeRegistry';
-import type { ComponentId, RuntimeKey } from './types';
 
 // provides an endpoint to obtain runtimes imperatively
-export const useRuntimeProvider = (id: ComponentId) => {
-  const treeMap = useTreeMap(id);
+export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
   const registry = useRuntimeRegistry();
 
   function getByKey(
@@ -14,25 +11,25 @@ export const useRuntimeProvider = (id: ComponentId) => {
     key: RuntimeKey
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): RuntimeInstance<any> | null {
+    const value = registry.getById(currentId, key);
+    if (value) return value;
     const parentId = treeMap.getParent(currentId);
-    const value = registry.getById(
-      parentId === null ? currentId : parentId,
-      key
-    );
 
     const result =
-      value && parentId
+      parentId !== '__ROOT__' && parentId !== null
         ? getByKey(parentId as unknown as ComponentId, key)
         : null;
 
+    // console.log(result);
     return result;
   }
 
   return {
     getByKey,
-    register: registry.register.bind(registry),
+    register: registry.register,
     unregister: () => registry.unregister(id, () => treeMap.unregister(id)),
-    isRoot: moize(() => treeMap.isRoot(id)),
+    resetCount: registry.resetCount,
+    // isRoot: moize(() => treeMap.isRoot(id)),
   };
 };
 

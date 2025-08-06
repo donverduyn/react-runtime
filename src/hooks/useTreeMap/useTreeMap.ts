@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useParentId } from 'hooks/common/useParentId';
+import type { ComponentId, ParentId } from 'types';
 import { createSingletonHook } from '../common/factories/SingletonFactory';
-import type { ComponentId, ParentId } from '../useRuntimeProvider/types';
 
 /**
  * Represents a node in the TreeMap.
@@ -21,7 +21,7 @@ type TreeMapMeta = {
 /**
  * Store interface for managing TreeMap nodes and subscriptions.
  */
-type TreeMapStore = {
+export type TreeMapStore = {
   subscribe: (id: ComponentId) => (callback: () => void) => () => void;
   getSnapshot: () => Map<string, TreeMapNode | null>;
   register: (id: ComponentId, parentId: ParentId) => void;

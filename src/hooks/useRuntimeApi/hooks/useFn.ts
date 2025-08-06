@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
-import type { RuntimeContext, RuntimeInstance } from 'components/common/providerFactory/types';
+import type { RuntimeContext, RuntimeInstance } from 'types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
 import type { RuntimeKey } from '../../useRuntimeProvider/types';
 

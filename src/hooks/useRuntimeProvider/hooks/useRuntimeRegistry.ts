@@ -1,11 +1,14 @@
 import { ManagedRuntime } from 'effect';
 import type {
+  ComponentId,
   Config,
+  ParentId,
+  RuntimeId,
   RuntimeInstance,
+  RuntimeKey,
   RuntimePayload,
-} from 'components/common/providerFactory/types';
+} from 'types';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
-import type { RuntimeKey, ComponentId, RuntimeId, ParentId } from '../types';
 
 type RuntimeMapping = Map<ComponentId | ParentId, Map<RuntimeKey, RuntimeId[]>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,8 +69,8 @@ export function createRuntimeRegistry() {
         runtimeId
       );
       runtimeKeyMap.set(context.key, updatedIds);
-      currentCount += 1;
       counts.set(context.key, currentCount);
+      currentCount += 1;
     }
 
     // listeners.forEach((fn) => fn());
@@ -116,12 +119,11 @@ export function createRuntimeRegistry() {
       });
     });
 
-    const counts = runtimeCounts.get(id);
-    if (counts) {
-      counts.keys().forEach((key) => {
-        counts.set(key, 0);
-      });
-    }
+    resetCount(id);
+  }
+
+  function resetCount(id: ComponentId) {
+    runtimeCounts.get(id)?.clear();
   }
 
   function subscribe(id: RuntimeKey) {
@@ -144,6 +146,7 @@ export function createRuntimeRegistry() {
     unregister,
     getById,
     subscribe,
+    resetCount,
     registry, // exposed for advanced use/testing
   };
 }

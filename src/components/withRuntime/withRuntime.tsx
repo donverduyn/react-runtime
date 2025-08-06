@@ -16,7 +16,7 @@ import type {
   ExtractStaticUpstream,
   Down,
   ProviderConfigFn,
-} from 'components/common/providerFactory/types';
+} from 'types';
 import { type ExtractMeta } from 'utils/react';
 
 const withRuntimeImpl = providerFactory('runtime', 'withRuntime');

@@ -1,8 +1,4 @@
-import type {
-  RuntimeInstance,
-  RuntimeModule,
-} from 'components/common/providerFactory/types';
-import type { RuntimeKey } from 'hooks/useRuntimeProvider/types';
+import type { RuntimeInstance, RuntimeKey, RuntimeModule } from 'types';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';

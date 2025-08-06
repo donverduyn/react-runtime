@@ -3,7 +3,7 @@ import type {
   ProviderConfigFn,
   PropsConfigFn,
   ProviderEntry,
-} from '../types';
+} from '../../../../types';
 
 export const createProviderEntry = <
   R,

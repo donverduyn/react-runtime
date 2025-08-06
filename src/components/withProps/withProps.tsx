@@ -14,7 +14,7 @@ import type {
   UPSTREAM_PROP,
   ExtractStaticUpstream,
   PropsConfigFn,
-} from 'components/common/providerFactory/types';
+} from 'types';
 import { type ExtractMeta } from 'utils/react';
 
 const withPropsImpl = providerFactory('props', 'withProps');

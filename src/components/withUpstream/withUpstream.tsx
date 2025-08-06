@@ -17,7 +17,7 @@ import type {
   KeepUpstream,
   Up,
   ProviderConfigFn,
-} from 'components/common/providerFactory/types';
+} from 'types';
 import { type ExtractMeta } from 'utils/react';
 
 const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
