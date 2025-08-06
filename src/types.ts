@@ -66,7 +66,7 @@ export type RuntimeInstance<R> = {
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
 
-export type ProviderConfigFn<
+export type ProviderFn<
   R,
   C extends React.FC<any>,
   TProps extends
@@ -85,7 +85,7 @@ export type ProviderConfigFn<
   >
 ) => TProps;
 
-export type PropsConfigFn<
+export type PropsFn<
   C extends React.FC<any>,
   TProps extends
     | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
@@ -105,18 +105,18 @@ export type ProviderEntry<R, C extends React.FC<any>> =
       id: ProviderId;
       type: 'runtime';
       module: RuntimeModule<R>;
-      configFn?: ProviderConfigFn<R, C>;
+      fn: ProviderFn<R, C> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
       module: RuntimeModule<R>;
-      configFn?: ProviderConfigFn<R, C>;
+      fn: ProviderFn<R, C>;
     }
   | {
       id: ProviderId;
       type: 'props';
-      configFn?: PropsConfigFn<C>;
+      fn: PropsFn<C>;
     };
 
 export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }

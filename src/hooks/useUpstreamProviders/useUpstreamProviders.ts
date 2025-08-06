@@ -10,7 +10,7 @@ const getStaticProviderList = <R, C extends React.FC<any>>(
 
 export function useUpstreamProviders<C extends React.FC<any>, R>(
   component: C,
-  entry: ProviderEntry<R, C>
+  entry?: ProviderEntry<R, C>
 ) {
   const graph: (ProviderEntry<any, any> & {
     level: number;
@@ -24,7 +24,7 @@ export function useUpstreamProviders<C extends React.FC<any>, R>(
 
     const entries = getStaticProviderList<R, React.FC<any>>(cmp);
     const appendedRegistry =
-      cmp === component ? entries.concat(entry) : entries;
+      cmp === component && entry ? entries.concat(entry) : entries;
 
     appendedRegistry.forEach((item, index) => {
       if (item.type === 'upstream') {

@@ -3,7 +3,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Simplify, Merge, SetOptional } from 'type-fest';
-import { providerFactory } from 'components/common/providerFactory/providerFactory';
+import { v4 as uuid } from 'uuid';
+import {
+  createWrapper,
+  finalizeWrapper,
+} from 'components/common/providerFactory/providerFactory';
+import {
+  getStaticDeclarationId,
+  getStaticComponent,
+  getStaticProviderList,
+} from 'components/common/providerFactory/utils/static';
+import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
@@ -16,11 +26,12 @@ import type {
   TraverseDeps,
   KeepUpstream,
   Up,
-  ProviderConfigFn,
+  ProviderFn,
+  DeclarationId,
+  ProviderEntry,
+  ProviderId,
 } from 'types';
-import { type ExtractMeta } from 'utils/react';
-
-const withUpstreamImpl = providerFactory('upstream', 'withUpstream');
+import { getDisplayName, type ExtractMeta } from 'utils/react';
 
 export function withUpstream<
   TProps extends
@@ -31,7 +42,7 @@ export function withUpstream<
   R,
 >(
   Context: TContext & RuntimeModule<R>,
-  configFn?: ProviderConfigFn<R, C, TProps>
+  fn: ProviderFn<R, C, TProps>
 ): (Component: C) => React.FC<
   Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
 > &
@@ -55,6 +66,43 @@ export function withUpstream<
   TProps extends
     | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
     | undefined,
->(Context: RuntimeModule<R>, configFn?: ProviderConfigFn<R, C, TProps>) {
-  return withUpstreamImpl(Context, configFn);
+>(module: RuntimeModule<R>, fn: ProviderFn<R, C, TProps>) {
+  return (Component: C) => {
+    const declarationId = (getStaticDeclarationId(Component) ??
+      uuid()) as DeclarationId;
+    const hocId = uuid();
+
+    const target = getStaticComponent(Component) ?? Component;
+    const localProviders = getStaticProviderList<C, R>(Component);
+    const provider = createUpstreamEntry<R, C>(hocId as ProviderId, module, fn);
+
+    const componentRegistry = getComponentRegistry();
+    const targetName = getDisplayName(target, 'withRuntime');
+
+    const Wrapper = createWrapper(Component, target, targetName, provider);
+    const Memo = finalizeWrapper(
+      Wrapper,
+      Component,
+      declarationId,
+      target,
+      localProviders.concat(provider),
+      targetName
+    );
+
+    componentRegistry.register(declarationId, Memo);
+    return Memo as never;
+  };
+}
+
+function createUpstreamEntry<R, C extends React.FC<any>>(
+  id: ProviderId,
+  module: RuntimeModule<R>,
+  fn: ProviderFn<R, C>
+): ProviderEntry<R, C> {
+  return {
+    type: 'upstream',
+    id,
+    module,
+    fn,
+  };
 }
