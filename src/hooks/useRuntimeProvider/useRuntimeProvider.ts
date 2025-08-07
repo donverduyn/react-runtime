@@ -20,7 +20,6 @@ export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
         ? getByKey(parentId as unknown as ComponentId, key)
         : null;
 
-    // console.log(result);
     return result;
   }
 

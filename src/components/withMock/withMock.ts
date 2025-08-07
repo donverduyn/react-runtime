@@ -21,12 +21,12 @@ import {
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { isRuntimeModule } from 'utils/runtime';
-import { createEngine, propagateEngine } from '../common/Engine/Engine';
+import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
   getStaticProviderList,
-} from '../common/Engine/utils/static';
+} from '../common/System/utils/static';
 
 // the idea of withMock, is that we accept a component that has already been composed, instead of using it as a target to render, we read the static properties from it, the entries and the original component. of the composed component. then we recreate what would've been done in the last hoc of the composed component, but this time, we provide mocked values for either props or layer. The only thing we have to think about is, how do we mock the layer of a specific hoc. do we use the module and its key together with the mocked layer, and do we support props through the same withMock hoc. We might be able to get this working by supporting multiple variants of arguments. this way a user can use multiple withMock hocs in tests.
 
@@ -71,8 +71,8 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
     const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target);
 
-    const Wrapper = createEngine(Component, target, targetName);
-    const Memo = propagateEngine(
+    const Wrapper = createSystem(Component, target, targetName);
+    const Memo = propagateSystem(
       Wrapper,
       Component,
       declarationId,

@@ -22,12 +22,12 @@ import {
   type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { createEngine, propagateEngine } from '../common/Engine/Engine';
+import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
   getStaticProviderList,
-} from '../common/Engine/utils/static';
+} from '../common/System/utils/static';
 
 export function withProps<
   C extends React.FC<any>,
@@ -51,8 +51,8 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
     const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target);
 
-    const Wrapper = createEngine(Component, target, targetName, provider);
-    const Memo = propagateEngine(
+    const Wrapper = createSystem(Component, target, targetName, provider);
+    const Memo = propagateSystem(
       Wrapper,
       Component,
       declarationId,

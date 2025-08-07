@@ -4,12 +4,12 @@
 import * as React from 'react';
 import type { Simplify, Merge, SetOptional } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { createEngine, propagateEngine } from 'components/common/Engine/Engine';
+import { createSystem, propagateSystem } from 'components/common/System/System';
 import {
   getStaticDeclarationId,
   getStaticComponent,
   getStaticProviderList,
-} from 'components/common/Engine/utils/static';
+} from 'components/common/System/utils/static';
 import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import type {
   RuntimeModule,
@@ -74,8 +74,8 @@ export function withRuntime<C extends React.FC<any>, R>(
     const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target, 'withRuntime');
 
-    const Wrapper = createEngine(Component, target, targetName, provider);
-    const Memo = propagateEngine(
+    const Wrapper = createSystem(Component, target, targetName, provider);
+    const Memo = propagateSystem(
       Wrapper,
       Component,
       declarationId,

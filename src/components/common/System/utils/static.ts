@@ -6,15 +6,28 @@ import {
   COMPONENT_PROP,
   ID_PROP,
   type ExtractStaticProviders,
+  PROPS_PROP,
+  type IdProp,
 } from 'types';
 
-export const getStaticProviderList = <C extends React.FC<any>, R>(
-  component: C & { [PROVIDERS_PROP]?: ProviderEntry<R, C>[] }
-) => component[PROVIDERS_PROP] ?? ([] as ProviderEntry<R, C>[]);
+export const getStaticProviderList = <
+  C extends React.FC<any>,
+  R,
+  P = Partial<React.ComponentProps<C>> & IdProp,
+>(
+  component: C & {
+    [PROVIDERS_PROP]?: ProviderEntry<R, C, P>[];
+  },
+  provider?: ProviderEntry<R, C, P>
+) => (component[PROVIDERS_PROP] ?? []).concat(provider ? [provider] : []);
 
 export const getStaticComponent = <C extends React.FC<any>>(
   component: C & { [COMPONENT_PROP]?: React.FC<any> }
 ) => component[COMPONENT_PROP];
+
+export const getStaticProps = <C extends React.FC<any>>(
+  component: C & { [PROPS_PROP]?: Record<string, any> }
+) => component[PROPS_PROP];
 
 export const getStaticDeclarationId = <C extends React.FC<any>>(
   component: C & { [ID_PROP]?: string }

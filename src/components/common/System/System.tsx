@@ -14,42 +14,164 @@ import {
   type ProviderEntry as ProviderEntry,
   type Config,
   type RuntimeInstance,
-  type ProviderId,
   type DeclarationId,
+  type IdProp,
+  type ExtractStaticProps,
+  type ProviderApi,
+  type RuntimeModule,
 } from 'types';
 import { createElement, copyStaticProperties, extractMeta } from 'utils/react';
 import {
+  getStaticProviderList,
   hoistDeclarationId,
   hoistOriginalComponent,
   hoistProviderList,
 } from './utils/static';
 
-export function createEngine<R, C extends React.FC<any>>(
+export function createSystem<R, C extends React.FC<any>>(
   Component: C,
   target: React.FC<any>,
   name: string,
   provider?: ProviderEntry<R, C>
 ) {
-  const Wrapper: React.FC<
-    { readonly id: string } & Partial<React.ComponentProps<C>>
-  > = (props) => {
+  const Wrapper: React.FC<IdProp & Partial<React.ComponentProps<C>>> = (
+    props
+  ) => {
     const hasRun = React.useRef(false);
 
     const componentId = props.id as ComponentId;
+    const localEntries = getStaticProviderList<C, R>(Component, provider);
     const entries = useUpstreamProviders(Component, provider);
     const runtimeApi = useRuntimeApi();
 
     const treeMap = useTreeMap(componentId);
     const runtimeProvider = useRuntimeProvider(componentId, treeMap);
 
-    const instances = new Map<RuntimeKey, RuntimeInstance<any>>();
-    const upstreamIds = new Set<ProviderId>();
+    const instances = React.useMemo(
+      () => new Map<RuntimeKey, RuntimeInstance<any>>(),
+      []
+    );
 
     //* We need a method that takes a set of runtime keys and returns a map with runtime instances, using useSyncExternalStore. This way we can compare runtime ids, between getSnapshot calls, to return a stable map. When ids change, the component will re-render, which allows upstream fast refresh, to update downstream components that depend on upstream runtimes. In order to make this happen, runtimeRegistry, should use this method to register the component id under each runtime id associated with the provided key.
 
     const reconstructionLevels = new Set<number>();
+    let needsLateReconstruction = false;
     let currentLevel = entries[0].level;
     let accumulatedProps = { id: componentId };
+
+    // think about it, whether we really need to reconstruct everything from upstream, because all we really need from upstream is whatever is pulled in from withUpstream at level 0. Because every component instantiaties before its child, and registers as parent, we can rely on registry.getByKey, to resolve from the closest component.
+
+    if (!hasRun.current) {
+      localEntries.forEach((item) => {
+        if (item.type === 'upstream') {
+          const { context } = item.module;
+          const instance = runtimeProvider.getByKey(
+            props.id as ComponentId,
+            context.key
+          );
+          if (instance) {
+            instances.set(context.key, instance);
+          } else if (!treeMap.isRoot(componentId)) {
+            // This happens when upstream dependencies are included downstream who are connected higher in the tree, then the ones included by the root component.
+            needsLateReconstruction = true;
+          }
+        }
+      });
+    }
+
+    localEntries.forEach((item) => {
+      if (item.type === 'runtime') {
+      }
+    });
+
+    const createApiProxy = React.useCallback(
+      (
+        type: 'upstream' | 'runtime',
+        module: RuntimeModule<R>,
+        factory: (overrides?: Partial<Config>) => ProviderApi<R>
+      ) => {
+        return new Proxy<ProviderApi<R>>({} as never, {
+          get(_, prop) {
+            if (prop === 'runtime') {
+              return type === 'upstream'
+                ? runtimeApi.create(module, instances)
+                : factory();
+            }
+            if (prop === 'configure' && type === 'runtime') {
+              return factory;
+            }
+            throw new Error(invalidDestructure(name, prop));
+          },
+        });
+      },
+      [runtimeApi, instances]
+    );
+
+    const createPropsProxy = React.useCallback(
+      (currentProps: ExtractStaticProps<C>) => {
+        return new Proxy(currentProps, {
+          get(target, prop: string) {
+            const value = target[prop as keyof typeof target];
+            if (!(prop in currentProps)) {
+              console.warn(noUpstreamMessage(name, prop));
+            }
+            return value;
+          },
+        });
+      },
+      []
+    );
+
+    const runtimeFactory2 = React.useCallback(
+      (
+        id: ComponentId,
+        entry: ProviderEntry<R, C> & { type: 'runtime' | 'upstream' },
+        callback: (instance: RuntimeInstance<any> | null) => void
+      ) =>
+        (overrides: Partial<Config> = {}) => {
+          const { context } = entry.module;
+          const instance = !hasRun.current
+            ? runtimeProvider.register(id, {
+                entryId: entry.id,
+                context: context,
+                config: overrides,
+              })
+            : runtimeProvider.getByKey(id, context.key);
+
+          if (!instance) {
+            throw new Error(
+              `[${name}] Runtime instance for provider id "${entry.id}" not found. Did you use withMock or withAutoMock?`
+            );
+          }
+          // instances.set(context.key, instance);
+          callback(instance);
+          return runtimeApi.create(entry.module, instances);
+        },
+      [runtimeProvider, runtimeApi, instances]
+    );
+
+    if (!hasRun.current) {
+      localEntries.forEach((item) => {
+        if (item.type === 'runtime') {
+          return;
+        }
+        if (item.type === 'props') {
+          const currentProps = Object.assign(
+            {},
+            props,
+            accumulatedProps as ExtractStaticProps<C>
+          );
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          Object.assign(accumulatedProps, item.fn(currentProps) ?? {});
+        }
+      });
+    }
+
+    // The only case that diverges here is in portable scenarios. In this case we have to traverse upstream from the root, to rebuild everything there.
+
+    // In late reconstuctions, we simply register at the root component id when anything from withUpstream is missing.
+
+    // ofcourse this has all impact en terms of fast refresh behavior. That's something to think about but that's for later.
 
     entries
       .filter((item) => item.type === 'runtime' && item.level !== 0)
@@ -63,28 +185,12 @@ export function createEngine<R, C extends React.FC<any>>(
         );
         if (instance) {
           instances.set(module.context.key, instance);
-          upstreamIds.add(entry.id);
         } else {
           reconstructionLevels.add(entry.level);
         }
       });
 
     const reconstructionThreshold = Math.max(...reconstructionLevels.values());
-
-    const needsLateReconstruction =
-      !treeMap.isRoot(componentId) &&
-      entries
-        .filter((item) => item.type === 'upstream' && item.level === 0)
-        .some((entry) => {
-          const { module } = entry as ProviderEntry<any, any, unknown> & {
-            type: 'upstream';
-          };
-          const instance = runtimeProvider.getByKey(
-            props.id as ComponentId,
-            module.context.key
-          );
-          return !instance;
-        });
 
     entries
       .filter(
@@ -188,7 +294,7 @@ export function createEngine<R, C extends React.FC<any>>(
   return Wrapper;
 }
 
-export const propagateEngine = <C extends React.FC<any>>(
+export const propagateSystem = <C extends React.FC<any>>(
   Wrapper: C,
   Component: React.FC<any>,
   declarationId: DeclarationId,

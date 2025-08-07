@@ -1,13 +1,14 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import type { ComponentId, ParentId } from 'types';
+import type { ComponentId, IdProp, ParentId } from 'types';
 import { useParentId, ParentIdContext } from '../common/useParentId';
 import { useTreeMap } from './useTreeMap';
 
-const TestComponent: React.FC<{
-  readonly children?: React.ReactNode;
-  readonly id: string;
-}> = ({ children, id }) => {
+const TestComponent: React.FC<
+  {
+    readonly children?: React.ReactNode;
+  } & IdProp
+> = ({ children, id }) => {
   const parentId = useParentId();
   // useComponentId({ id });
 
@@ -19,7 +20,7 @@ const TestComponent: React.FC<{
   );
 };
 
-const TestRootComponent: React.FC<{ readonly id: string }> = ({ id }) => {
+const TestRootComponent: React.FC<IdProp> = ({ id }) => {
   const treeMap = useTreeMap(id as ComponentId);
   React.useEffect(() => {
     // console.log(

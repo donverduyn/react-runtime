@@ -65,15 +65,17 @@ export type RuntimeInstance<R> = {
 //   T extends React.Context<infer U> ? NonNullable<U> : never;
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
-export type IdProp = { id: string };
+export type IdProp = { readonly id: string };
 
 export type Extensible<T> = T & Record<string, unknown>;
 
+export type ProviderApi<R> = {
+  configure: (config?: Partial<Config>) => RuntimeApi<R>;
+  runtime: RuntimeApi<R>;
+}
+
 export type ProviderFn<R, C extends React.FC<any>, TResult = any> = (
-  api: {
-    configure: (config?: Partial<Config>) => RuntimeApi<R>;
-    runtime: RuntimeApi<R>;
-  },
+  api: ProviderApi<R>,
   props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
 ) => TResult;
 

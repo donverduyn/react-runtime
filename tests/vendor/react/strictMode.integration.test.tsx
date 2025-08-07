@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import { identity } from 'effect';
+import type { IdProp } from 'types';
 
 describe('strict mode/hooks', () => {
   // it('should check if two symbols are equal', () => {
@@ -67,10 +68,11 @@ describe('strict mode/hooks', () => {
     const renderFn = vi.fn();
     // const callbackFn = vi.fn((_: string) => {});
 
-    const StrictTestComponent: React.FC<{
-      readonly id: string;
-      readonly children?: React.ReactNode;
-    }> = ({ id, children }) => {
+    const StrictTestComponent: React.FC<
+      {
+        readonly children?: React.ReactNode;
+      } & IdProp
+    > = ({ id, children }) => {
       renderFn(id);
 
       // useState

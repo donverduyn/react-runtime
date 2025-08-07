@@ -1,9 +1,10 @@
+import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import type { RuntimeInstance, RuntimeKey, RuntimeModule } from 'types';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';
 
-export const useRuntimeApi = () => {
+const createRuntimeApi = () => {
   function create<R>(
     module: RuntimeModule<R>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,4 +19,10 @@ export const useRuntimeApi = () => {
   }
 
   return { create };
+};
+
+const useRuntimeApiInstance = createSingletonHook(createRuntimeApi);
+
+export const useRuntimeApi = () => {
+  return useRuntimeApiInstance();
 };
