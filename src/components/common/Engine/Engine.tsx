@@ -24,7 +24,7 @@ import {
   hoistProviderList,
 } from './utils/static';
 
-export function createWrapper<R, C extends React.FC<any>>(
+export function createEngine<R, C extends React.FC<any>>(
   Component: C,
   target: React.FC<any>,
   name: string,
@@ -188,7 +188,7 @@ export function createWrapper<R, C extends React.FC<any>>(
   return Wrapper;
 }
 
-export const finalizeWrapper = <C extends React.FC<any>>(
+export const propagateEngine = <C extends React.FC<any>>(
   Wrapper: C,
   Component: React.FC<any>,
   declarationId: DeclarationId,

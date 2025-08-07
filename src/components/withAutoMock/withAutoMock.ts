@@ -18,15 +18,12 @@ import {
   type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import {
-  createWrapper,
-  finalizeWrapper,
-} from '../common/providerFactory/providerFactory';
+import { createEngine, propagateEngine } from '../common/Engine/Engine';
 import {
   getStaticComponent,
   getStaticDeclarationId,
   getStaticProviderList,
-} from '../common/providerFactory/utils/static';
+} from '../common/Engine/utils/static';
 
 export function withAutoMock<
   C extends React.FC<any>,
@@ -51,8 +48,8 @@ export function withAutoMock<
     const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target);
 
-    const Wrapper = createWrapper(Component, target, targetName);
-    const Memo = finalizeWrapper(
+    const Wrapper = createEngine(Component, target, targetName);
+    const Memo = propagateEngine(
       Wrapper,
       Component,
       declarationId,

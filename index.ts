@@ -3,7 +3,7 @@ export * from 'components/withUpstream/withUpstream';
 export * from 'components/withProps/withProps';
 export * from 'components/withAutoMock/withAutoMock';
 export * from 'components/withMock/withMock';
-export * from 'components/common/providerFactory/providerFactory';
+export * from 'components/common/Engine/Engine';
 export * from 'types';
 export * from 'utils/runtime';
 export * from 'utils/react';
