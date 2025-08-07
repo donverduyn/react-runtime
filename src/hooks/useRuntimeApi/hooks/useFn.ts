@@ -2,9 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
-import type { RuntimeContext, RuntimeInstance } from 'types';
+import type { RuntimeContext, RuntimeInstance, RuntimeKey } from 'types';
 import { EventEmitter, createAsyncIterator } from 'utils/emitter';
-import type { RuntimeKey } from 'types';
 
 /*
 This hook returns a function that can be called to trigger an effect.

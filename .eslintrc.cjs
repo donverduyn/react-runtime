@@ -147,6 +147,23 @@ module.exports = {
         //     allow: ['src/modules/MyModule/context.ts'],
         //   },
         // ],
+
+        '@typescript-eslint/no-extraneous-class': [
+          'warn',
+          {
+            allowConstructorOnly: true,
+            allowEmpty: false,
+            allowStaticOnly: false,
+            allowWithDecorator: false,
+          },
+        ],
+        '@typescript-eslint/unified-signatures': [
+          'warn',
+          {
+            ignoreDifferentlyNamedParameters: true,
+            ignoreOverloadsWithDifferentJSDoc: false,
+          },
+        ],
         '@typescript-eslint/ban-ts-comment': [
           'warn',
           {
@@ -282,7 +299,7 @@ module.exports = {
             ignoreCase: true,
             multiline: 'last',
             reservedFirst: true,
-            shorthandFirst: true
+            shorthandFirst: true,
           },
         ],
         'react/jsx-wrap-multilines': 'warn',

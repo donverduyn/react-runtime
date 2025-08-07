@@ -14,6 +14,8 @@ import {
   type UPSTREAM_PROP,
   type DeclarationId,
   type ExtractStaticUpstream,
+  type IdProp,
+  type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import {
@@ -27,25 +29,13 @@ import {
 } from '../common/providerFactory/utils/static';
 
 export function withAutoMock<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
   C1 extends React.FC<any>,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
 >(
   RootComponent: C1
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 export function withAutoMock<
   R,
@@ -77,4 +67,80 @@ export function withAutoMock<
     // TODO: instead of registering the real root component, we can use it directly to kick off a dry run here on module load, from the provided root component. We can use the Wrapper to traverse from the root component to the target component and track the parent/child relationships between components inbetween. Based on this information we can use a separate ProviderMap to traverse upward and remove the need to rely on component references in runtime modules.
     return Memo as never;
   };
+}
+
+type StaticProperties<C, TProps> = Merge<
+  ExtractMeta<C>,
+  {
+    [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
+    [PROVIDERS_PROP]: ExtractStaticProviders<C>;
+    [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+  }
+>;
+
+type GlobalKeys =
+  | 'fetch'
+  | 'XMLHttpRequest'
+  | 'WebSocket'
+  | 'setTimeout'
+  | 'setInterval'
+  | 'requestAnimationFrame'
+  | 'Promise';
+
+const thrower = (name: string) => () => {
+  throw new Error(`[dryRender] Blocked global call to: ${name}`);
+};
+
+export function withDryGlobalContext<T>(fn: () => T): T {
+  const originals: Partial<Record<GlobalKeys, any>> = {};
+
+  const patches: Partial<Record<GlobalKeys, any>> = {
+    fetch: thrower('fetch'),
+    XMLHttpRequest: class {
+      constructor() {
+        throw new Error('[dryRender] XMLHttpRequest blocked during dry render');
+      }
+    },
+    WebSocket: class {
+      constructor() {
+        throw new Error('[dryRender] WebSocket blocked during dry render');
+      }
+    },
+    setTimeout: thrower('setTimeout'),
+    setInterval: thrower('setInterval'),
+    requestAnimationFrame: thrower('requestAnimationFrame'),
+    Promise: class BlockedPromise {
+      constructor() {
+        throw new Error('[dryRender] Promises are blocked during dry render');
+      }
+      static resolve = () => new BlockedPromise();
+      static reject = () => new BlockedPromise();
+      static all = () => new BlockedPromise();
+      static race = () => new BlockedPromise();
+      then = thrower('Promise.then');
+      catch = thrower('Promise.catch');
+      finally = thrower('Promise.finally');
+    },
+  };
+
+  try {
+    for (const key in patches) {
+      const k = key as GlobalKeys;
+      if (k in globalThis) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        originals[k] = globalThis[k as keyof typeof globalThis];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        globalThis[k] = patches[k];
+      }
+    }
+
+    return fn();
+  } finally {
+    for (const key in originals) {
+      const k = key as GlobalKeys;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      globalThis[k] = originals[k];
+    }
+  }
 }

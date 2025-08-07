@@ -65,58 +65,40 @@ export type RuntimeInstance<R> = {
 //   T extends React.Context<infer U> ? NonNullable<U> : never;
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
+export type IdProp = { id: string };
 
-export type ProviderFn<
-  R,
-  C extends React.FC<any>,
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined =
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
-> = (
+export type Extensible<T> = T & Record<string, unknown>;
+
+export type ProviderFn<R, C extends React.FC<any>, TResult = any> = (
   api: {
     configure: (config?: Partial<Config>) => RuntimeApi<R>;
     runtime: RuntimeApi<R>;
   },
-  props: Merge<
-    Partial<React.ComponentProps<C>>,
-    ExtractStaticProps<C> & { id: string }
-  >
-) => TProps;
+  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
+) => TResult;
 
-export type PropsFn<
-  C extends React.FC<any>,
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined =
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
-> = (
-  props: Merge<
-    Partial<React.ComponentProps<C>>,
-    ExtractStaticProps<C> & { id: string }
-  >
-) => TProps;
+export type PropsFn<C extends React.FC<any>, TResult = unknown> = (
+  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
+) => TResult;
 
 export type ProviderEntryType = 'runtime' | 'upstream' | 'props';
-export type ProviderEntry<R, C extends React.FC<any>> =
+export type ProviderEntry<R, C extends React.FC<any>, P = any> =
   | {
       id: ProviderId;
       type: 'runtime';
       module: RuntimeModule<R>;
-      fn: ProviderFn<R, C> | undefined;
+      fn: ProviderFn<R, C, P> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
       module: RuntimeModule<R>;
-      fn: ProviderFn<R, C>;
+      fn: ProviderFn<R, C, P>;
     }
   | {
       id: ProviderId;
       type: 'props';
-      fn: PropsFn<C>;
+      fn: PropsFn<C, P>;
     };
 
 export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }

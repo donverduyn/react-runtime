@@ -1,27 +1,27 @@
 import { useState } from 'react';
-import { withRuntime } from '@donverduyn/react-runtime';
-import { pipe } from 'effect';
+import { withRuntime, withUpstream, connect } from '@donverduyn/react-runtime';
 import { Child } from './components/Child/Child';
 import { Observer } from 'mobx-react-lite';
 import * as AppRuntime from './App.runtime';
+import * as SomeRuntime from './Some.runtime';
 import reactLogo from './assets/react.svg';
 // eslint-disable-next-line import/no-unresolved
 import viteLogo from '/vite.svg';
 import './App.css';
 
-const withLogger = <C extends React.FC<Props>>(component: C) =>
-  pipe(
+const withLogger = (component: React.FC<Props>) =>
+  connect(
     component,
-    // withUpstream(SomeRuntime, ({ runtime }) => {
-    //   console.log('SomeRuntime', runtime.runtime.id);
-    // }),
-    withRuntime(AppRuntime, ({ configure }) => {
-      const runtime = configure({ postUnmountTTL: 1000 });
-      return { store: runtime.use(AppRuntime.Store) };
-    })
+    withUpstream(SomeRuntime, ({ runtime }) => {
+      console.log('SomeRuntime', runtime.instance );
+    }),
+    // withRuntime(AppRuntime, ({ configure }) => {
+    //   const runtime = configure({ postUnmountTTL: 1000 });
+    //   return { store: runtime.use(AppRuntime.Store) };
+    // })
   );
 
-export const App = pipe(AppView, withLogger);
+export const App = connect(AppView, withLogger);
 
 type Props = {
   readonly store: AppRuntime.Store;

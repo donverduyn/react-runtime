@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Effect, Scope, Exit } from 'effect';
-import type { RuntimeContext, RuntimeInstance } from 'types';
-import type { RuntimeKey } from 'types';
+import type { RuntimeContext, RuntimeInstance, RuntimeKey } from 'types';
 
 /*
 This hook is used to run an effect in a runtime.

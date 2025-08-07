@@ -15,6 +15,17 @@ const ComponentView: React.FC<ComponentProps> = ({ value }) => (
 );
 
 const text = 'parent-text';
+// function fn<
+//   C extends React.FC<any>,
+//   T extends Partial<React.ComponentProps<C>> & Record<string, unknown>,
+// >(component: C, arg: T): T {
+//   return arg;
+// }
+
+// const Comp: React.FC<{ bar: string }> = () => <div>foo</div>;
+
+// const foo = fn(Comp, { bar: 'bar', foo: 'foo' });
+// T is inferred as { foo: string } ✅
 
 describe('withProps', () => {
   it('should render the wrapped component', () => {

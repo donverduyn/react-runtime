@@ -16,8 +16,11 @@ import {
   type DeclarationId,
   type ExtractStaticUpstream,
   type RuntimeModule,
+  type IdProp,
+  type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
+import { isRuntimeModule } from 'utils/runtime';
 import {
   createWrapper,
   finalizeWrapper,
@@ -27,54 +30,30 @@ import {
   getStaticDeclarationId,
   getStaticProviderList,
 } from '../common/providerFactory/utils/static';
-import { isRuntimeModule } from 'utils/runtime';
 
 // the idea of withMock, is that we accept a component that has already been composed, instead of using it as a target to render, we read the static properties from it, the entries and the original component. of the composed component. then we recreate what would've been done in the last hoc of the composed component, but this time, we provide mocked values for either props or layer. The only thing we have to think about is, how do we mock the layer of a specific hoc. do we use the module and its key together with the mocked layer, and do we support props through the same withMock hoc. We might be able to get this working by supporting multiple variants of arguments. this way a user can use multiple withMock hocs in tests.
 
 export function withMock<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
   C1 extends React.FC<any>,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
 >(
   target: C1,
   props: React.ComponentProps<C1>
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 export function withMock<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
-  R,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  R = unknown,
 >(
   module: RuntimeModule<R>,
   layer: Layer.Layer<R>
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
+//
 export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
   moduleOrComponent: RuntimeModule<R> | C1,
   input: Layer.Layer<R> | React.ComponentProps<C1>
@@ -109,3 +88,13 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
     return Memo as never;
   };
 }
+
+type StaticProperties<C, TProps> = Merge<
+  ExtractMeta<C>,
+  {
+    [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
+    [PROVIDERS_PROP]: ExtractStaticProviders<C>;
+    [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+  }
+>;

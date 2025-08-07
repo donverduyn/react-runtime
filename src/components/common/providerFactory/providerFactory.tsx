@@ -1,10 +1,7 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { IsEqual, Merge } from 'type-fest';
-import { v4 as uuid } from 'uuid';
 import { ParentIdContext } from 'hooks/common/useParentId';
-import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
 import { useTreeMap } from 'hooks/useTreeMap/useTreeMap';
@@ -13,105 +10,19 @@ import {
   ComponentId,
   ParentId,
   RuntimeKey,
-  type ExtractStaticComponent,
-  type ExtractStaticProviders,
   type RuntimeApi,
-  type RuntimeModule,
   type ProviderEntry as ProviderEntry,
   type Config,
-  type PROPS_PROP,
-  type ExtractStaticProps,
-  COMPONENT_PROP,
-  PROVIDERS_PROP,
-  type UPSTREAM_PROP,
-  type TraverseDeps,
   type RuntimeInstance,
-  type ProviderFn,
-  type PropsFn,
   type ProviderId,
   type DeclarationId,
 } from 'types';
 import { createElement, copyStaticProperties, extractMeta } from 'utils/react';
-import { isRuntimeModule } from 'utils/runtime';
 import {
-  getStaticComponent,
-  getStaticDeclarationId,
-  getStaticProviderList,
   hoistDeclarationId,
   hoistOriginalComponent,
   hoistProviderList,
 } from './utils/static';
-
-export const providerFactory = <Type extends 'runtime' | 'upstream' | 'props'>(
-  type: Type,
-  name: string
-) => {
-  function HOC<
-    R,
-    C extends React.FC<any>,
-    CRef extends React.FC<any>,
-    TProps extends
-      | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-      | undefined,
-  >(
-    moduleOrFn: RuntimeModule<R, CRef> | PropsFn<C, TProps>,
-    fn?: ProviderFn<R, C, TProps>
-  ) {
-    const isModuleFirst = isRuntimeModule<R>(moduleOrFn);
-    const module = isModuleFirst ? moduleOrFn : undefined;
-    const providerFn = !isModuleFirst ? moduleOrFn : fn;
-
-    return (Component: C) => {
-      const declarationId = (getStaticDeclarationId(Component) ??
-        uuid()) as DeclarationId;
-      const hocId = uuid();
-
-      const target = getStaticComponent(Component) ?? Component;
-      const localProviders = getStaticProviderList<C, R>(Component);
-      const componentRegistry = getComponentRegistry();
-
-      const provider: ProviderEntry<R, C> = (() => {
-        if (type === 'props') {
-          return {
-            id: hocId as ProviderId,
-            type: 'props',
-            fn: providerFn as PropsFn<C>,
-          };
-        } else {
-          return {
-            id: hocId as ProviderId,
-            type,
-            module: module!,
-            fn: providerFn as ProviderFn<R, C>,
-          };
-        }
-      })();
-
-      const Wrapper = createWrapper<R, C>(Component, target, name, provider);
-      const Memo = finalizeWrapper(
-        Wrapper,
-        Component,
-        declarationId,
-        target,
-        localProviders.concat(provider) as React.ComponentProps<C>,
-        name
-      );
-
-      componentRegistry.register(declarationId, Memo);
-      return Memo as typeof Memo & {
-        [UPSTREAM_PROP]: TraverseDeps<{
-          [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, typeof module];
-        }>;
-        [PROVIDERS_PROP]: IsEqual<typeof type, 'props'> extends true
-          ? ExtractStaticProviders<C>
-          : [...ExtractStaticProviders<C>, typeof module];
-        [COMPONENT_PROP]: ExtractStaticComponent<C>;
-        [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-      };
-    };
-  }
-  return HOC;
-};
 
 export function createWrapper<R, C extends React.FC<any>>(
   Component: C,
@@ -165,7 +76,7 @@ export function createWrapper<R, C extends React.FC<any>>(
       entries
         .filter((item) => item.type === 'upstream' && item.level === 0)
         .some((entry) => {
-          const { module } = entry as ProviderEntry<any, any> & {
+          const { module } = entry as ProviderEntry<any, any, unknown> & {
             type: 'upstream';
           };
           const instance = runtimeProvider.getByKey(
@@ -198,7 +109,7 @@ export function createWrapper<R, C extends React.FC<any>>(
         );
 
         if (entry.type === 'props') {
-          Object.assign(accumulatedProps, entry.fn?.(currentProps) ?? {});
+          Object.assign(accumulatedProps, entry.fn(currentProps) ?? {});
           return;
         }
 

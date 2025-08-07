@@ -30,43 +30,42 @@ import type {
   DeclarationId,
   ProviderEntry,
   ProviderId,
+  Extensible,
+  IdProp,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
 export function withUpstream<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
-  TContext,
-  R,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  R = unknown,
 >(
-  Context: TContext & RuntimeModule<R>,
+  module: RuntimeModule<R>,
   fn: ProviderFn<R, C, TProps>
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: TraverseDeps<{
-        [PROVIDERS_PROP]: KeepUpstream<
-          [...ExtractStaticProviders<C>, Up<TContext>]
-        >;
-      }>;
-      [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Up<TContext>];
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+): (
+  Component: C
+) => React.FC<Simplify<TResult>> &
+  StaticProperties<C, RuntimeModule<R>, TProps>;
 
 export function withUpstream<
   C extends React.FC<any>,
-  R,
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
->(module: RuntimeModule<R>, fn: ProviderFn<R, C, TProps>) {
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  R = unknown,
+>(
+  module: RuntimeModule<R>,
+  fnVoid: ProviderFn<R, C>
+): (
+  Component: C
+) => React.FC<Simplify<TResult>> &
+  StaticProperties<C, RuntimeModule<R>, TProps>;
+
+//
+export function withUpstream<C extends React.FC<any>, R>(
+  module: RuntimeModule<R>,
+  fn: ProviderFn<any, any>
+) {
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;
@@ -106,3 +105,17 @@ function createUpstreamEntry<R, C extends React.FC<any>>(
     fn,
   };
 }
+
+type StaticProperties<C, TModule, TProps> = Merge<
+  ExtractMeta<C>,
+  {
+    [UPSTREAM_PROP]: TraverseDeps<{
+      [PROVIDERS_PROP]: KeepUpstream<
+        [...ExtractStaticProviders<C>, Up<TModule>]
+      >;
+    }>;
+    [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Up<TModule>];
+    [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+  }
+>;

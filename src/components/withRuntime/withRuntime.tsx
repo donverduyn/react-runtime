@@ -25,43 +25,46 @@ import type {
   UPSTREAM_PROP,
   ExtractStaticUpstream,
   Down,
-  ProviderFn as ProviderFn,
+  ProviderFn,
   DeclarationId,
   ProviderEntry,
   ProviderId,
+  IdProp,
+  Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
 export function withRuntime<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
-  TContext,
-  R,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  R = unknown,
 >(
-  Context: TContext & RuntimeModule<R>,
-  configFn?: ProviderFn<R, C, TProps>
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TContext>];
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+  module: RuntimeModule<R>,
+  fn?: ProviderFn<R, C, TProps>
+): (
+  Component: C
+) => React.FC<Simplify<TResult>> &
+  StaticProperties<C, RuntimeModule<R>, TProps>;
 
 export function withRuntime<
   C extends React.FC<any>,
-  R,
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
->(module: RuntimeModule<R>, fn?: ProviderFn<R, C, TProps>) {
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  R = unknown,
+>(
+  module: RuntimeModule<R>,
+  fnVoid?: ProviderFn<R, C>
+): (
+  Component: C
+) => React.FC<Simplify<TResult>> &
+  StaticProperties<C, RuntimeModule<R>, TProps>;
+
+//
+export function withRuntime<C extends React.FC<any>, R>(
+  module: RuntimeModule<R>,
+  fn?: ProviderFn<any, any>
+) {
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;
@@ -101,3 +104,13 @@ function createRuntimeEntry<R, C extends React.FC<any>>(
     fn,
   };
 }
+
+type StaticProperties<C, TModule, TProps> = Merge<
+  ExtractMeta<C>,
+  {
+    [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
+    [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TModule>];
+    [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+  }
+>;

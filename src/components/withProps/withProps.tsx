@@ -1,4 +1,5 @@
-// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable eslint-comments/disable-enable-pair */
+/* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Simplify, SetOptional, Merge } from 'type-fest';
@@ -17,6 +18,8 @@ import {
   type ProviderId,
   type ProviderEntry,
   type ExtractStaticUpstream,
+  type IdProp,
+  type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import {
@@ -30,25 +33,14 @@ import {
 } from '../common/providerFactory/utils/static';
 
 export function withProps<
-  TProps extends
-    | (Partial<React.ComponentProps<C>> & { [key: string]: unknown })
-    | undefined,
   C extends React.FC<any>,
+  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
 >(
   fn: PropsFn<C, TProps>
-): (Component: C) => React.FC<
-  Simplify<{ id: string } & SetOptional<React.ComponentProps<C>, keyof TProps>>
-> &
-  Merge<
-    ExtractMeta<C>,
-    {
-      [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-      [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-      [COMPONENT_PROP]: ExtractStaticComponent<C>;
-      [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-    }
-  >;
+): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
+//
 export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
@@ -87,3 +79,13 @@ function createPropsEntry<R, C extends React.FC<any>>(
     fn: configFn,
   };
 }
+
+type StaticProperties<C, TProps> = Merge<
+  ExtractMeta<C>,
+  {
+    [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
+    [PROVIDERS_PROP]: ExtractStaticProviders<C>;
+    [COMPONENT_PROP]: ExtractStaticComponent<C>;
+    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+  }
+>;

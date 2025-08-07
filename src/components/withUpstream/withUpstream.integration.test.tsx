@@ -32,6 +32,9 @@ const parentText = 'life is a journey';
 const childText = 'death is a destination';
 
 describe('withUpstream', () => {
+  it('should pass', () => {
+    expect(true).toBeTruthy();
+  });
   it('should allow child to resolve parent runtime value', () => {
     const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
 

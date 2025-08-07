@@ -12,7 +12,7 @@ export function useUpstreamProviders<C extends React.FC<any>, R>(
   component: C,
   entry?: ProviderEntry<R, C>
 ) {
-  const graph: (ProviderEntry<any, any> & {
+  const graph: (ProviderEntry<any, any, Record<string, unknown> | undefined> & {
     level: number;
     index: number;
   })[] = [];
