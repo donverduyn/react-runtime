@@ -1,6 +1,6 @@
 import type { ComponentId, RuntimeInstance, RuntimeKey } from 'types';
 import { type TreeMapStore } from '../useTreeMap/useTreeMap';
-import { useRuntimeRegistry as useRuntimeRegistry } from './hooks/useRuntimeRegistry';
+import { useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 
 // provides an endpoint to obtain runtimes imperatively
 export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
@@ -8,10 +8,11 @@ export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
 
   function getByKey(
     currentId: ComponentId = id,
-    key: RuntimeKey
+    key: RuntimeKey,
+    index: number = 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): RuntimeInstance<any> | null {
-    const value = registry.getById(currentId, key);
+    const value = registry.getById(currentId, key, index);
     if (value) return value;
     const parentId = treeMap.getParent(currentId);
 
@@ -24,11 +25,12 @@ export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
   }
 
   return {
+    gcUnpromoted: () => registry.gcUnpromoted(id),
+    keepAlive: () => registry.keepAlive(id),
+    promote: () => registry.promoteById(id),
     getByKey,
     register: registry.register,
     unregister: () => registry.unregister(id, () => treeMap.unregister(id)),
-    resetCount: registry.resetCount,
-    // isRoot: moize(() => treeMap.isRoot(id)),
   };
 };
 

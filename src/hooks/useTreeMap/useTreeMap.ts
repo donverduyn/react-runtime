@@ -139,19 +139,19 @@ function createTreeMap(): TreeMapStore {
     }
   }
 
-  function getParent(id: ComponentId): ParentId | null {
+  function getParent(id: ComponentId) {
     return childToParent.get(id) ?? null;
   }
 
-  function getChildren(id: ParentId): ComponentId[] {
+  function getChildren(id: ParentId) {
     return parentToChildren.get(id) ?? [];
   }
 
-  function isRoot(id: ComponentId): boolean {
+  function isRoot(id: ComponentId) {
     return getParent(id) === '__ROOT__';
   }
 
-  function getRoot(): ComponentId | null {
+  function getRoot() {
     return getChildren('__ROOT__' as ParentId)[0] ?? null;
   }
 

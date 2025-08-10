@@ -25,5 +25,5 @@ export const reference = () => App;
 export const context = pipe(
   Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
   Layer.provideMerge(Store.Default),
-  createRuntimeContext({})
+  createRuntimeContext()
 );

@@ -10,7 +10,6 @@ import {
   getStaticComponent,
   getStaticProviderList,
 } from 'components/common/System/utils/static';
-import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
@@ -69,23 +68,26 @@ export function withUpstream<C extends React.FC<any>, R>(
     const hocId = uuid();
 
     const target = getStaticComponent(Component) ?? Component;
-    const localProviders = getStaticProviderList<C, R>(Component);
     const provider = createUpstreamEntry<R, C>(hocId as ProviderId, module, fn);
-
-    const componentRegistry = getComponentRegistry();
+    const localProviders = getStaticProviderList<C, R>(Component, provider);
     const targetName = getDisplayName(target, 'withRuntime');
 
-    const Wrapper = createSystem(Component, target, targetName, provider);
-    const Memo = propagateSystem(
-      Wrapper,
-      Component,
+    const Wrapper = createSystem(
       declarationId,
+      Component,
       target,
-      localProviders.concat(provider),
+      targetName,
+      provider
+    );
+    const Memo = propagateSystem(
+      declarationId,
+      Component,
+      Wrapper,
+      target,
+      localProviders,
       targetName
     );
 
-    componentRegistry.register(declarationId, Memo);
     return Memo as never;
   };
 }

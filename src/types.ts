@@ -31,6 +31,13 @@ export type RuntimeApi<R> = {
   useRun: ReturnType<typeof createRun<R>>;
 };
 
+export type RuntimeApiFactory<R> = {
+  create: (
+    module: RuntimeModule<R>,
+    instances: Map<RuntimeKey, RuntimeInstance<any>>
+  ) => RuntimeApi<R>;
+};
+
 export type Config = {
   debug: boolean;
   postUnmountTTL: number;
@@ -51,6 +58,7 @@ export type RuntimeContext<T> = {
 
 export type RuntimePayload<R> = {
   entryId: string;
+  index: number;
   context: RuntimeContext<R>;
   config: Partial<Config>;
 };
@@ -72,9 +80,9 @@ export type Extensible<T> = T & Record<string, unknown>;
 export type ProviderApi<R> = {
   configure: (config?: Partial<Config>) => RuntimeApi<R>;
   runtime: RuntimeApi<R>;
-}
+};
 
-export type ProviderFn<R, C extends React.FC<any>, TResult = any> = (
+export type ProviderFn<R, C extends React.FC<any>, TResult = unknown> = (
   api: ProviderApi<R>,
   props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
 ) => TResult;
@@ -89,19 +97,28 @@ export type ProviderEntry<R, C extends React.FC<any>, P = any> =
       id: ProviderId;
       type: 'runtime';
       module: RuntimeModule<R>;
-      fn: ProviderFn<R, C, P> | undefined;
+      fn?: ProviderFn<R, C, P> | ProviderFn<R, C, undefined> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
       module: RuntimeModule<R>;
-      fn: ProviderFn<R, C, P>;
+      fn: ProviderFn<R, C, P> | ProviderFn<R, C>;
     }
   | {
       id: ProviderId;
       type: 'props';
       fn: PropsFn<C, P>;
     };
+
+export type ResolvedProviderEntry<
+  R,
+  C extends React.FC<any>,
+  P,
+> = ProviderEntry<R, C, P> & {
+  level: number;
+  index: number;
+};
 
 export type ExtractStaticComponent<T> = T extends { [COMPONENT_PROP]: infer C }
   ? C extends (props: infer P) => any

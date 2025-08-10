@@ -8,6 +8,7 @@ import {
   type ExtractStaticProviders,
   PROPS_PROP,
   type IdProp,
+  type ResolvedProviderEntry,
 } from 'types';
 
 export const getStaticProviderList = <
@@ -19,7 +20,10 @@ export const getStaticProviderList = <
     [PROVIDERS_PROP]?: ProviderEntry<R, C, P>[];
   },
   provider?: ProviderEntry<R, C, P>
-) => (component[PROVIDERS_PROP] ?? []).concat(provider ? [provider] : []);
+): ResolvedProviderEntry<R, C, P>[] =>
+  (component[PROVIDERS_PROP] ?? [])
+    .concat(provider ? [provider] : [])
+    .map((item, index) => Object.assign({}, item, { level: 0, index }));
 
 export const getStaticComponent = <C extends React.FC<any>>(
   component: C & { [COMPONENT_PROP]?: React.FC<any> }

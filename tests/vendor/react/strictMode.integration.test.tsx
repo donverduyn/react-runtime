@@ -175,4 +175,136 @@ describe('strict mode/hooks', () => {
     expect(refCallback).toHaveBeenCalledTimes(4);
     expect(refCleanup).toHaveBeenCalledTimes(2);
   });
+  it('should determine if microtask runs before or after second render in StrictMode', async () => {
+    const events: string[] = [];
+    let renderCount = 0;
+
+    const TestComponent: React.FC = () => {
+      renderCount++;
+      const currentRender = renderCount.toString();
+      events.push(`render ${currentRender}`);
+
+      queueMicrotask(() => {
+        events.push(`microtask after render ${currentRender}`);
+      });
+
+      React.useLayoutEffect(() => {
+        events.push(`layoutEffect after render ${currentRender}`);
+        return () => {
+          events.push(`layoutEffect cleanup after render ${currentRender}`);
+        };
+      });
+
+      React.useEffect(() => {
+        events.push(`effect after render ${currentRender}`);
+        return () => {
+          events.push(`effect cleanup after render ${currentRender}`);
+        };
+      });
+
+      return <div>test</div>;
+    };
+
+    render(<TestComponent />);
+    await Promise.resolve();
+
+    expect(events).toEqual([
+      'render 1',
+      'render 2',
+      'layoutEffect after render 2',
+      'effect after render 2',
+      'layoutEffect cleanup after render 2',
+      'effect cleanup after render 2',
+      'layoutEffect after render 2',
+      'effect after render 2',
+      'microtask after render 1',
+      'microtask after render 2',
+    ]);
+  });
+
+  it('microtask runs after effects under act, and committed survives GC', async () => {
+    // Tiny in-test registry ------------------------------------------
+    type Entry =
+      | { status: 'provisional'; token: number }
+      | { status: 'committed' };
+    let seq = 0;
+    const map = new Map<string, Entry>();
+
+    const provisionalSet = (key: string) => {
+      const token = ++seq;
+      map.set(key, { status: 'provisional', token });
+      return token;
+    };
+    const promote = (key: string) => {
+      const e = map.get(key);
+      if (!e) return;
+      map.set(key, { status: 'committed' });
+    };
+    const gcIfStillProvisional = (key: string, token: number) => {
+      const e = map.get(key);
+      if (e && e.status === 'provisional' && e.token === token) {
+        map.delete(key);
+        return 'deleted';
+      }
+      return 'kept';
+    };
+    const has = (key: string) => map.has(key);
+    // ---------------------------------------------------------------
+    const key = 'k';
+    const events: string[] = [];
+    let renders = 0;
+
+    const Test: React.FC = () => {
+      const c = React.useRef(0);
+      c.current = ++renders;
+      const n = c.current.toString();
+      events.push(`render ${n}`);
+
+      const token = provisionalSet(key);
+      queueMicrotask(() => {
+        const res = gcIfStillProvisional(key, token);
+        events.push(`microtask ${res} after render ${n}`);
+      });
+
+      React.useLayoutEffect(() => {
+        events.push(`layout ${n}`);
+        promote(key); // commit before microtask
+        return () => {
+          events.push(`layout cleanup ${n}`);
+        };
+      }, [n]);
+
+      React.useEffect(() => {
+        events.push(`effect ${n}`);
+        return () => {
+          events.push(`effect cleanup ${n}`);
+        };
+      }, [n]);
+
+      return null;
+    };
+
+    render(<Test />);
+
+    // After act: layout+effects have run for the second (Strict) pass.
+    expect(has(key)).toBeTruthy(); // promoted
+
+    // Now let the microtask queue drain.
+    await Promise.resolve();
+
+    // Still committed; GC was a no-op.
+    expect(has(key)).toBeTruthy();
+    expect(events).toEqual([
+      'render 1',
+      'render 2',
+      'layout 2',
+      'effect 2',
+      'layout cleanup 2',
+      'effect cleanup 2',
+      'layout 2',
+      'effect 2',
+      'microtask kept after render 1',
+      'microtask kept after render 2',
+    ]);
+  });
 });

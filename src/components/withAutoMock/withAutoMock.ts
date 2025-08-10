@@ -3,7 +3,6 @@
 import * as React from 'react';
 import type { Simplify, SetOptional, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import {
   type ExtractStaticComponent,
   type ExtractStaticProviders,
@@ -45,20 +44,18 @@ export function withAutoMock<
 
     const target = getStaticComponent(Component) ?? Component;
     const localProviders = getStaticProviderList<C, R>(Component);
-    const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target);
 
-    const Wrapper = createSystem(Component, target, targetName);
+    const Wrapper = createSystem(declarationId, Component, target, targetName);
     const Memo = propagateSystem(
-      Wrapper,
-      Component,
       declarationId,
+      Component,
+      Wrapper,
       target,
       localProviders,
       targetName
     );
 
-    componentRegistry.register(declarationId, Memo);
     // componentRegistry.register('__ROOT__' as DeclarationId, RootComponent);
 
     // TODO: instead of registering the real root component, we can use it directly to kick off a dry run here on module load, from the provided root component. We can use the Wrapper to traverse from the root component to the target component and track the parent/child relationships between components inbetween. Based on this information we can use a separate ProviderMap to traverse upward and remove the need to rely on component references in runtime modules.

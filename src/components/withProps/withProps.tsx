@@ -4,7 +4,6 @@
 import * as React from 'react';
 import type { Simplify, SetOptional, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import {
   type ExtractStaticComponent,
   type ExtractStaticProviders,
@@ -45,23 +44,26 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
     const hocId = uuid();
 
     const target = getStaticComponent(Component) ?? Component;
-    const localProviders = getStaticProviderList<C, R>(Component);
     const provider = createPropsEntry<R, C>(hocId as ProviderId, fn);
-
-    const componentRegistry = getComponentRegistry();
+    const localProviders = getStaticProviderList<C, R>(Component, provider);
     const targetName = getDisplayName(target);
 
-    const Wrapper = createSystem(Component, target, targetName, provider);
-    const Memo = propagateSystem(
-      Wrapper,
-      Component,
+    const Wrapper = createSystem(
       declarationId,
+      Component,
       target,
-      localProviders.concat(provider),
+      targetName,
+      provider
+    );
+    const Memo = propagateSystem(
+      declarationId,
+      Component,
+      Wrapper,
+      target,
+      localProviders,
       targetName
     );
 
-    componentRegistry.register(declarationId, Memo);
     return Memo as never;
   };
 }
@@ -71,8 +73,8 @@ function createPropsEntry<R, C extends React.FC<any>>(
   configFn: PropsFn<C>
 ): ProviderEntry<R, C> {
   return {
-    id,
     type: 'props',
+    id,
     fn: configFn,
   };
 }

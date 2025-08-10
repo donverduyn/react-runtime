@@ -1,46 +1,42 @@
-import {
-  withRuntime,
-  withUpstream,
-  connect,
-  withProps,
-} from '@donverduyn/react-runtime';
+import { withRuntime, withUpstream, connect } from '@donverduyn/react-runtime';
 import { Console } from 'effect';
+import { observer } from 'mobx-react-lite';
 import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
 
 type Props = {
-  readonly name: string;
+  readonly getName: () => string;
   readonly log: (value: string) => void;
 };
 
 export const Child = connect(
-  ChildView,
-  withUpstream(AppRuntime, () => ({ foo: true })),
-  withRuntime(ChildRuntime, ({ configure }) => {
-    const runtime = configure({ debug: true });
-    const log = runtime.useFn((value: string) => {
-      return Console.log('Child mounted', value);
-    });
-    return { log, name: runtime.use(ChildRuntime.Name) };
+  observer(ChildView),
+  withUpstream(AppRuntime, ({ runtime }) => {
+    const store = runtime.use(AppRuntime.Store);
+    return { getName: () => store.get('message') };
   }),
-  withProps((props) => ({
-    bar: props.name,
-  }))
+  withRuntime(ChildRuntime, ({ configure }, props) => {
+    const runtime = configure({ debug: true });
+    return {
+      log: runtime.useFn((value: string) =>
+        Console.log(`${value} ${props.getName?.() ?? ''}`)
+      ),
+    };
+  })
 );
 
-function ChildView({ name, log }: Props) {
+function ChildView({ getName, log }: Props) {
   return (
     <div>
-      <h1>Hello, {name}!</h1>
       <button
         type='button'
-        // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
         onClick={() => {
-          log('Hello from Child');
+          log(`Child component received:`);
         }}
       >
-        hello
+        Click me
       </button>
+      <h2>{getName()}</h2>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import * as React from 'react';
 import type { Layer } from 'effect';
 import type { Simplify, SetOptional, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { getComponentRegistry } from 'hooks/useComponentRegistry/useComponentRegistry';
 import {
   type ExtractStaticComponent,
   type ExtractStaticProviders,
@@ -67,21 +66,18 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
 
     const target = getStaticComponent(Component) ?? Component;
     const localProviders = getStaticProviderList<C, R>(Component);
-
-    const componentRegistry = getComponentRegistry();
     const targetName = getDisplayName(target);
 
-    const Wrapper = createSystem(Component, target, targetName);
+    const Wrapper = createSystem(declarationId, Component, target, targetName);
     const Memo = propagateSystem(
-      Wrapper,
-      Component,
       declarationId,
+      Component,
+      Wrapper,
       target,
       localProviders,
       targetName
     );
 
-    componentRegistry.register(declarationId, Memo);
     return Memo as never;
   };
 }
