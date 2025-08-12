@@ -1,6 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
+import type { TreeMapStore } from 'hooks/useTree/useTree';
 import type {
   ComponentId,
   DeclarationId,

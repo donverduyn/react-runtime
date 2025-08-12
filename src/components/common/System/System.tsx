@@ -2,13 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Merge } from 'type-fest';
+import { v4 as uuid } from 'uuid';
 import { useIsoLayoutEffect } from 'hooks/common/useIsoLayoutEffect';
-import { ParentIdContext } from 'hooks/common/useParentId';
 import { useStableObject } from 'hooks/common/useStableObject';
 import { useProviderTree } from 'hooks/useProviderTree/useProviderTree';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
-import { useTreeMap } from 'hooks/useTreeMap/useTreeMap';
+import { TreeContext2 } from 'hooks/useTree/hooks/useTreeContext';
+import { useTreeMap } from 'hooks/useTree/useTree';
 import { useUpstreamProviders } from 'hooks/useUpstreamProviders/useUpstreamProviders';
 import {
   ComponentId,
@@ -99,7 +100,7 @@ const useRuntimeFactory = <R, C extends React.FC<any>>(
 
 const usePropsProxyFactory = (name: string) =>
   React.useCallback(
-    <P extends Record<string, unknown>>(currentProps: P) => {
+    <P extends object>(currentProps: P) => {
       return new Proxy(currentProps, {
         get(target, prop: string) {
           const value = target[prop as keyof typeof target];
@@ -232,8 +233,13 @@ export function createSystem<R, C extends React.FC<any>>(
   ) => {
     const hasRun = React.useRef(false);
     const disposed = React.useRef(false);
-    const componentId = props.id as ComponentId;
+    const componentId = React.useMemo(
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      () => (props.id ?? uuid()) as ComponentId,
+      [props.id]
+    );
 
+    // const frame = useTreeFrame();
     const localEntries = getStaticProviderList<C, R>(Component, provider);
     const entries = useUpstreamProviders(Component, provider);
 
@@ -361,9 +367,9 @@ export function createSystem<R, C extends React.FC<any>>(
       null;
 
     return (
-      <ParentIdContext.Provider value={props.id as ParentId}>
+      <TreeContext2.Provider value={props.id as ParentId}>
         {children}
-      </ParentIdContext.Provider>
+      </TreeContext2.Provider>
     );
   };
   return Wrapper;

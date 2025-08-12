@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState } from 'react';
 import { withRuntime, connect } from '@donverduyn/react-runtime';
 import { Child } from './components/Child/Child';
@@ -28,7 +29,13 @@ type Props = {
 
 export function AppView({ store }: Props) {
   const [count, setCount] = useState(0);
-
+  console.log('App rendered', Date.now());
+  React.useEffect(() => {
+    console.log('App mounted', Date.now());
+    return () => {
+      console.log('App unmounted', Date.now());
+    }
+  })
   return (
     <>
       <div>

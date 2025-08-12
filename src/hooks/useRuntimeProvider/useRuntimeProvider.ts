@@ -1,5 +1,5 @@
 import type { ComponentId, RuntimeInstance, RuntimeKey } from 'types';
-import { type TreeMapStore } from '../useTreeMap/useTreeMap';
+import { type TreeMapStore } from '../useTree/useTree';
 import { useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 
 // provides an endpoint to obtain runtimes imperatively

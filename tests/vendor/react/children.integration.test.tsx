@@ -45,4 +45,18 @@ describe('children', () => {
 
     expect(elementProps?.children).toBeUndefined();
   });
+  it('should be able to render itself manually using a reference to itself from props', () => {
+    const Parent: React.FC<{
+      readonly children: React.ReactNode;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      readonly self: React.FC<any>
+    }> = ({ children, self }) => {
+      return <div>{children}</div>;
+    };
+
+    const Child: React.FC = () => {
+      const self = Child({})
+      return <span>Child</span>;
+    };
+  });
 });

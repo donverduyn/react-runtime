@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { describe, it, expect } from 'vitest';
-import { isReactNode } from './react';
+import { isReactNode } from '.';
 
 describe('react.isValidElement', () => {
   it('returns true for a valid React element', () => {

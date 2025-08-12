@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { useParentId } from 'hooks/common/useParentId';
 import type { ComponentId, ParentId } from 'types';
 import { createSingletonHook } from '../common/factories/SingletonFactory';
+import { useTreeContext, useTreeContext2 } from './hooks/useTreeContext';
 
 /**
  * Represents a node in the TreeMap.
@@ -180,7 +180,7 @@ export const useTreeMap = (id: ComponentId): TreeMapStore => {
 };
 
 export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
-  const parentId = useParentId();
+  const parentId = useTreeContext2();
   const parentNode = treeMap.getParent(id);
 
   // one time register on mount, at the root (first registration), parentId is __ROOT__,

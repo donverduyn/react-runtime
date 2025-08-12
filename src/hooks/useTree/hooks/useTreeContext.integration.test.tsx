@@ -1,19 +1,19 @@
 import { render } from '@testing-library/react';
 import type { ParentId } from 'types';
-import { ParentIdContext, useParentId } from './useParentId';
+import { TreeContext2, useTreeContext2 } from './useTreeContext';
 
-describe('useParentId', () => {
+describe('useTreeContext', () => {
   it('should return the parent id from the context', () => {
     const value = 'test-parent-id' as ParentId;
     const TestComponent: React.FC = () => {
-      const parentId = useParentId();
+      const parentId = useTreeContext2();
       return <div>{parentId}</div>;
     };
 
     const { getByText } = render(
-      <ParentIdContext.Provider value={value}>
+      <TreeContext2.Provider value={value}>
         <TestComponent />
-      </ParentIdContext.Provider>
+      </TreeContext2.Provider>
     );
 
     expect(getByText(value)).toBeDefined();

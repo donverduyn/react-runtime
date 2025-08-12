@@ -7,6 +7,10 @@ import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
 
+export type ScopeId = Tagged<string, 'ScopeId'>;
+export type InstId = Tagged<string, 'InstId'>;
+export type DeclId = Tagged<string, 'DeclId'>;
+
 export type DeclarationId = Tagged<string, 'DeclarationId'>;
 export type ComponentId = Tagged<string, 'ComponentId'>;
 export type ParentId = Tagged<string, 'ParentId'>;
@@ -18,7 +22,9 @@ export type ComponentMeta = {
   name: string;
 };
 
+//TODO: this is exported from react utils too
 export const ID_PROP = '_id';
+
 export const PROVIDERS_PROP = '_providers';
 export const COMPONENT_PROP = '_component';
 export const PROPS_PROP = '_props';

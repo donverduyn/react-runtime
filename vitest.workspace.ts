@@ -20,6 +20,15 @@ export default defineWorkspace([
   {
     extends: './vitest.config.ts',
     test: {
+      // browser: {
+      //   api: { host: '0.0.0.0', port: 63315 },
+      //   enabled: true,
+      //   headless: true,
+      //   instances: [{ browser: 'firefox' }],
+      //   isolate: true,
+      //   provider: 'playwright',
+      //   ui: true,
+      // },
       environment: 'happy-dom',
       include: ['**/*.integration.test.{ts,tsx}'],
       exclude: ['**/node_modules/**'],

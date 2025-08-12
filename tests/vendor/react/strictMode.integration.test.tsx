@@ -17,6 +17,24 @@ describe('strict mode/hooks', () => {
   //   expect(symbol1).toEqual(symbol3);
   //   expect(symbol1).not.toEqual(symbol2);
   // });
+  it('should reuse the idRef across renders', () => {
+    const ids: number[] = [];
+    let count = 0;
+
+    function TestComponent() {
+      const id = ++count;
+      const idRef = React.useRef(id);
+      ids.push(id);
+      ids.push(idRef.current);
+
+      return <div>Test</div>;
+    }
+
+    render(<TestComponent />);
+
+    // idRef keeps the value from the first render
+    expect(ids).toEqual([1, 1, 2, 1]);
+  });
   it('should check if useId id changes across unmount/remount cycles', () => {
     const ids: string[] = [];
     function Child() {

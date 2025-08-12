@@ -22,7 +22,7 @@
       ".*/**/*.test.tsx",
       "**/*.test.ts",
       "**/*.test.tsx",
-      "tests/**/*", "src/components/withAutoMock/withAutoMock.ts",
+      "tests/**/*", "src/components/withProviderScope/withProviderScope.ts",
     ],
     "references": [
       {

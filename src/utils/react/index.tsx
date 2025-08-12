@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { isPlainObject } from './object';
+import { isPlainObject } from './../object';
 
 export function isReactNode(value: unknown): value is React.ReactNode {
   // Fast path for primitives and null/undefined

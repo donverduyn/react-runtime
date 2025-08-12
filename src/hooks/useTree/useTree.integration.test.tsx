@@ -1,22 +1,22 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
 import type { ComponentId, IdProp, ParentId } from 'types';
-import { useParentId, ParentIdContext } from '../common/useParentId';
-import { useTreeMap } from './useTreeMap';
+import { useTreeContext, TreeContext2, useTreeContext2 } from './hooks/useTreeContext';
+import { useTreeMap } from './useTree';
 
 const TestComponent: React.FC<
   {
     readonly children?: React.ReactNode;
   } & IdProp
 > = ({ children, id }) => {
-  const parentId = useParentId();
+  const parentId = useTreeContext2();
   // useComponentId({ id });
 
   return (
-    <ParentIdContext.Provider value={id as ParentId}>
+    <TreeContext2.Provider value={id as ParentId}>
       <p>{`id: ${id}, parent: ${parentId}`}</p>
       {children}
-    </ParentIdContext.Provider>
+    </TreeContext2.Provider>
   );
 };
 
