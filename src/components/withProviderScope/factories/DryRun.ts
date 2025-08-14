@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import ReactDOM from 'react-dom/client';
-import { useResolveAfterRender } from 'hooks/common/useResolveAfterRender';
 import type { ComponentId, DeclarationId, ProviderEntry } from 'types';
 import {
   createHiddenDomRoot,
@@ -27,19 +26,7 @@ export function createReactDryRunRoot(opts: RootOpts) {
   };
 }
 
-const createDryRunController = <P extends object>(
-  Component: React.FC<P>,
-  props: P,
-  resolve: () => void,
-  timeoutMs: number = 50
-) => {
-  return function Controller() {
-    useResolveAfterRender(resolve, timeoutMs);
-    return React.createElement(Component, props);
-  };
-};
-
-export async function createDryRun<P extends object>(
+export function createDryRun<P extends object>(
   Component: React.FC<P>,
   props: P,
   edge: EdgeData
@@ -67,12 +54,8 @@ export async function createDryRun<P extends object>(
     });
   }
 
-  return new Promise((resolve) => {
-    const Controller = createDryRunController(Component, props, () =>
-      resolve(finish())
-    );
-    root.render(React.createElement(Controller));
-  });
+  root.render(React.createElement(Component, props));
+  finish();
 }
 
 const createDryRunResult = (options: {

@@ -17,12 +17,14 @@ import {
   type Extensible,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
+import { createChildrenSketch } from 'utils/react/children';
 import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
   getStaticProviderList,
 } from '../common/System/utils/static';
+import { createDryRun } from './factories/DryRun';
 
 export function withProviderScope<
   C extends React.FC<any>,
@@ -30,14 +32,15 @@ export function withProviderScope<
   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
   TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
 >(
-  RootComponent: C1
+  RootComponent: C1,
+  rootProps: React.ComponentProps<C1>
 ): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 export function withProviderScope<
   R,
   C extends React.FC<any>,
   C1 extends React.FC<any>,
->(RootComponent: C1) {
+>(RootComponent: C1, rootProps: React.ComponentProps<C1>) {
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;
@@ -46,7 +49,25 @@ export function withProviderScope<
     const localProviders = getStaticProviderList<C, R>(Component);
     const targetName = getDisplayName(target);
 
-    const Wrapper = createSystem(declarationId, Component, target, targetName);
+    const registerDryRun = (
+      props: React.PropsWithChildren<IdProp>,
+      hasRun: boolean
+    ) => {
+      const result = createDryRun(RootComponent, rootProps, {
+        declId: declarationId,
+        instId: props.id,
+        childSketch: createChildrenSketch(props.children),
+      });
+    };
+
+    const Wrapper = createSystem(
+      declarationId,
+      Component,
+      target,
+      targetName,
+      undefined,
+      registerDryRun
+    );
     const Memo = propagateSystem(
       declarationId,
       Component,

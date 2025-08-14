@@ -226,7 +226,11 @@ export function createSystem<R, C extends React.FC<any>>(
   Component: C,
   target: React.FC<any>,
   name: string,
-  provider?: ProviderEntry<R, C>
+  provider?: ProviderEntry<R, C>,
+  beforeFn?: (
+    props: IdProp & Partial<React.ComponentProps<C>>,
+    hasRun: boolean
+  ) => void
 ) {
   const Wrapper: React.FC<IdProp & Partial<React.ComponentProps<C>>> = (
     props
@@ -238,6 +242,9 @@ export function createSystem<R, C extends React.FC<any>>(
       () => (props.id ?? uuid()) as ComponentId,
       [props.id]
     );
+
+    // delegate to beforeFn if provided. This is used for dry runs.
+    beforeFn?.(Object.assign({}, props, { id: componentId }), hasRun.current);
 
     // const frame = useTreeFrame();
     const localEntries = getStaticProviderList<C, R>(Component, provider);

@@ -1,6 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 
 import { v5 as uuidv5 } from 'uuid';
+import type { ChildrenSketch } from './react/children';
 
 export const ROOT_NS = '6e0d58b0-6a8e-4a53-8a30-0d9b8b1a8f37'; // pick & freeze once
 // one library-wide namespace (stable constant)
@@ -83,7 +84,7 @@ type SketchQuality = 'weak' | 'ok' | 'strong';
 export type EdgeData = {
   declId: string;
   instId?: string;
-  childSketchQuality: SketchQuality;
+  childSketch: ChildrenSketch;
 };
 
 function looksUuidV4(s: string) {
@@ -142,7 +143,7 @@ export function computeEdgeReliability(ev: EdgeData) {
     reasons.push(s.reason);
   }
   {
-    const s = sketchScore(ev.childSketchQuality);
+    const s = sketchScore(ev.childSketch.quality);
     score += s.score;
     reasons.push(s.reason);
   }
