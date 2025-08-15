@@ -1,19 +1,20 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { TreeMapStore } from 'hooks/useTree/useTree';
+import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
 import type {
   ComponentId,
   DeclarationId,
   ParentId,
   ProviderEntry,
   ResolvedProviderEntry,
+  ScopeId,
 } from 'types';
 import { useComponentMap } from './hooks/useComponentMap';
 import { useProviderMap } from './hooks/useProviderMap';
 
-export const useProviderTree = (treeMap: TreeMapStore) => {
-  const componentMap = useComponentMap();
-  const providerMap = useProviderMap();
+export const useProviderTree = (scopeId: ScopeId, treeMap: TreeMapStore) => {
+  const componentMap = useComponentMap(scopeId);
+  const providerMap = useProviderMap(scopeId);
 
   function resolveUpstream(id: ComponentId) {
     const seen = new Set<DeclarationId>();

@@ -1,4 +1,5 @@
-// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable eslint-comments/disable-enable-pair */
+/* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Layer } from 'effect';

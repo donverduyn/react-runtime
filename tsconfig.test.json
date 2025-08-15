@@ -22,7 +22,7 @@
       ".*/**/*.test.tsx",
       "**/*.test.ts",
       "**/*.test.tsx",
-      "tests/**/*", "src/components/withProviderScope/withProviderScope.ts",
+      "tests/**/*", "src/components/withProviderScope/withProviderScope.ts", "src/components/withMock/withMock.integration.test.tsz",
     ],
     "references": [
       {

@@ -1,7 +1,5 @@
-import type { ComponentId, DeclarationId, DeclId } from 'types';
+import type { ComponentId, DeclarationId, DeclId, ScopeId } from 'types';
 import { ROOT_NS } from 'utils/hash';
-
-export type ScopeId = string;
 
 type TreeFrameParentNode = {
   declarationId: DeclarationId | null;
@@ -15,7 +13,7 @@ type TreeFrameBase = {
   seq: Map<DeclId, number>;
 };
 
-type DryRunTreeFrame = TreeFrameBase & {
+export type DryRunTreeFrame = TreeFrameBase & {
   targetEdge: string;
   depth: number;
   parentHit: boolean;

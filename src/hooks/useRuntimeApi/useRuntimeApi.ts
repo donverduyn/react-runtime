@@ -1,5 +1,10 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { RuntimeInstance, RuntimeKey, RuntimeModule } from 'types';
+import type {
+  RuntimeInstance,
+  RuntimeKey,
+  RuntimeModule,
+  ScopeId,
+} from 'types';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';
@@ -23,6 +28,6 @@ const createRuntimeApi = () => {
 
 const useRuntimeApiInstance = createSingletonHook(createRuntimeApi);
 
-export const useRuntimeApi = () => {
-  return useRuntimeApiInstance();
+export const useRuntimeApi = (scopeId: ScopeId) => {
+  return useRuntimeApiInstance(scopeId);
 };

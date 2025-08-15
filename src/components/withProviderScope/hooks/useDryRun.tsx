@@ -2,13 +2,15 @@
 
 import * as React from 'react';
 import ReactDOM from 'react-dom/client';
-import type { ComponentId, DeclarationId, ProviderEntry } from 'types';
+import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
+import type { ComponentId, DeclarationId, ProviderEntry, ScopeId } from 'types';
 import {
   createHiddenDomRoot,
   disableAsyncGlobals,
   type RootOpts,
 } from 'utils/dom';
 import { computeEdgeReliability, type EdgeData } from 'utils/hash';
+import { ScopeIdContext } from './useScopeIdContext';
 
 //
 export function createReactDryRunRoot(opts: RootOpts) {
@@ -26,11 +28,14 @@ export function createReactDryRunRoot(opts: RootOpts) {
   };
 }
 
+let count = 0;
 export function createDryRun<P extends object>(
+  scopeId: ScopeId,
   Component: React.FC<P>,
   props: P,
   edge: EdgeData
 ) {
+  const uniqueScopeId = `dry-run-${String(count++)}` as ScopeId;
   const root = createReactDryRunRoot({ mode: 'hidden' });
   const reliability = computeEdgeReliability(edge);
   const restoreAsync = disableAsyncGlobals();
@@ -54,7 +59,11 @@ export function createDryRun<P extends object>(
     });
   }
 
-  root.render(React.createElement(Component, props));
+  root.render(
+    <ScopeIdContext.Provider value={scopeId}>
+      <Component {...props} />
+    </ScopeIdContext.Provider>
+  );
   finish();
 }
 
@@ -78,3 +87,5 @@ type DryRunCandidate = {
   componentId: ComponentId;
   path: Map<DeclarationId, DeclarationId>;
 };
+
+export const useDryRun = createSingletonHook(createDryRun);

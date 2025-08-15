@@ -1,10 +1,14 @@
-import type { ComponentId, RuntimeInstance, RuntimeKey } from 'types';
-import { type TreeMapStore } from '../useTree/useTree';
+import type { ComponentId, RuntimeInstance, RuntimeKey, ScopeId } from 'types';
+import { type TreeMapStore } from '../useTreeMap/useTreeMap';
 import { useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 
 // provides an endpoint to obtain runtimes imperatively
-export const useRuntimeProvider = (id: ComponentId, treeMap: TreeMapStore) => {
-  const registry = useRuntimeRegistry();
+export const useRuntimeProvider = (
+  scopeId: ScopeId,
+  id: ComponentId,
+  treeMap: TreeMapStore
+) => {
+  const registry = useRuntimeRegistry(scopeId);
 
   function getByKey(
     currentId: ComponentId = id,

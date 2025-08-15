@@ -1,5 +1,5 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { DeclarationId, ComponentId } from 'types';
+import type { DeclarationId, ComponentId, ScopeId } from 'types';
 
 const createComponentMap = () => {
   const idMap = new Map<ComponentId, DeclarationId>();
@@ -25,7 +25,7 @@ const createComponentMap = () => {
 
 const useComponentMapInstance = createSingletonHook(createComponentMap);
 
-export const useComponentMap = () => {
-  const instance = useComponentMapInstance();
+export const useComponentMap = (scopeId: ScopeId) => {
+  const instance = useComponentMapInstance(scopeId);
   return instance;
 };

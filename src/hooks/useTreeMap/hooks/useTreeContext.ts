@@ -1,6 +1,6 @@
 import * as React from 'react';
 import type { ParentId } from 'types';
-import type { TreeFrame } from '../factories/TreeFrame';
+import type { TreeFrame } from '../../useTreeFrame/factories/TreeFrame';
 // the idea is to track by parent id, all the child ids per index. by doing this, we can assume that the index given the same referential equality of props, is enough to determine the id between remounts.
 
 /**

@@ -15,6 +15,7 @@ import {
   type ExtractStaticUpstream,
   type IdProp,
   type Extensible,
+  type ScopeId,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { createChildrenSketch } from 'utils/react/children';
@@ -24,7 +25,7 @@ import {
   getStaticDeclarationId,
   getStaticProviderList,
 } from '../common/System/utils/static';
-import { createDryRun } from './factories/DryRun';
+import { createDryRun, useDryRun } from './hooks/useDryRun';
 
 export function withProviderScope<
   C extends React.FC<any>,
@@ -53,7 +54,7 @@ export function withProviderScope<
       props: React.PropsWithChildren<IdProp>,
       hasRun: boolean
     ) => {
-      const result = createDryRun(RootComponent, rootProps, {
+      const dryRun = useDryRun('dry-run' as ScopeId, RootComponent, rootProps, {
         declId: declarationId,
         instId: props.id,
         childSketch: createChildrenSketch(props.children),

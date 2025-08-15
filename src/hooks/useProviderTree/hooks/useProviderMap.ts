@@ -6,6 +6,7 @@ import type {
   ProviderEntry,
   ProviderId,
   RuntimeModule,
+  ScopeId,
 } from 'types';
 
 const createProviderMap = () => {
@@ -67,6 +68,6 @@ const createProviderMap = () => {
 
 const useProviderMapInstance = createSingletonHook(createProviderMap);
 
-export const useProviderMap = () => {
-  return useProviderMapInstance();
+export const useProviderMap = (scopeId: ScopeId) => {
+  return useProviderMapInstance(scopeId);
 };

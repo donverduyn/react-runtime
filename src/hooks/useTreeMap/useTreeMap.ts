@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ComponentId, ParentId } from 'types';
+import type { ComponentId, ParentId, ScopeId } from 'types';
 import { createSingletonHook } from '../common/factories/SingletonFactory';
 import { useTreeContext, useTreeContext2 } from './hooks/useTreeContext';
 
@@ -22,8 +22,8 @@ type TreeMapMeta = {
  * Store interface for managing TreeMap nodes and subscriptions.
  */
 export type TreeMapStore = {
-  subscribe: (id: ComponentId) => (callback: () => void) => () => void;
-  getSnapshot: () => Map<string, TreeMapNode | null>;
+  // subscribe: (id: ComponentId) => (callback: () => void) => () => void;
+  // getSnapshot: () => Map<string, TreeMapNode | null>;
   register: (id: ComponentId, parentId: ParentId) => void;
   unregister: (id: ComponentId) => void;
   getParent: (id: ComponentId) => ParentId | null;
@@ -52,7 +52,7 @@ export function createTreeMapNode(
  * Creates a TreeMapStore for managing TreeMap nodes and subscriptions.
  * @returns {TreeMapStore} The created TreeMapStore instance.
  */
-function createTreeMap(): TreeMapStore {
+function createTreeMap(_: ScopeId): TreeMapStore {
   const nodeMap: Map<string, TreeMapNode | null> = new Map();
   const childToParent: Map<ComponentId, ParentId> = new Map();
   const parentToChildren: Map<ParentId, ComponentId[]> = new Map();
@@ -156,8 +156,8 @@ function createTreeMap(): TreeMapStore {
   }
 
   return {
-    subscribe,
-    getSnapshot,
+    // subscribe,
+    // getSnapshot,
     register,
     isRoot,
     getRoot,
@@ -173,8 +173,8 @@ function createTreeMap(): TreeMapStore {
  */
 const useTreeMapInstance = createSingletonHook(createTreeMap);
 
-export const useTreeMap = (id: ComponentId): TreeMapStore => {
-  const instance = useTreeMapInstance();
+export const useTreeMap = (scopeId: ScopeId, id: ComponentId): TreeMapStore => {
+  const instance = useTreeMapInstance(scopeId);
   useTreeMapBinding(id, instance);
   return instance;
 };

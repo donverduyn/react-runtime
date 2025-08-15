@@ -7,6 +7,7 @@ import type {
   RuntimeInstance,
   RuntimeKey,
   RuntimePayload,
+  ScopeId,
 } from 'types';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
@@ -29,7 +30,7 @@ export const defaultConfig = {
   replace: false,
 } satisfies Partial<Config>;
 
-export function createRuntimeRegistry() {
+export function createRuntimeRegistry(scopeId: ScopeId) {
   const runtimeMapping: RuntimeMapping = new Map();
   const registry: RuntimeRegistry = new Map();
   const disposerMap: DisposerMap = new Map();

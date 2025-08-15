@@ -3,13 +3,17 @@
 import * as React from 'react';
 import type { Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
+import { useScopeIdContext } from 'components/withProviderScope/hooks/useScopeIdContext';
 import { useIsoLayoutEffect } from 'hooks/common/useIsoLayoutEffect';
 import { useStableObject } from 'hooks/common/useStableObject';
 import { useProviderTree } from 'hooks/useProviderTree/useProviderTree';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
-import { TreeContext2 } from 'hooks/useTree/hooks/useTreeContext';
-import { useTreeMap } from 'hooks/useTree/useTree';
+import { createTreeFrame } from 'hooks/useTreeFrame/factories/TreeFrame';
+import { TreeFrameContext } from 'hooks/useTreeFrame/hooks/useTreeFrameContext';
+import { useTreeFrame } from 'hooks/useTreeFrame/useTreeFrame';
+import { TreeContext2 } from 'hooks/useTreeMap/hooks/useTreeContext';
+import { useTreeMap } from 'hooks/useTreeMap/useTreeMap';
 import { useUpstreamProviders } from 'hooks/useUpstreamProviders/useUpstreamProviders';
 import {
   ComponentId,
@@ -26,7 +30,9 @@ import {
   type Extensible,
   type ExtractStaticProps,
   type ResolvedProviderEntry,
+  type ScopeId,
 } from 'types';
+import { combineV5 } from 'utils/hash';
 import { createElement, copyStaticProperties, extractMeta } from 'utils/react';
 import {
   getStaticProviderList,
@@ -135,12 +141,13 @@ const useStatefulMerger = <T extends Extensible<unknown>>(initial: T) => {
 };
 
 const useEntryBuilder = <R, C extends React.FC<any>>(
+  scopeId: ScopeId,
   runtimeProvider: ReturnType<typeof useRuntimeProvider>,
   componentId: ComponentId,
   hasRun: React.RefObject<boolean>,
   name: string
 ) => {
-  const createRuntimeApi = useRuntimeApi();
+  const createRuntimeApi = useRuntimeApi(scopeId);
   const createApiProxy = useApiProxyFactory<R>(createRuntimeApi, name);
   const createPropsProxy = usePropsProxyFactory(name);
   const createRuntime = useRuntimeFactory<R, C>(
@@ -243,6 +250,18 @@ export function createSystem<R, C extends React.FC<any>>(
       [props.id]
     );
 
+    const scopeId = useScopeIdContext() ?? ('live' as ScopeId);
+    const frame = useTreeFrame(scopeId);
+    const childFrame = createTreeFrame(frame, {
+      declarationId,
+      componentId,
+      cumulativeSignature: combineV5(
+        frame.parent.cumulativeSignature,
+        declarationId,
+        componentId,
+        0
+      ),
+    });
     // delegate to beforeFn if provided. This is used for dry runs.
     beforeFn?.(Object.assign({}, props, { id: componentId }), hasRun.current);
 
@@ -250,9 +269,9 @@ export function createSystem<R, C extends React.FC<any>>(
     const localEntries = getStaticProviderList<C, R>(Component, provider);
     const entries = useUpstreamProviders(Component, provider);
 
-    const treeMap = useTreeMap(componentId);
-    const runtimeProvider = useRuntimeProvider(componentId, treeMap);
-    const providerTree = useProviderTree(treeMap);
+    const treeMap = useTreeMap(scopeId, componentId);
+    const runtimeProvider = useRuntimeProvider(scopeId, componentId, treeMap);
+    const providerTree = useProviderTree(scopeId, treeMap);
 
     if (!hasRun.current) {
       count++;
@@ -291,6 +310,7 @@ export function createSystem<R, C extends React.FC<any>>(
     // This is the main entry point for the system, which builds the entries and registers them in the provider tree. Don't fuck with this.
 
     const buildEntries = useEntryBuilder<R, C>(
+      scopeId,
       runtimeProvider,
       componentId,
       hasRun,
@@ -374,9 +394,11 @@ export function createSystem<R, C extends React.FC<any>>(
       null;
 
     return (
-      <TreeContext2.Provider value={props.id as ParentId}>
-        {children}
-      </TreeContext2.Provider>
+      <TreeFrameContext.Provider value={childFrame}>
+        <TreeContext2.Provider value={props.id as ParentId}>
+          {children}
+        </TreeContext2.Provider>
+      </TreeFrameContext.Provider>
     );
   };
   return Wrapper;

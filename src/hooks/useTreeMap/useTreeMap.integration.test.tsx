@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import type { ComponentId, IdProp, ParentId } from 'types';
+import type { ComponentId, IdProp, ParentId, ScopeId } from 'types';
 import { useTreeContext, TreeContext2, useTreeContext2 } from './hooks/useTreeContext';
-import { useTreeMap } from './useTree';
+import { useTreeMap } from './useTreeMap';
 
 const TestComponent: React.FC<
   {
@@ -20,8 +20,9 @@ const TestComponent: React.FC<
   );
 };
 
+const scopeId = 'scope' as ScopeId;
 const TestRootComponent: React.FC<IdProp> = ({ id }) => {
-  const treeMap = useTreeMap(id as ComponentId);
+  const treeMap = useTreeMap(scopeId, id as ComponentId);
   React.useEffect(() => {
     // console.log(
     //   'TreeMap Store initialized:',
