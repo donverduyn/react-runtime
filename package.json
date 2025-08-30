@@ -113,8 +113,5 @@
   "homepage": "https://github.com/donverduyn/react-runtime#readme",
   "publishConfig": {
     "access": "public"
-  },
-  "workspaces": [
-    "examples/*"
-  ]
+  }
 }

@@ -47,6 +47,7 @@ export function AppView({ store }: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
+        {/* @ts-expect-error wrong signature for jsx */}
         {count % 2 === 0 ? <Child id='2' /> : null}
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

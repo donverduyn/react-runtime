@@ -1,5 +1,5 @@
 import { createRuntimeContext } from '@donverduyn/react-runtime';
-import { pipe, Layer, Console } from 'effect';
+import { pipe, Layer, Console } from '@donverduyn/react-runtime';
 import { Foo } from './Foo';
 
 export const reference = () => Foo;
