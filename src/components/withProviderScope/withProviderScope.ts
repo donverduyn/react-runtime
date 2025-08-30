@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Simplify, SetOptional, Merge } from 'type-fest';
-import { v4 as uuid } from 'uuid';
+import { createDryRun } from 'hooks/useDryRun/useDryRun';
 import {
   type ExtractStaticComponent,
   type ExtractStaticProviders,
@@ -18,14 +18,15 @@ import {
   type ScopeId,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { createChildrenSketch } from 'utils/react/children';
 import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
   getStaticProviderList,
 } from '../common/System/utils/static';
-import { createDryRun, useDryRun } from './hooks/useDryRun';
+
+type PropsOrEmpty<P> = keyof P extends never ? Record<never, never> : P;
+let count = 0;
 
 export function withProviderScope<
   C extends React.FC<any>,
@@ -34,32 +35,31 @@ export function withProviderScope<
   TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
 >(
   RootComponent: C1,
-  rootProps: React.ComponentProps<C1>
+  rootProps?: PropsOrEmpty<React.ComponentProps<C1>>
 ): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 export function withProviderScope<
   R,
   C extends React.FC<any>,
   C1 extends React.FC<any>,
->(RootComponent: C1, rootProps: React.ComponentProps<C1>) {
+>(RootComponent: C1, rootProps?: PropsOrEmpty<React.ComponentProps<C1>>) {
   return (Component: C) => {
-    const declarationId = (getStaticDeclarationId(Component) ??
-      uuid()) as DeclarationId;
+    // if the user uses an unwrapped component as a portable root, we cannot determine what the target is, so we have to throw an error, where the user is offered to options. either use withId, on the unwrapped portable root inside the app hierarchy (for production analytics in storybook, for example, to make it digestible), or to suggest to use withParentTag so we can use the parent as target and collect candidate chains from there. Since the portable root doesn't have providers itself, we know we can't miss any providers by using the parent as target. Note that withParentTag, will assign a declaration id to the component itself, but since it's not available in the app hierarchy, it won't be registered, but that's why we rely on the declid of the provided parent tag as an argument.
+    const declarationId = getStaticDeclarationId(
+      Component
+    ) as DeclarationId | null;
+
+    if (declarationId === null) {
+      throw new Error(noDeclarationMessage(Component));
+    }
 
     const target = getStaticComponent(Component) ?? Component;
     const localProviders = getStaticProviderList<C, R>(Component);
     const targetName = getDisplayName(target);
 
-    const registerDryRun = (
-      props: React.PropsWithChildren<IdProp>,
-      hasRun: boolean
-    ) => {
-      const dryRun = useDryRun('dry-run' as ScopeId, RootComponent, rootProps, {
-        declId: declarationId,
-        instId: props.id,
-        childSketch: createChildrenSketch(props.children),
-      });
-    };
+    const dryRunId = `dry-run-${String(count++)}` as ScopeId;
+    // makes api instance available under dryRunId
+    createDryRun(dryRunId, RootComponent, rootProps, declarationId);
 
     const Wrapper = createSystem(
       declarationId,
@@ -67,10 +67,11 @@ export function withProviderScope<
       target,
       targetName,
       undefined,
-      registerDryRun
+      dryRunId
     );
     const Memo = propagateSystem(
       declarationId,
+      dryRunId,
       Component,
       Wrapper,
       target,
@@ -94,3 +95,7 @@ type StaticProperties<C, TProps> = Merge<
     [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
   }
 >;
+
+function noDeclarationMessage(component: React.FC<any>) {
+  return `Component with name "${getDisplayName(component)}" cannot be identified as a target for off-tree provider traversal. Use withId on the component itself, to make it discoverable and to enable additional analytics in tools like Storybook, or use withParentTag on the portable root to use the parent component as a target for provider resolution.`;
+}

@@ -1,5 +1,11 @@
-import { createRuntimeContext } from '@donverduyn/react-runtime';
-import { pipe, Layer, Effect, Stream, Schedule } from 'effect';
+import {
+  pipe,
+  Layer,
+  Effect,
+  Stream,
+  Schedule,
+  createRuntimeContext,
+} from '@donverduyn/react-runtime';
 import { action } from 'mobx';
 import { App } from './App';
 import { createStore } from './utils/store';
@@ -22,8 +28,9 @@ export class Store extends Effect.Service<Store>()('App/Store2', {
 
 export const reference = () => App;
 
-export const context = pipe(
+export const layer = pipe(
   Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
-  Layer.provideMerge(Store.Default),
-  createRuntimeContext({})
+  Layer.provideMerge(Store.Default)
 );
+
+export const context = createRuntimeContext()(layer);

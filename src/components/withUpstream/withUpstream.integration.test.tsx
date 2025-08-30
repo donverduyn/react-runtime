@@ -2,6 +2,7 @@ import * as React from 'react';
 import { render } from '@testing-library/react';
 import { pipe as connect, Context } from 'effect';
 import { describe, it, expect } from 'vitest';
+import { withProviderScope } from 'components/withProviderScope/withProviderScope';
 import { mockRuntimeModule } from 'tests/utils/mockRuntimeModule';
 import { withRuntime } from '../withRuntime/withRuntime';
 import { withUpstream } from './withUpstream';
@@ -109,6 +110,7 @@ describe('withUpstream', () => {
     const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
     const ChildRuntime = mockRuntimeModule(Tag, childText)(() => Child);
 
+    // TODO: if no candidates are found, we fall back to the provided component to withProviderScope. This also allows picking providers from components that do not render in the same tree or through children.
     const Parent = connect(ParentView, withRuntime(ParentRuntime));
 
     const Child = connect(
@@ -121,7 +123,8 @@ describe('withUpstream', () => {
       }))
     );
 
-    const { getByText } = render(<Child id='child' />);
+    const Test = connect(Child, withProviderScope(Parent));
+    const { getByText } = render(<Test id='child' />);
 
     expect(getByText(parentText)).toBeDefined();
     expect(getByText(childText)).toBeDefined();

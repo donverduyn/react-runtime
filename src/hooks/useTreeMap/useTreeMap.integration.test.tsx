@@ -1,28 +1,37 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import type { ComponentId, IdProp, ParentId, ScopeId } from 'types';
-import { useTreeContext, TreeContext2, useTreeContext2 } from './hooks/useTreeContext';
+import { createTreeFrame } from 'hooks/useTreeFrame/factories/TreeFrame';
+import {
+  TreeFrameContext,
+  useTreeFrameContext,
+} from 'hooks/useTreeFrame/hooks/useTreeFrameContext';
+import type { RegisterId, IdProp, ScopeId } from 'types';
+import { combineV5 } from 'utils/hash';
 import { useTreeMap } from './useTreeMap';
 
+const scopeId = 'scope' as ScopeId;
+const declId = 'declaration' as RegisterId;
 const TestComponent: React.FC<
   {
     readonly children?: React.ReactNode;
   } & IdProp
-> = ({ children, id }) => {
-  const parentId = useTreeContext2();
-  // useComponentId({ id });
+> = ({ children, id } = { id: 'default' }) => {
+  const frame = useTreeFrameContext(scopeId);
+  const childFrame = createTreeFrame(frame, {
+    registerId: id as RegisterId,
+    cumSig: combineV5(frame.parent.cumSig, declId, id!),
+  });
 
   return (
-    <TreeContext2.Provider value={id as ParentId}>
-      <p>{`id: ${id}, parent: ${parentId}`}</p>
+    <TreeFrameContext.Provider value={childFrame}>
+      <p>{`id: ${id!}, parent: ${frame.parent.registerId}`}</p>
       {children}
-    </TreeContext2.Provider>
+    </TreeFrameContext.Provider>
   );
 };
 
-const scopeId = 'scope' as ScopeId;
 const TestRootComponent: React.FC<IdProp> = ({ id }) => {
-  const treeMap = useTreeMap(scopeId, id as ComponentId);
+  const treeMap = useTreeMap(scopeId, id as RegisterId);
   React.useEffect(() => {
     // console.log(
     //   'TreeMap Store initialized:',

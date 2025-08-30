@@ -15,9 +15,9 @@ describe('parent-first ids', () => {
 
   it('combine accumulates along the path', () => {
     const root = ROOT_NS;
-    const n1 = combineV5(root, 'Root', 'R', 0);
-    const n2 = combineV5(n1, 'Child', 'C1', 0);
-    const n3 = combineV5(n2, 'Leaf', 'L', 0);
+    const n1 = combineV5(root, 'Root', 'R');
+    const n2 = combineV5(n1, 'Child', 'C1');
+    const n3 = combineV5(n2, 'Leaf', 'L');
     expect(n1).not.toBe(n2);
     expect(n2).not.toBe(n3);
   });

@@ -1,9 +1,7 @@
 import * as React from 'react';
-import { withRuntime, withUpstream, connect, withProps } from '@donverduyn/react-runtime';
-import { Console } from 'effect';
+import { withUpstream, connect } from '@donverduyn/react-runtime';
 import { observer } from 'mobx-react-lite';
 import * as AppRuntime from '../../App.runtime';
-import * as ChildRuntime from './Child.runtime';
 
 type Props = {
   readonly getName: () => string;
@@ -15,8 +13,9 @@ export const Child = connect(
   withUpstream(AppRuntime, ({ runtime }) => {
     const store = runtime.use(AppRuntime.Store);
     return { getName: () => store.get('message') };
-  }),
-  withProps(() => ({ getName: () => 'Child Component' })),
+  })
+  // )
+  // withProps(() => ({ getName: () => 'Child Component' }))
   // withRuntime(ChildRuntime, ({ configure }, props) => {
   //   const runtime = configure({ debug: true });
   //   return {
@@ -27,15 +26,14 @@ export const Child = connect(
   // })
 );
 
-function ChildView({ getName
- }: Props) {
-    console.log('Child rendered', Date.now());
-    React.useEffect(() => {
-      console.log('Child mounted', Date.now());
-      return () => {
-        console.log('Child unmounted', Date.now());
-      }
-    })
+function ChildView({ getName }: Props) {
+  console.log('Child rendered', Date.now());
+  React.useEffect(() => {
+    console.log('Child mounted', Date.now());
+    return () => {
+      console.log('Child unmounted', Date.now());
+    };
+  });
   return (
     <div>
       <h2>{getName()}</h2>

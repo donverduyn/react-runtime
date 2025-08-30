@@ -1,10 +1,10 @@
 import { Effect, identity, Layer, ManagedRuntime, pipe } from 'effect';
 import type {
-  Config,
+  RuntimeConfig,
   RuntimeContext,
   RuntimeInstance,
   RuntimeModule,
-} from 'types';
+} from '@types';
 
 export const connect = pipe;
 
@@ -37,7 +37,7 @@ export const isRuntimeModule = <T>(
   );
 };
 
-export const isRuntimeConfig = (input: unknown): input is Config => {
+export const isRuntimeConfig = (input: unknown): input is RuntimeConfig => {
   return (
     typeof input === 'object' &&
     input !== null &&
@@ -46,11 +46,11 @@ export const isRuntimeConfig = (input: unknown): input is Config => {
     'env' in input &&
     'replace' in input &&
     'cleanupPolicy' in input &&
-    typeof (input as Config).debug === 'boolean' &&
-    typeof (input as Config).postUnmountTTL === 'number' &&
-    ['prod', 'dev'].includes((input as Config).env) &&
-    typeof (input as Config).replace === 'boolean' &&
-    ['onUnmount', 'immediate'].includes((input as Config).cleanupPolicy)
+    typeof (input as RuntimeConfig).debug === 'boolean' &&
+    typeof (input as RuntimeConfig).postUnmountTTL === 'number' &&
+    ['prod', 'dev'].includes((input as RuntimeConfig).env) &&
+    typeof (input as RuntimeConfig).replace === 'boolean' &&
+    ['onUnmount', 'immediate'].includes((input as RuntimeConfig).cleanupPolicy)
   );
 };
 
@@ -70,8 +70,8 @@ export const isRuntimeInstance = <T>(
 
 export const createRuntimeContext =
   () =>
-  <R = never>(layer: Layer.Layer<R>) => {
-    const context: RuntimeContext<R> = {
+  <R, E, A>(layer: Layer.Layer<R, E, A>) => {
+    const context: RuntimeContext<R, E, A> = {
       key: Symbol('RuntimeContext'),
       layer,
     };

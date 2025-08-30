@@ -1,7 +1,6 @@
 import * as React from 'react';
-import type { ComponentId, ParentId, ScopeId } from 'types';
+import type { RegisterId, ScopeId } from 'types';
 import { createSingletonHook } from '../common/factories/SingletonFactory';
-import { useTreeContext, useTreeContext2 } from './hooks/useTreeContext';
 
 /**
  * Represents a node in the TreeMap.
@@ -22,13 +21,14 @@ type TreeMapMeta = {
  * Store interface for managing TreeMap nodes and subscriptions.
  */
 export type TreeMapStore = {
-  // subscribe: (id: ComponentId) => (callback: () => void) => () => void;
+  // subscribe: (id: RegisterId) => (callback: () => void) => () => void;
   // getSnapshot: () => Map<string, TreeMapNode | null>;
-  register: (id: ComponentId, parentId: ParentId) => void;
-  unregister: (id: ComponentId) => void;
-  getParent: (id: ComponentId) => ParentId | null;
-  isRoot: (id: ComponentId) => boolean;
-  getRoot: () => ComponentId | null;
+  update: (id: RegisterId, parentId: RegisterId) => void
+  register: (id: RegisterId, parentId: RegisterId) => void;
+  unregister: (id: RegisterId) => void;
+  getParent: (id: RegisterId) => RegisterId | null;
+  isRoot: (id: RegisterId) => boolean;
+  getRoot: () => RegisterId | null;
   // emitById: (id: string) => void;
 };
 
@@ -39,7 +39,7 @@ export type TreeMapStore = {
  * @returns {TreeMapNode} The created TreeMapNode.
  */
 export function createTreeMapNode(
-  id: ParentId | ComponentId,
+  id: RegisterId,
   meta: TreeMapMeta = {}
 ): TreeMapNode {
   return {
@@ -54,11 +54,11 @@ export function createTreeMapNode(
  */
 function createTreeMap(_: ScopeId): TreeMapStore {
   const nodeMap: Map<string, TreeMapNode | null> = new Map();
-  const childToParent: Map<ComponentId, ParentId> = new Map();
-  const parentToChildren: Map<ParentId, ComponentId[]> = new Map();
+  const childToParent: Map<RegisterId, RegisterId> = new Map();
+  const parentToChildren: Map<RegisterId, RegisterId[]> = new Map();
   const listeners: Map<string, () => void> = new Map();
 
-  function register(id: ComponentId, parentId: ParentId) {
+  function register(id: RegisterId, parentId: RegisterId) {
     if (!nodeMap.has(id)) {
       nodeMap.set(id, createTreeMapNode(id));
     }
@@ -71,7 +71,22 @@ function createTreeMap(_: ScopeId): TreeMapStore {
     parentToChildren.get(parentId)!.push(id);
   }
 
-  function dispose(id: ComponentId) {
+  function update(id: RegisterId, parentId: RegisterId) {
+    const currentParentId = childToParent.get(id);
+    if (currentParentId) {
+      childToParent.set(id, parentId);
+      parentToChildren
+        .get(currentParentId)
+        ?.splice(parentToChildren.get(currentParentId)!.indexOf(id), 1);
+    }
+    childToParent.set(id, parentId);
+    if (!parentToChildren.has(parentId)) {
+      parentToChildren.set(parentId, []);
+    }
+    parentToChildren.get(parentId)!.push(id);
+  }
+
+  function dispose(id: RegisterId) {
     // Remove from childToParent and nodeMap
     const parentId = childToParent.get(id);
     childToParent.delete(id);
@@ -92,11 +107,11 @@ function createTreeMap(_: ScopeId): TreeMapStore {
 
   // Every components cleans up after itself, based on some dispose timeout. There is also a case where we directly unregister (this happens when the id has changed, we need to handle this specifically)
   // The idea is that we unregister without notification, because subtrees will be notified after the parent rerenders with a new id, or unmounted (which would clean the subtree anyway, so no need to notify).
-  function unregister(id: ComponentId) {
+  function unregister(id: RegisterId) {
     dispose(id);
   }
 
-  function subscribe(id: ComponentId) {
+  function subscribe(id: RegisterId) {
     return (callback: () => void) => {
       listeners.set(id, callback);
       return () => listeners.delete(id);
@@ -112,18 +127,18 @@ function createTreeMap(_: ScopeId): TreeMapStore {
     return nodeMap;
   }
 
-  // function getChildren(parentId: ParentId): Set<ComponentId> {
+  // function getChildren(parentId: RegisterId): Set<RegisterId> {
   //   return parentToChildren.get(parentId) ?? new Set();
   // }
 
-  function getAllDescendants(parentId: ParentId): SetIterator<ComponentId> {
-    const result = new Set<ComponentId>();
-    function traverse(currentId: ParentId) {
+  function getAllDescendants(parentId: RegisterId): SetIterator<RegisterId> {
+    const result = new Set<RegisterId>();
+    function traverse(currentId: RegisterId) {
       const children = parentToChildren.get(currentId);
       if (children) {
         for (const childId of children) {
           result.add(childId);
-          traverse(childId as unknown as ParentId);
+          traverse(childId as unknown as RegisterId);
         }
       }
     }
@@ -131,7 +146,7 @@ function createTreeMap(_: ScopeId): TreeMapStore {
     return result.values();
   }
 
-  function emitSubtree(parentId: ParentId) {
+  function emitSubtree(parentId: RegisterId) {
     const toUpdate = getAllDescendants(parentId);
     for (const id of toUpdate) {
       const cb = listeners.get(id);
@@ -139,25 +154,26 @@ function createTreeMap(_: ScopeId): TreeMapStore {
     }
   }
 
-  function getParent(id: ComponentId) {
+  function getParent(id: RegisterId) {
     return childToParent.get(id) ?? null;
   }
 
-  function getChildren(id: ParentId) {
+  function getChildren(id: RegisterId) {
     return parentToChildren.get(id) ?? [];
   }
 
-  function isRoot(id: ComponentId) {
+  function isRoot(id: RegisterId) {
     return getParent(id) === '__ROOT__';
   }
 
   function getRoot() {
-    return getChildren('__ROOT__' as ParentId)[0] ?? null;
+    return getChildren('__ROOT__' as RegisterId)[0] ?? null;
   }
 
   return {
     // subscribe,
     // getSnapshot,
+    update,
     register,
     isRoot,
     getRoot,
@@ -173,14 +189,26 @@ function createTreeMap(_: ScopeId): TreeMapStore {
  */
 const useTreeMapInstance = createSingletonHook(createTreeMap);
 
-export const useTreeMap = (scopeId: ScopeId, id: ComponentId): TreeMapStore => {
+export const useTreeMap = (
+  scopeId: ScopeId,
+  id?: RegisterId,
+  parentId?: RegisterId | null
+): TreeMapStore => {
   const instance = useTreeMapInstance(scopeId);
-  useTreeMapBinding(id, instance);
+  // TODO: think about moving register logic into tree map instance
+  if (id && parentId) useTreeMapBinding(id, parentId, instance);
   return instance;
 };
 
-export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
-  const parentId = useTreeContext2();
+export const getTreeMap = (scopeId: ScopeId) => {
+  return useTreeMapInstance(scopeId);
+};
+
+export const useTreeMapBinding = (
+  id: RegisterId,
+  parentId: RegisterId,
+  treeMap: TreeMapStore
+) => {
   const parentNode = treeMap.getParent(id);
 
   // one time register on mount, at the root (first registration), parentId is __ROOT__,
@@ -192,7 +220,7 @@ export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
     }
   }, [id, parentId, parentNode, treeMap]);
 
-  // register synchronously
+  // register synchronously (registration happens only once, even with multiple calls)
   register();
 
   React.useEffect(() => {
@@ -201,4 +229,6 @@ export const useTreeMapBinding = (id: ComponentId, treeMap: TreeMapStore) => {
 
     return () => treeMap.unregister(id);
   }, [id, parentId]);
+
+  return register;
 };

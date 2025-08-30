@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ScopeId } from 'types';
+import type { DeclarationId, ScopeId } from 'types';
 import {
   createRootTreeFrame,
   type DryRunTreeFrame,
@@ -10,6 +10,13 @@ export const TreeFrameContext = React.createContext<
   TreeFrame | DryRunTreeFrame | null
 >(null);
 
-export function useTreeFrameContext(scopeId: ScopeId) {
-  return React.useContext(TreeFrameContext) ?? createRootTreeFrame(scopeId);
+export function useTreeFrameContext<Mode extends 'live' | 'dry'>(
+  scopeId: ScopeId,
+  mode: Mode = 'live' as Mode,
+  targetId: DeclarationId | null = null
+) {
+  return (
+    React.useContext(TreeFrameContext) ??
+    createRootTreeFrame(scopeId, mode, targetId)
+  );
 }

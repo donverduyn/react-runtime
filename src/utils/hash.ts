@@ -1,6 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 
-import { v5 as uuidv5 } from 'uuid';
+import { v5 as uuidv5, v4 as uuidv4 } from 'uuid';
+import type { ComponentId, DeclarationId, RegisterId } from 'types';
 import type { ChildrenSketch } from './react/children';
 
 export const ROOT_NS = '6e0d58b0-6a8e-4a53-8a30-0d9b8b1a8f37'; // pick & freeze once
@@ -17,11 +18,44 @@ export type FallbackSig = string;
 export type ChildrenSig = string;
 
 /** Create a per-declaration id factory. */
+// export function createIdFactory(declId: string) {
+//   const DECL_NS = uuidv5(declId, LIB_NS); // stable per declaration
+//   return (cumSig: string, instId: string, salt: number | null) => {
+//     const suffix = salt !== null ? `@${String(salt)}` : '';
+//     return uuidv5(`${cumSig}|${declId}#${instId}${suffix}`, DECL_NS);
+//   };
+// }
+
+export function createGhostRegisterId(): RegisterId {
+  return `ghost:${uuidv4()}` as RegisterId;
+}
+
 export function createIdFactory(declId: string) {
   const DECL_NS = uuidv5(declId, LIB_NS); // stable per declaration
-  return (parentCumHash: string, ordinal: number) =>
-    uuidv5(`${parentCumHash}|${declId}@${ordinal.toString()}`, DECL_NS);
+
+  // Step 1: Create the base id (without suffix)
+  function baseId(instId: string) {
+    const id = uuidv5(instId, DECL_NS);
+    console.log('creating component id with', declId, instId, DECL_NS, id);
+    return id;
+  }
+
+  // Step 2: Add a suffix to an existing id (for ordinal/salt)
+  function withTrail(cumSig: string, instId: string, salt: number | null) {
+    if (salt === null) return uuidv5(`${cumSig}|${declId}#${instId}`, DECL_NS);
+    return uuidv5(`${cumSig}|${declId}#${instId}@${String(salt)}`, DECL_NS);
+  }
+
+  // Combined: for backward compatibility
+  function createId(instId: string, salt: number | null) {
+    const base = baseId(instId);
+    return withTrail(base, instId, salt);
+  }
+
+  // Expose all three for flexibility
+  return Object.assign(createId, { baseId, withTrail });
 }
+
 /** Immediate parent tuple → namespace UUID (prefix-agnostic) */
 export const parentNS = (parentDecl?: string, parentInst?: string) =>
   uuidv5(`${parentDecl ?? ''}#${parentInst ?? ''}`, ROOT_NS);
@@ -30,40 +64,25 @@ export const parentNS = (parentDecl?: string, parentInst?: string) =>
 export function combineV5(
   parentCum: string,
   decl: string,
-  inst: string,
-  ordinal: number
+  inst: string
 ): string {
-  const msg = `${decl}#${inst}@${ordinal.toString()}`;
+  const msg = `${decl}#${inst}`;
   return uuidv5(msg, parentCum); // parentCum acts as namespace
 }
 
-/** Per parent, count children of a given decl to get a stable ordinal. */
-export function nextOrdinal(
-  seq: Map<string, number>,
-  childDeclId: string
-): number {
-  const n = seq.get(childDeclId) ?? 0;
-  seq.set(childDeclId, n + 1);
-  return n;
-}
-
 export type EdgeInputs = {
-  parentDeclId?: string;
-  parentInstId?: string;
-  parentChildrenSketch?: string;
-  declId: string;
-  instId?: string;
-  childrenSketch?: string;
-  ordinal: number;
+  parent?: EdgeDataFields;
+  self: Partial<EdgeDataFields> & Pick<EdgeDataFields, 'declarationId'>;
+  salt?: number;
 };
 
 /** Canonical, order-sensitive edge hash (deterministic, minification-safe). */
 export function edgeSigV5(i: EdgeInputs): string {
   const msg =
-    `p:${i.parentDeclId ?? ''}#${i.parentInstId ?? ''}|` +
-    `ps:${i.parentChildrenSketch ?? ''}||` +
-    `c:${i.declId}#${i.instId ?? ''}|` +
-    `cs:${i.childrenSketch ?? ''}|@${i.ordinal.toString()}`;
+    `p:${i.parent?.declarationId ?? ''}#${i.parent?.componentId ?? ''}|` +
+    `ps:${i.parent?.childrenSketch.id ?? ''}||` +
+    `c:${i.self.declarationId}#${i.self.componentId ?? ''}|` +
+    `cs:${i.self.childrenSketch?.id ?? ''}|${i.salt ? `@${String(i.salt)}` : ''}`;
   return uuidv5(msg, NS_EDGE);
 }
 
@@ -78,85 +97,14 @@ export function computeFallbackSig(
   return uuidv5(`${declId}@${ordinal.toString()}|${childrenSig}`, ns);
 }
 
-type ReliabilityTier = 'ambiguous' | 'weak' | 'good' | 'strong';
-type SketchQuality = 'weak' | 'ok' | 'strong';
-
-export type EdgeData = {
-  declId: string;
-  instId?: string;
-  childSketch: ChildrenSketch;
+export type EdgeDataFields = {
+  declarationId: DeclarationId;
+  componentId: ComponentId;
+  registerId: RegisterId;
+  childrenSketch: ChildrenSketch;
 };
 
-function looksUuidV4(s: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    s
-  );
-}
-function looksUuidV5(s: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    s
-  );
-}
-
-// very rough entropy sniffing: length + distinct chars
-function approxEntropyBits(s: string) {
-  const set = new Set(s);
-  const classes =
-    (/[a-z]/.test(s) ? 1 : 0) +
-    (/[A-Z]/.test(s) ? 1 : 0) +
-    (/[0-9]/.test(s) ? 1 : 0) +
-    (/[^a-zA-Z0-9]/.test(s) ? 1 : 0);
-  return Math.min(
-    128,
-    (Math.log2(Math.max(2, set.size)) + 1.5 * classes) * Math.sqrt(s.length)
-  );
-}
-
-function instIdScore(instId?: string): { score: number; reason: string } {
-  if (!instId) return { score: 0, reason: 'no instId' };
-  if (looksUuidV5(instId)) {
-    return { score: 0.18, reason: 'auto v5 (deterministic)' };
-  }
-  if (looksUuidV4(instId)) {
-    return { score: 0.08, reason: 'uuid v4 (ephemeral)' };
-  }
-  const ent = approxEntropyBits(instId);
-  if (ent >= 40) return { score: 0.25, reason: 'user instId high entropy' };
-  if (ent >= 20) return { score: 0.15, reason: 'user instId medium entropy' };
-  return { score: 0.08, reason: 'user instId low entropy' };
-}
-
-function sketchScore(q: SketchQuality): { score: number; reason: string } {
-  if (q === 'strong') return { score: 0.25, reason: 'childSketch strong' };
-  if (q === 'ok') return { score: 0.15, reason: 'childSketch ok' };
-  return { score: 0.05, reason: 'childSketch weak' };
-}
-
-export function computeEdgeReliability(ev: EdgeData) {
-  let score = 0;
-  const reasons: string[] = [];
-
-  reasons.push('declId present');
-  {
-    const s = instIdScore(ev.instId);
-    score += s.score;
-    reasons.push(s.reason);
-  }
-  {
-    const s = sketchScore(ev.childSketch.quality);
-    score += s.score;
-    reasons.push(s.reason);
-  }
-  score = Math.max(0, Math.min(1, score));
-
-  const tier: ReliabilityTier =
-    score >= 0.75
-      ? 'strong'
-      : score >= 0.5
-        ? 'good'
-        : score >= 0.3
-          ? 'weak'
-          : 'ambiguous';
-
-  return { score, tier, reasons };
-}
+export type EdgeData = {
+  self: EdgeDataFields;
+  firstDescendent?: EdgeDataFields;
+};

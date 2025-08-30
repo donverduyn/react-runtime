@@ -1,6 +1,7 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+  DRYRUN_ID_PROP,
   PROVIDERS_PROP,
   type ProviderEntry,
   COMPONENT_PROP,
@@ -9,6 +10,7 @@ import {
   PROPS_PROP,
   type IdProp,
   type ResolvedProviderEntry,
+  type ScopeId,
 } from 'types';
 
 export const getStaticProviderList = <
@@ -42,6 +44,17 @@ export const hoistDeclarationId = <C extends React.FC<any>>(
   id: string
 ) => {
   Wrapper[ID_PROP] = id;
+};
+
+export const getStaticDryRunId = <C extends React.FC<any>>(
+  component: C & { [DRYRUN_ID_PROP]?: ScopeId | null }
+): ScopeId | null => component[DRYRUN_ID_PROP] ?? null;
+
+export const hoistDryRunId = <C extends React.FC<any>>(
+  Wrapper: C & { [DRYRUN_ID_PROP]?: ScopeId | null },
+  id: ScopeId | null
+) => {
+  Wrapper[DRYRUN_ID_PROP] = id;
 };
 
 export const hoistOriginalComponent = <

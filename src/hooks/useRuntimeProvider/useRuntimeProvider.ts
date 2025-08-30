@@ -1,31 +1,46 @@
-import type { ComponentId, RuntimeInstance, RuntimeKey, ScopeId } from 'types';
+import type { ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
+import type { ProviderTreeApi } from 'hooks/useProviderTree/useProviderTree';
+import type { RegisterId, RuntimeInstance, RuntimeKey, ScopeId } from 'types';
 import { type TreeMapStore } from '../useTreeMap/useTreeMap';
 import { useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 
 // provides an endpoint to obtain runtimes imperatively
 export const useRuntimeProvider = (
   scopeId: ScopeId,
-  id: ComponentId,
-  treeMap: TreeMapStore
+  id: RegisterId,
+  treeMap: TreeMapStore,
+  componentTree: ComponentTreeApi,
+  providerTree: ProviderTreeApi
 ) => {
   const registry = useRuntimeRegistry(scopeId);
 
   function getByKey(
-    currentId: ComponentId = id,
+    currentId: RegisterId = id,
     key: RuntimeKey,
     index: number = 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): RuntimeInstance<any> | null {
-    const value = registry.getById(currentId, key, index);
-    if (value) return value;
-    const parentId = treeMap.getParent(currentId);
+    let searchId: RegisterId | null = currentId;
 
-    const result =
-      parentId !== '__ROOT__' && parentId !== null
-        ? getByKey(parentId as unknown as ComponentId, key)
-        : null;
+    while (searchId !== null) {
+      const result = registry.getById(searchId, key, index);
+      if (result) return result;
 
-    return result;
+      const parentId = treeMap.getParent(searchId);
+
+      if (parentId !== '__ROOT__' && parentId !== null) {
+        // try resolving at the parent
+        searchId = parentId as unknown as RegisterId;
+      } else if (parentId === '__ROOT__') {
+        // drop out
+        searchId = null;
+      } else {
+        // drop out too
+        searchId = null;
+      }
+    }
+
+    return null;
   }
 
   return {

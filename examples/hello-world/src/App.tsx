@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { withRuntime, connect } from '@donverduyn/react-runtime';
-import { Child } from './components/Child/Child';
-import { Observer } from 'mobx-react-lite';
 import * as AppRuntime from './App.runtime';
 import reactLogo from './assets/react.svg';
+import { Child } from './components/Child/Child';
 // eslint-disable-next-line import/no-unresolved
 import viteLogo from '/vite.svg';
 import './App.css';
@@ -34,8 +33,8 @@ export function AppView({ store }: Props) {
     console.log('App mounted', Date.now());
     return () => {
       console.log('App unmounted', Date.now());
-    }
-  })
+    };
+  });
   return (
     <>
       <div>

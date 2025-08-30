@@ -1,21 +1,29 @@
-import type { ComponentId, DeclarationId, DeclId, ScopeId } from 'types';
-import { ROOT_NS } from 'utils/hash';
+import type { ComponentId, DeclarationId, RegisterId, ScopeId } from 'types';
+import { ROOT_NS, type EdgeDataFields } from 'utils/hash';
 
-type TreeFrameParentNode = {
-  declarationId: DeclarationId | null;
-  componentId: ComponentId | null;
-  cumulativeSignature: string;
+type TreeFrameParentNode = Partial<{
+  [K in keyof EdgeDataFields]: EdgeDataFields[K] | null;
+}> & {
+  registerId: RegisterId; // non-null, '__ROOT__' for root
+  cumSig: string;
+};
+
+export type SeqEntry = {
+  inUse: number;
+  nextSalt: number;
+  free: number[];
+  claims: Map<symbol, number | null>;
 };
 
 type TreeFrameBase = {
   scopeId: ScopeId;
   parent: TreeFrameParentNode;
-  seq: Map<DeclId, number>;
+  seq: Map<ComponentId, SeqEntry>;
+  depth: number;
 };
 
 export type DryRunTreeFrame = TreeFrameBase & {
-  targetEdge: string;
-  depth: number;
+  targetId: DeclarationId | null;
   parentHit: boolean;
   mode: 'dry';
 };
@@ -29,7 +37,7 @@ const createLiveTreeFrame = (
 ): TreeFrame => ({
   ...options,
   mode: 'live',
-  seq: new Map<DeclId, number>(),
+  seq: new Map<ComponentId, SeqEntry>(),
 });
 
 const createDryRunTreeFrame = (
@@ -37,28 +45,41 @@ const createDryRunTreeFrame = (
 ): DryRunTreeFrame => ({
   ...options,
   mode: 'dry',
-  seq: new Map<DeclId, number>(),
+  seq: new Map<ComponentId, SeqEntry>(),
 });
 
-export function createRootTreeFrame(scopeId: ScopeId): TreeFrame {
-  return createLiveTreeFrame({
-    scopeId,
-    parent: {
-      declarationId: null,
-      componentId: null,
-      cumulativeSignature: ROOT_NS,
-    },
-  });
-}
-
-export function nextOrdinal(frame: TreeFrame, childDecl: DeclId): number {
-  const n = frame.seq.get(childDecl) ?? 0;
-  frame.seq.set(childDecl, n + 1);
-  return n;
+export function createRootTreeFrame<Mode extends 'live' | 'dry'>(
+  scopeId: ScopeId,
+  mode: Mode = 'live' as Mode,
+  targetId: DeclarationId | null = null
+): TreeFrame | DryRunTreeFrame {
+  return mode === 'live'
+    ? createLiveTreeFrame({
+        scopeId,
+        parent: {
+          declarationId: null,
+          registerId: '__ROOT__' as RegisterId,
+          childrenSketch: null,
+          cumSig: ROOT_NS,
+        },
+        depth: 0,
+      })
+    : createDryRunTreeFrame({
+        scopeId,
+        parent: {
+          declarationId: null,
+          registerId: '__ROOT__' as RegisterId,
+          childrenSketch: null,
+          cumSig: ROOT_NS,
+        },
+        targetId: targetId,
+        depth: 0,
+        parentHit: false,
+      });
 }
 
 export function createTreeFrame(
-  parent: TreeFrame | DryRunTreeFrame,
+  parent: Omit<TreeFrame, 'seq'> | Omit<DryRunTreeFrame, 'seq'>,
   node: TreeFrameParentNode,
   hit: boolean = false
 ) {
@@ -66,12 +87,13 @@ export function createTreeFrame(
     return createLiveTreeFrame({
       scopeId: parent.scopeId,
       parent: node,
+      depth: parent.depth + 1,
     });
   } else {
     return createDryRunTreeFrame({
       scopeId: parent.scopeId,
       parent: node,
-      targetEdge: parent.targetEdge,
+      targetId: parent.targetId,
       depth: parent.depth + 1,
       parentHit: hit,
     });

@@ -25,6 +25,7 @@ import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
+  getStaticDryRunId,
   getStaticProviderList,
 } from '../common/System/utils/static';
 
@@ -43,6 +44,7 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
       uuid()) as DeclarationId;
     const hocId = uuid();
 
+    const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
     const provider = createPropsEntry<R, C>(hocId as ProviderId, fn);
     const localProviders = getStaticProviderList<C, R>(Component, provider);
@@ -57,6 +59,7 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
     );
     const Memo = propagateSystem(
       declarationId,
+      dryRunId,
       Component,
       Wrapper,
       target,

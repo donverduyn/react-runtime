@@ -20,6 +20,7 @@
     ],
     "include": [
       "*.ts",
-      "scripts/**/*", "rollup.config.js",
+      "scripts/**/*", 
+      "rollup.config.js",
     ]
   }

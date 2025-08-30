@@ -9,6 +9,7 @@ import {
   getStaticDeclarationId,
   getStaticComponent,
   getStaticProviderList,
+  getStaticDryRunId,
 } from 'components/common/System/utils/static';
 import type {
   RuntimeModule,
@@ -67,6 +68,7 @@ export function withUpstream<C extends React.FC<any>, R>(
       uuid()) as DeclarationId;
     const hocId = uuid();
 
+    const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
     const provider = createUpstreamEntry<R, C>(hocId as ProviderId, module, fn);
     const localProviders = getStaticProviderList<C, R>(Component, provider);
@@ -81,6 +83,7 @@ export function withUpstream<C extends React.FC<any>, R>(
     );
     const Memo = propagateSystem(
       declarationId,
+      dryRunId,
       Component,
       Wrapper,
       target,

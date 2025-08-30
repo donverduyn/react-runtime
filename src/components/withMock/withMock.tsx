@@ -25,6 +25,7 @@ import { createSystem, propagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
+  getStaticDryRunId,
   getStaticProviderList,
 } from '../common/System/utils/static';
 
@@ -65,6 +66,7 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;
 
+    const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
     const localProviders = getStaticProviderList<C, R>(Component);
     const targetName = getDisplayName(target);
@@ -72,6 +74,7 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
     const Wrapper = createSystem(declarationId, Component, target, targetName);
     const Memo = propagateSystem(
       declarationId,
+      dryRunId,
       Component,
       Wrapper,
       target,

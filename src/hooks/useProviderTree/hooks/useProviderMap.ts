@@ -52,6 +52,9 @@ const createProviderMap = () => {
       childToParent.delete(id);
     }
   }
+  function getParent(id: DeclarationId) {
+    return childToParent.get(id) ?? null;
+  }
   function getById(id: DeclarationId | null) {
     return id ? (map.get(id) ?? null) : null;
   }
@@ -61,6 +64,7 @@ const createProviderMap = () => {
   return {
     register,
     unregister,
+    getParent,
     getById,
     getModulesById,
   };

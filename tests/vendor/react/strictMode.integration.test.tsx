@@ -91,24 +91,25 @@ describe('strict mode/hooks', () => {
         readonly children?: React.ReactNode;
       } & IdProp
     > = ({ id, children }) => {
-      renderFn(id);
+      const instId = id || 'default';
+      renderFn(instId);
 
       // useState
-      React.useState(() => stateInitFn(id));
+      React.useState(() => stateInitFn(instId));
 
       // useMemo
-      React.useMemo(() => memoFn(id), [id]);
+      React.useMemo(() => memoFn(instId), [instId]);
 
       // useCallback
-      // React.useCallback(() => callbackFn(id), [id]);
+      // React.useCallback(() => callbackFn(instId), [instId]);
 
       // useEffect
       React.useEffect(() => {
-        effectFn(id);
+        effectFn(instId);
         return () => {
-          unmountFn(id);
+          unmountFn(instId);
         };
-      }, [id]);
+      }, [instId]);
 
       return <div>{children}</div>;
     };

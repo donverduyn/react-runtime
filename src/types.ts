@@ -13,7 +13,7 @@ export type DeclId = Tagged<string, 'DeclId'>;
 
 export type DeclarationId = Tagged<string, 'DeclarationId'>;
 export type ComponentId = Tagged<string, 'ComponentId'>;
-export type ParentId = Tagged<string, 'ParentId'>;
+export type RegisterId = Tagged<string, 'RegisterId'>;
 export type RuntimeKey = symbol;
 export type RuntimeId = Tagged<string, 'RuntimeId'>;
 export type ProviderId = Tagged<string, 'ProviderId'>;
@@ -24,6 +24,7 @@ export type ComponentMeta = {
 
 //TODO: this is exported from react utils too
 export const ID_PROP = '_id';
+export const DRYRUN_ID_PROP = '_dryRunId';
 
 export const PROVIDERS_PROP = '_providers';
 export const COMPONENT_PROP = '_component';
@@ -44,7 +45,7 @@ export type RuntimeApiFactory<R> = {
   ) => RuntimeApi<R>;
 };
 
-export type Config = {
+export type RuntimeConfig = {
   debug: boolean;
   postUnmountTTL: number;
   env: 'prod' | 'dev'; // Environment config
@@ -57,21 +58,21 @@ export type RuntimeModule<R, C extends React.FC<any> = React.FC<any>> = {
   reference: () => C;
 };
 
-export type RuntimeContext<T> = {
+export type RuntimeContext<R, E = never, A = never> = {
   key: RuntimeKey;
-  layer: Layer.Layer<T>;
+  layer: Layer.Layer<R, E, A>;
 };
 
 export type RuntimePayload<R> = {
   entryId: string;
   index: number;
   context: RuntimeContext<R>;
-  config: Partial<Config>;
+  config: Partial<RuntimeConfig>;
 };
 
 export type RuntimeInstance<R> = {
   runtime: ManagedRuntime.ManagedRuntime<R, never>;
-  config: Config;
+  config: RuntimeConfig;
 };
 
 // export type RuntimeInstance
@@ -79,12 +80,12 @@ export type RuntimeInstance<R> = {
 //   T extends React.Context<infer U> ? NonNullable<U> : never;
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
-export type IdProp = { readonly id: string };
+export type IdProp = { readonly id?: string };
 
 export type Extensible<T> = T & Record<string, unknown>;
 
 export type ProviderApi<R> = {
-  configure: (config?: Partial<Config>) => RuntimeApi<R>;
+  configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;
   runtime: RuntimeApi<R>;
 };
 

@@ -1,8 +1,7 @@
 import { ManagedRuntime } from 'effect';
 import type {
-  ComponentId,
-  Config,
-  ParentId,
+  RegisterId,
+  RuntimeConfig,
   RuntimeId,
   RuntimeInstance,
   RuntimeKey,
@@ -11,16 +10,13 @@ import type {
 } from 'types';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
-type RuntimeMapping = Map<
-  ComponentId | ParentId,
-  Map<RuntimeKey, Map<number, RuntimeId>>
->;
+type RuntimeMapping = Map<RegisterId, Map<RuntimeKey, Map<number, RuntimeId>>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RuntimeRegistry = Map<RuntimeId, RuntimeInstance<any>>;
 
 // type ListenerMap = Map<RuntimeId, (() => void)[]>;
-type DisposerMap = Map<ComponentId, Map<RuntimeId, NodeJS.Timeout>>;
-type PromotionMap = Map<ComponentId, boolean>;
+type DisposerMap = Map<RegisterId, Map<RuntimeId, NodeJS.Timeout>>;
+type PromotionMap = Map<RegisterId, boolean>;
 
 export const defaultConfig = {
   debug: false,
@@ -28,7 +24,7 @@ export const defaultConfig = {
   env: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
   cleanupPolicy: 'onUnmount', // only used with replace: true
   replace: false,
-} satisfies Partial<Config>;
+} satisfies Partial<RuntimeConfig>;
 
 export function createRuntimeRegistry(scopeId: ScopeId) {
   const runtimeMapping: RuntimeMapping = new Map();
@@ -38,7 +34,7 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
   // const listeners: ListenerMap = new Map();
 
   function register(
-    id: ComponentId,
+    id: RegisterId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: RuntimePayload<any>
   ) {
@@ -73,7 +69,7 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
     return registry.get(currentId!)!;
   }
 
-  function dispose(id: ComponentId, runtimeId: RuntimeId, cleanup: () => void) {
+  function dispose(id: RegisterId, runtimeId: RuntimeId, cleanup: () => void) {
     void registry.get(runtimeId)?.runtime.dispose();
     registry.delete(runtimeId);
     const componentDisposerMap = disposerMap.get(id);
@@ -94,7 +90,7 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
   }
 
   // called on unmount
-  function unregister(id: ComponentId, cleanup?: () => void) {
+  function unregister(id: RegisterId, cleanup?: () => void) {
     const keyMap = runtimeMapping.get(id);
     if (!keyMap) return; // if gc'd
     if (!disposerMap.has(id)) {
@@ -114,7 +110,7 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
     });
   }
 
-  function keepAlive(id: ComponentId) {
+  function keepAlive(id: RegisterId) {
     // use the disposer map to clear the timeouts
     const map = disposerMap.get(id);
     if (map) {
@@ -132,16 +128,16 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
     };
   }
 
-  function getById(id: ComponentId | ParentId, key: RuntimeKey, index: number) {
+  function getById(id: RegisterId, key: RuntimeKey, index: number) {
     const runtimeId = runtimeMapping.get(id)?.get(key)?.get(index);
     return (runtimeId && registry.get(runtimeId)) ?? null;
   }
 
-  function promoteById(id: ComponentId) {
+  function promoteById(id: RegisterId) {
     promotionMap.set(id, true);
   }
 
-  function gcUnpromoted(id: ComponentId) {
+  function gcUnpromoted(id: RegisterId) {
     const promoted = promotionMap.get(id);
     if (promoted === true) return;
 
@@ -174,8 +170,8 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
 
 export const useRuntimeRegistry = createSingletonHook(createRuntimeRegistry);
 
-const noDisposerMapMessage = (id: ComponentId) =>
+const noDisposerMapMessage = (id: RegisterId) =>
   `No disposer map found for component ${id}. This may indicate a bug in the runtime management logic.`;
 
-const noTimeoutMessage = (id: ComponentId, runtimeId: RuntimeId) =>
+const noTimeoutMessage = (id: RegisterId, runtimeId: RuntimeId) =>
   `No timeout found for component ${id} and runtime ${runtimeId}.`;
