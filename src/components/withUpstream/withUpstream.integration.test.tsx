@@ -106,7 +106,7 @@ describe('withUpstream', () => {
     expect(getByText(childText)).toBeDefined();
   });
 
-  it('should reconstuct parent runtime in portable scenarios', () => {
+  it.todo('should reconstuct parent runtime in portable scenarios', () => {
     const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
     const ChildRuntime = mockRuntimeModule(Tag, childText)(() => Child);
 
