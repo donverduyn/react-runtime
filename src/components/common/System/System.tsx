@@ -36,6 +36,7 @@ import { combineV5, createIdFactory, type EdgeDataFields } from 'utils/hash';
 import { createElement, copyStaticProperties, extractMeta } from 'utils/react';
 import { createChildrenSketch } from 'utils/react/children';
 import { useDryRunTracker } from '../../../hooks/useDryRun/hooks/useDryRunTracker';
+import { SystemContext, useSystemContext } from './hooks/useSystemContext';
 import {
   getStaticDryRunId,
   getStaticProviderList,
@@ -239,74 +240,8 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
       currentProps,
     ]
   );
-
-  // return React.useCallback(
-  //   (
-  //     entries: Map<RegisterId, ResolvedProviderEntry<R, C, unknown>[]>,
-  //     instances: Map<RuntimeKey, RuntimeInstance<any>>
-  //   ) => {
-  //     entries.forEach((entry) => {
-  //       if (entry.type === 'upstream') {
-  //         const { context } = entry.module;
-  //         const instance = runtimeProvider.getByKey(
-  //           registerId,
-  //           context.key,
-  //           entry.index
-  //         );
-  //         if (instance) {
-  //           instances.set(context.key, instance);
-  //         } else {
-  //           throw new Error(
-  //             `[${name}] Runtime instance for upstream "${context.key.toString()}" not found. Did you use withMock or withAutoMock in your test?`
-  //           );
-  //         }
-  //       }
-
-  //       if (entry.type === 'runtime' || entry.type === 'upstream') {
-  //         const factory =
-  //           !hasRun.current && entry.type === 'runtime'
-  //             ? createRuntime(registerId, entry, instances, (instance) => {
-  //                 instances.set(entry.module.context.key, instance);
-  //               })
-  //             : () => createRuntimeApi.create(entry.module, instances);
-  //         const apiProxy = createApiProxy(entry, instances, factory);
-  //         const propsProxy = createPropsProxy(currentProps.get());
-
-  //         if (entry.fn) {
-  //           // this call triggers the runtime to be created
-  //           const maybeProps = entry.fn(apiProxy, propsProxy);
-  //           if (maybeProps) {
-  //             currentProps.update(maybeProps);
-  //           }
-  //         } else if (entry.type === 'runtime') {
-  //           // in case we don't have a function, we still create the instance, for dependency injection.
-  //           factory();
-  //         }
-  //       }
-
-  //       if (entry.type === 'props') {
-  //         const newProps = entry.fn(currentProps.get());
-  //         currentProps.update(newProps ?? {});
-  //       }
-  //     });
-  //     // TODO: think about returning a boolean that indicates whether construction is possible, or split up checking upstream registrations to check if everything is available if not we pass the full map of resolveProviders to useEntryBuilder. no need to know the portable root because it would always build what's needed. both at the portable root and at late subree mounts.
-  //     return currentProps.get();
-  //   },
-  //   [
-  //     createApiProxy,
-  //     createPropsProxy,
-  //     createRuntime,
-  //     createRuntimeApi,
-  //     runtimeProvider,
-  //     registerId,
-  //     currentProps,
-  //     hasRun,
-  //     name,
-  //   ]
-  // );
 };
 
-let count = 0;
 export function createSystem<R, C extends React.FC<any>>(
   declarationId: DeclarationId,
   Component: C,
@@ -323,11 +258,20 @@ export function createSystem<R, C extends React.FC<any>>(
     const disposed = React.useRef(false);
     const dryRunContext = useDryRunContext();
     const scopeId = dryRunContext?.scopeId ?? ('live' as ScopeId);
-    const frame = useTreeFrame(
+    const frame = useTreeFrame();
+
+    // cast to scopeId because if it is null, we want to use the current dryRunId
+    const dryRunId = dryRunIdArg ?? getStaticDryRunId(Component);
+
+    // TODO: think about the api because the provided values are only used at the root, while the context itself is used everywhere else.
+    const systemContext = useSystemContext(
       scopeId,
-      dryRunContext === null ? 'live' : 'dry',
-      dryRunContext?.targetId ?? null
+      dryRunId,
+      dryRunContext ? 'dry' : 'live'
     );
+    const dryRunApi = useDryRun(systemContext.dryRunId as ScopeId) as
+      | DryRunApi
+      | undefined;
 
     const componentId = React.useMemo(
       () => createId.baseId(props.id ?? '') as ComponentId,
@@ -355,6 +299,7 @@ export function createSystem<R, C extends React.FC<any>>(
       [props.children]
     );
 
+    // childFrame should be stable unlike frame, because frame is pulling upstream and childframe is pushing downstream.
     const childFrame = React.useMemo(
       () =>
         createTreeFrame(
@@ -365,16 +310,12 @@ export function createSystem<R, C extends React.FC<any>>(
             childrenSketch,
             cumSig: combineV5(frame.parent.cumSig, declarationId, registerId),
           },
-          // this becomes parentHit for the child frame
-          dryRunContext?.targetId === declarationId
+          dryRunContext
+            ? { parentHit: dryRunContext.targetId === declarationId }
+            : undefined
         ),
       [frame, registerId, childrenSketch, dryRunContext]
     );
-
-    // const dryRunId = getStaticDryRunId(Component);
-    // cast to scopeId because if it is null, we want to use the current dryRunId
-    const dryRunId = dryRunIdArg ?? getStaticDryRunId(Component);
-    const dryRunApi = useDryRun(dryRunId as ScopeId) as DryRunApi | undefined;
 
     const treeMap = useTreeMap(
       scopeId,
@@ -397,14 +338,9 @@ export function createSystem<R, C extends React.FC<any>>(
       providerTree
     );
     const tracker = useDryRunTracker(scopeId, componentTree);
-    // TODO: rely on static dryRunId to obtain the api instance in useDryRunApi. add the property in withProviderScope.
-
     const localEntries = getStaticProviderList<C, R>(Component, provider);
 
     if (!hasRun.current) {
-      count++;
-
-      // TODO: do not rely on the availability of dryRunApi to decide if we are at the root. think about how we can distinguish the root from other components. maybe frame depth???
       if (frame.depth === 0) {
         const self = { declarationId, componentId, registerId, childrenSketch };
         //* this must be executed before providerTree.resolveProviders
@@ -418,27 +354,25 @@ export function createSystem<R, C extends React.FC<any>>(
         frame.parent.declarationId ?? null,
         localEntries
       );
-      // TODO: think about where we want to update the maps as we don't want to have side effects in resolveProviders. Also think about when we want to call resolveProviders. Probably when we need construction, so it only happens once at the root and once on subtree mounts, because after the call, the map updates and the instantiation it won't be called again at that place. this way we don't have to bother hasRun too, because in the default case we just pull the localEntries to pass into useEntryBuiler. maybe convert that to a map too, we can look into the hook that returns that stuff.
-      console.log(
-        props.id,
-        scopeId,
-        count,
-        name,
-        registerId,
-        declarationId,
-        frame
-      );
+      // console.log(
+      //   props.id,
+      //   scopeId,
+      //   name,
+      //   registerId,
+      //   declarationId,
+      //   frame
+      // );
     }
 
     const firstRender = !hasRun.current;
     React.useLayoutEffect(() => {
       // this runs bottom up, after the dry run gate has short circuited, or when reaching the leaf.
       const noDescendent = childFrame.seq.size === 0;
+      // seq.size === 0 means no descendants, so we are the target
       if (
-        frame.mode === 'dry' &&
+        systemContext.mode === 'dry' &&
         firstRender &&
-        (frame.parentHit || noDescendent)
-        // seq.size === 0 means no descendants, so we are the target
+        (frame.dryRunMeta?.parentHit || noDescendent)
       ) {
         const self = {
           userId: props.id,
@@ -447,12 +381,11 @@ export function createSystem<R, C extends React.FC<any>>(
           registerId,
           childrenSketch: createChildrenSketch(props.children, 5),
         };
-        const candidate = tracker.registerCandidate(
+        const _ = tracker.registerCandidate(
           (noDescendent ? self : frame.parent) as EdgeDataFields,
           frame.depth,
           noDescendent ? null : self
         );
-        console.log(candidate);
       }
       // childFrame is stable
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -498,13 +431,6 @@ export function createSystem<R, C extends React.FC<any>>(
 
     //* We need a method that takes a set of runtime keys and returns a map with runtime instances, using useSyncExternalStore. This way we can compare runtime ids, between getSnapshot calls, to return a stable map. When ids change, the component will re-render, which allows upstream fast refresh, to update downstream components that depend on upstream runtimes. In order to make this happen, runtimeRegistry, should use this method to register the component id under each runtime id associated with the provided key.
 
-    // let needsLateReconstruction = false;
-    // const accumulatedProps = React.useRef({ id: componentId });
-
-    // think about it, whether we really need to reconstruct everything from upstream, because all we really need from upstream is whatever is pulled in from withUpstream at level 0. Because every component instantiaties before its child, and registers as parent, we can rely on registry.getByKey, to resolve from the closest component.
-
-    // This happens when upstream dependencies are included downstream who are connected higher in the tree, then the ones included by the root component.
-
     const needsReconstruction = localEntries.some((item) => {
       if (item.type === 'upstream') {
         const { context } = item.module;
@@ -513,8 +439,7 @@ export function createSystem<R, C extends React.FC<any>>(
       }
     });
 
-    // if we need construction we pass the full map into useEntryBuilder, if not we pass only localEntries. how do we do this? maybe just internally inside useEntryBuilder by passing a boolean argument so it can figure what to do?
-
+    // TODO: move side effects out of resolveProviders
     const targetEntries = needsReconstruction
       ? providerTree.resolveProviders(registerId)
       : (() => {
@@ -526,8 +451,7 @@ export function createSystem<R, C extends React.FC<any>>(
           return map;
         })();
 
-    // This is the main entry point for the system, which builds the entries and registers them in the provider tree. Don't fuck with this.
-
+    // This is the main entry point for the system.
     const buildEntries = useEntryBuilder<R, C>(
       scopeId,
       runtimeProvider,
@@ -535,11 +459,10 @@ export function createSystem<R, C extends React.FC<any>>(
       name
     );
 
-    // this is the main entry point for the system, which builds the entries and registers them in the provider tree.
+    // this builds the entries and registers them in the provider tree.
     const resultProps = buildEntries(targetEntries, instances);
 
     // make sure we clean up even if effect cleanup doesn't run, since our first render has side effects.
-    //
     // TODO: think about cleaning up after aborted renders in the maps and where we want to do this. do we want multiple queueMicrotask calls or together in one place?
     queueMicrotask(runtimeProvider.gcUnpromoted);
     useIsoLayoutEffect(() => {
@@ -561,10 +484,17 @@ export function createSystem<R, C extends React.FC<any>>(
       (props.children as React.ReactNode) ??
       null;
 
-    return (
+    const element = (
       <TreeFrameContext.Provider value={childFrame}>
         {children}
       </TreeFrameContext.Provider>
+    );
+    return frame.depth === 0 ? (
+      <SystemContext.Provider value={systemContext}>
+        {element}
+      </SystemContext.Provider>
+    ) : (
+      element
     );
   };
   return Wrapper;
@@ -586,6 +516,7 @@ export const propagateSystem = <C extends React.FC<any>>(
   copyStaticProperties(meta, Memo);
   hoistOriginalComponent(Memo, target);
   hoistDeclarationId(Memo, declarationId);
+  // this happens only at the root, so we can prepend withProviderScope with other hocs.
   if (dryRunId) hoistDryRunId(Memo, dryRunId);
   hoistProviderList(Memo, allProviders as React.ComponentProps<C>);
 

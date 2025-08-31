@@ -13,35 +13,33 @@ describe('withProviderScope', () => {
     expect(true).toBeTruthy();
   });
   it('should do a dry run and return candidates', () => {
-    const Module = mockRuntimeModule(Tag, 'providedValue')(() => Root);
-    // Arrange
-    const ChildView: React.FC<{ tag: string }> = ({ tag }) => (
-      <span>{tag}</span>
-    );
-    const Child = connect(
-      ChildView,
-      withUpstream(Module, ({ runtime }) => ({
-        tag: runtime.use(Tag),
-      }))
-    );
-
+    const RootModule = mockRuntimeModule(Tag, 'providedValue')(() => Root);
     const RootView: React.FC = () => {
       return (
         <div>
           Root
           <Child id='CHILD' />
-          <Child />
+          {/* <Child /> */}
         </div>
       );
     };
 
-    const Root = connect(RootView, withRuntime(Module));
+    const Root = connect(RootView, withRuntime(RootModule));
+
+    const ChildView: React.FC<{ tag: string }> = ({ tag }) => (
+      <span>{tag}</span>
+    );
+    const Child = connect(
+      ChildView,
+      withUpstream(RootModule, ({ runtime }) => ({
+        tag: runtime.use(Tag),
+      }))
+    );
+
     const TestComponent = connect(Child, withProviderScope(Root));
 
-    const { getByText, debug } = render(<TestComponent />);
+    const { getByText, debug } = render(<TestComponent id='CHILD' />);
     expect(getByText('providedValue')).toBeDefined();
     debug();
-    // Assert
-    // expect(result).toEqual();
   });
 });

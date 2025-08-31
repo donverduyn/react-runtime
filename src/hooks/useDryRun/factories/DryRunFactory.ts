@@ -151,7 +151,6 @@ export const createDryRunApi = (
     );
 
     const seen = new Set<DeclarationId>();
-    // const providers: ResolvedProviderEntry<any, any, unknown>[] = [];
 
     function traverse(
       index: number,

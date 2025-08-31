@@ -36,7 +36,7 @@ export function createIdFactory(declId: string) {
   // Step 1: Create the base id (without suffix)
   function baseId(instId: string) {
     const id = uuidv5(instId, DECL_NS);
-    console.log('creating component id with', declId, instId, DECL_NS, id);
+    // console.log('creating component id with', declId, instId, DECL_NS, id);
     return id;
   }
 

@@ -61,6 +61,7 @@ export function withMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
   const component = !isModule ? moduleOrComponent : undefined;
 
   // TODO: handle both cases where we either have a module or component.
+  // TODO: make mocks available during dry runs. think about how we want to validate that all mocks are provided when a certain provider scope root is used.
 
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
