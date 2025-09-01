@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { v4 as uuid } from 'uuid';
+import type { ScopeId } from 'types';
 import { isShallowEqual } from 'utils/object';
 import { getDisplayName } from 'utils/react';
 import { createSingletonHook } from './factories/SingletonFactory';
@@ -10,7 +11,8 @@ export function useStableId<P extends Record<string, unknown>>(
   props: P,
   prefix: string = 'default'
 ): string {
-  const stableIdMap = useStableIdMap();
+  const scopeId = 'scope' as ScopeId;
+  const stableIdMap = useStableIdMap(scopeId);
   const prevProps = React.useRef<P | null>(null);
   const idRef = React.useRef<string | null>(null);
 
