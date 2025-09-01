@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { RegisterId, ScopeId } from 'types';
+import type { RegisterId, ScopeId } from '@/types';
 import { createSingletonHook } from '../common/factories/SingletonFactory';
 
 /**

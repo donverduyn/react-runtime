@@ -17,7 +17,7 @@ import type {
   ResolvedProviderEntry,
   RuntimeModule,
   ScopeId,
-} from 'types';
+} from '@/types';
 import {
   createHiddenDomRoot,
   disableAsyncGlobals,
@@ -134,10 +134,13 @@ export const createDryRunApi = (
               )
         )
     );
-    console.warn('Off-tree candidates validation failed', {
-      candidates,
-      resolvedChains,
-    });
+    if (!validated) {
+      console.warn('Off-tree candidates validation failed', {
+        candidates,
+        resolvedChains,
+      });
+    }
+
     return validated ? first : null;
   }
 
@@ -272,19 +275,23 @@ export function createDryRunFactory<P extends object>(
   // get results from dryRunTracker and return them
   // think about when we do the filtering, we might want to return a module from useDryRun so we can call one of the methods during render to filter using the registerId and childrenSketch, and then validate the provider traversal results against eachother. we also have to think where we do this validation. we can return a module from dryRunTracker that has a method to validate the results, since we also have to do this with late subtree mounts. we also need a place to store the results, or at least give access to the provider map, so the question is do we run this separate from the provider map, or do we merge once into the existing provider map. If we have to late reconstruct, i think it makes more sense to have let the provider map read drom dryRunTracker, this way we can let the dry run interact solely with the dry run tracker, and at render let everything interact with the tracker, but this feels still like it leaks
 
-  flushSync(() => {
-    root.render(
-      React.createElement(
-        DryRunContext.Provider,
-        { value: contextObject },
-        React.createElement(Component, props)
-      )
-    );
-  });
+  const act =
+    process.env.NODE_ENV === 'test' ? React.act : (fn: () => void) => fn();
 
-  tryFnSync(() => {
-    root.unmount();
-    restoreAsync();
+  act(() => {
+    flushSync(() => {
+      root.render(
+        React.createElement(
+          DryRunContext.Provider,
+          { value: contextObject },
+          React.createElement(Component, props)
+        )
+      );
+    });
+    tryFnSync(() => {
+      root.unmount();
+      restoreAsync();
+    });
   });
 
   const treeMap = getTreeMap(scopeId);

@@ -1,7 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 
 import { v5 as uuidv5, v4 as uuidv4 } from 'uuid';
-import type { ComponentId, DeclarationId, RegisterId } from 'types';
+import type { ComponentId, DeclarationId, RegisterId } from '@/types';
 import type { ChildrenSketch } from './react/children';
 
 export const ROOT_NS = '6e0d58b0-6a8e-4a53-8a30-0d9b8b1a8f37'; // pick & freeze once

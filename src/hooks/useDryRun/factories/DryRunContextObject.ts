@@ -1,4 +1,4 @@
-import type { ScopeId, DeclarationId } from 'types';
+import type { ScopeId, DeclarationId } from '@/types';
 
 export type DryRunContextObject = {
   scopeId: ScopeId;

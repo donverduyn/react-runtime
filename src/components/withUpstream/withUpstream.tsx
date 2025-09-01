@@ -1,8 +1,9 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
+/* eslint-disable @typescript-eslint/no-invalid-void-type */
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge, SetOptional } from 'type-fest';
+import type { Simplify, Merge, IsNever } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { createSystem, propagateSystem } from 'components/common/System/System';
 import {
@@ -27,36 +28,68 @@ import type {
   DeclarationId,
   ProviderEntry,
   ProviderId,
-  Extensible,
   IdProp,
+  Extensible,
+  IsPrimitiveString,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
 export function withUpstream<
   C extends React.FC<any>,
-  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TProps extends Extensible<Partial<IdProp & React.ComponentProps<C>>>,
+  TKeys extends PropertyKey = IsPrimitiveString<keyof TProps> extends false
+    ? keyof TProps
+    : never,
+  // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
+
+  // when returned properties mismatch the original props, the
+  TResult = Readonly<
+    Partial<
+      IdProp &
+        Pick<React.ComponentProps<C>, TKeys> &
+        Omit<TProps, keyof React.ComponentProps<C>>
+    > &
+      Omit<React.ComponentProps<C>, TKeys>
+  >,
   R = unknown,
 >(
   module: RuntimeModule<R>,
-  fn: ProviderFn<R, C, TProps>
+  fn: ProviderFn<R, React.FC<React.ComponentProps<C>>, TProps>
 ): (
   Component: C
-) => React.FC<Simplify<TResult>> &
-  StaticProperties<C, RuntimeModule<R>, TProps>;
+) => IsNever<TKeys> extends false
+  ? React.FC<Simplify<TResult>> &
+      StaticProperties<
+        React.FC<React.ComponentProps<C>>,
+        RuntimeModule<R>,
+        IdProp & Readonly<TProps> & Omit<React.ComponentProps<C>, TKeys>
+      >
+  : any;
 
 export function withUpstream<
   C extends React.FC<any>,
-  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TProps extends Partial<IdProp & Record<string, unknown>> | void,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
   R = unknown,
 >(
   module: RuntimeModule<R>,
-  fnVoid: ProviderFn<R, C>
+  fnVoid: ProviderFn<
+    R,
+    React.FC<React.ComponentProps<C>>,
+    // when the inferred return type is not void, we have to create a mismatch against the original props.
+    TProps &
+      (TProps extends Record<string, unknown>
+        ? Partial<IdProp & React.ComponentProps<C>>
+        : void)
+  >
 ): (
   Component: C
 ) => React.FC<Simplify<TResult>> &
-  StaticProperties<C, RuntimeModule<R>, TProps>;
+  StaticProperties<
+    React.FC<React.ComponentProps<C>>,
+    RuntimeModule<R>,
+    IdProp & React.ComponentProps<C>
+  >;
 
 //
 export function withUpstream<C extends React.FC<any>, R>(
@@ -108,7 +141,7 @@ function createUpstreamEntry<R, C extends React.FC<any>>(
   };
 }
 
-type StaticProperties<C, TModule, TProps> = Merge<
+type StaticProperties<C, TModule, TProps = never> = Merge<
   ExtractMeta<C>,
   {
     [UPSTREAM_PROP]: TraverseDeps<{
@@ -118,6 +151,8 @@ type StaticProperties<C, TModule, TProps> = Merge<
     }>;
     [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Up<TModule>];
     [COMPONENT_PROP]: ExtractStaticComponent<C>;
-    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
+    [PROPS_PROP]: IsNever<TProps> extends false
+      ? Merge<ExtractStaticProps<C>, TProps>
+      : ExtractStaticProps<C>;
   }
 >;

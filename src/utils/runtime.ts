@@ -4,7 +4,7 @@ import type {
   RuntimeContext,
   RuntimeInstance,
   RuntimeModule,
-} from '@types';
+} from '@/types';
 
 export const connect = pipe;
 

@@ -1,4 +1,4 @@
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 
 const devSeenPerScope = new Map<ScopeId, Set<string>>();
 

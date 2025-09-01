@@ -1,5 +1,5 @@
 import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
-import type { DeclarationId, RegisterId, ScopeId } from 'types';
+import type { DeclarationId, RegisterId, ScopeId } from '@/types';
 import { useComponentMap } from './hooks/useComponentMap';
 
 export type ComponentTreeApi = {

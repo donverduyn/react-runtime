@@ -1,6 +1,6 @@
 // system/DryRunGate.ts
 
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 import {
   computeFallbackSig,
   FALLBACK_NS,

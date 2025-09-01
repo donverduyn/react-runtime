@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 
 type SystemContext = {
   scopeId: ScopeId;

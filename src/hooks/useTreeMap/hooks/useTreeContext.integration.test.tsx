@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import type { RegisterId } from 'types';
+import type { RegisterId } from '@/types';
 import { TreeContext2, useTreeContext2 } from './useTreeContext';
 
 describe('useTreeContext', () => {

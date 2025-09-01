@@ -12,7 +12,7 @@ const withLogger = (component: React.FC<Props>) =>
   connect(
     component,
     // withUpstream(SomeRuntime, ({ runtime }) => {
-    //   console.log('SomeRuntime', runtime.instance );
+    //   console.log('SomeRuntime', runtime.instance );[]
     // }),
     withRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });

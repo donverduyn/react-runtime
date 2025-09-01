@@ -19,7 +19,7 @@ import {
   type ExtractStaticUpstream,
   type IdProp,
   type Extensible,
-} from 'types';
+} from '@/types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { createSystem, propagateSystem } from '../common/System/System';
 import {
@@ -32,7 +32,7 @@ import {
 export function withProps<
   C extends React.FC<any>,
   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
 >(
   fn: PropsFn<C, TProps>
 ): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;

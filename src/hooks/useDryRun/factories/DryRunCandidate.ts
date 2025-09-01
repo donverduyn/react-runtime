@@ -1,6 +1,6 @@
 import type { Tagged } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import type { DeclarationId } from 'types';
+import type { DeclarationId } from '@/types';
 import type { EdgeDataFields } from 'utils/hash';
 
 export type DryRunCandidateId = Tagged<string, 'DryRunCandidate'>;

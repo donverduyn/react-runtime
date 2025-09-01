@@ -251,7 +251,7 @@ export function createSystem<R, C extends React.FC<any>>(
   dryRunIdArg?: ScopeId
 ) {
   const createId = createIdFactory(declarationId);
-  const Wrapper: React.FC<IdProp & Partial<React.ComponentProps<C>>> = (
+  const Wrapper: React.FC<Partial<IdProp & React.ComponentProps<C>>> = (
     props
   ) => {
     const hasRun = React.useRef(false);

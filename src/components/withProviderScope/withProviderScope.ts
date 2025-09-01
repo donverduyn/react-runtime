@@ -1,8 +1,7 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, SetOptional, Merge } from 'type-fest';
-import { createDryRun } from 'hooks/useDryRun/useDryRun';
+import type { Simplify, Merge } from 'type-fest';
 import {
   type ExtractStaticComponent,
   type ExtractStaticProviders,
@@ -16,7 +15,8 @@ import {
   type IdProp,
   type Extensible,
   type ScopeId,
-} from 'types';
+} from '@/types';
+import { createDryRun } from 'hooks/useDryRun/useDryRun';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { createSystem, propagateSystem } from '../common/System/System';
 import {
@@ -32,7 +32,7 @@ export function withProviderScope<
   C extends React.FC<any>,
   C1 extends React.FC<any>,
   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
 >(
   RootComponent: C1,
   rootProps?: PropsOrEmpty<React.ComponentProps<C1>>

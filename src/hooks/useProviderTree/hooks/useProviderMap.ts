@@ -7,7 +7,7 @@ import type {
   ProviderId,
   RuntimeModule,
   ScopeId,
-} from 'types';
+} from '@/types';
 
 const createProviderMap = () => {
   const map = new Map<

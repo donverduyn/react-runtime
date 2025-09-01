@@ -13,13 +13,14 @@ describe('withProviderScope', () => {
     expect(true).toBeTruthy();
   });
   it('should do a dry run and return candidates', () => {
-    const RootModule = mockRuntimeModule(Tag, 'providedValue')(() => Root);
+    const tagValue = 'providedValue';
+    const RootModule = mockRuntimeModule(Tag, tagValue)(() => Root);
     const RootView: React.FC = () => {
       return (
         <div>
           Root
-          <Child id='CHILD' />
-          {/* <Child /> */}
+          <Child />
+          <Child id='foo' />
         </div>
       );
     };
@@ -37,9 +38,9 @@ describe('withProviderScope', () => {
     );
 
     const TestComponent = connect(Child, withProviderScope(Root));
+    const { getByText, debug } = render(<TestComponent />);
 
-    const { getByText, debug } = render(<TestComponent id='CHILD' />);
-    expect(getByText('providedValue')).toBeDefined();
+    expect(getByText(tagValue)).toBeDefined();
     debug();
   });
 });

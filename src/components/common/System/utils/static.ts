@@ -11,12 +11,12 @@ import {
   type IdProp,
   type ResolvedProviderEntry,
   type ScopeId,
-} from 'types';
+} from '@/types';
 
 export const getStaticProviderList = <
   C extends React.FC<any>,
   R,
-  P = Partial<React.ComponentProps<C>> & IdProp,
+  P = Partial<IdProp> & React.ComponentProps<C>,
 >(
   component: C & {
     [PROVIDERS_PROP]?: ProviderEntry<R, C, P>[];

@@ -1,22 +1,20 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
+import type { RegisterId, IdProp, ScopeId } from '@/types';
 import { createTreeFrame } from 'hooks/useTreeFrame/factories/TreeFrame';
 import {
   TreeFrameContext,
   useTreeFrameContext,
 } from 'hooks/useTreeFrame/hooks/useTreeFrameContext';
-import type { RegisterId, IdProp, ScopeId } from 'types';
 import { combineV5 } from 'utils/hash';
 import { useTreeMap } from './useTreeMap';
 
 const scopeId = 'scope' as ScopeId;
 const declId = 'declaration' as RegisterId;
 const TestComponent: React.FC<
-  {
-    readonly children?: React.ReactNode;
-  } & IdProp
+  { readonly children?: React.ReactNode } & Partial<IdProp>
 > = ({ children, id } = { id: 'default' }) => {
-  const frame = useTreeFrameContext(scopeId);
+  const frame = useTreeFrameContext();
   const childFrame = createTreeFrame(frame, {
     registerId: id as RegisterId,
     cumSig: combineV5(frame.parent.cumSig, declId, id!),
@@ -30,7 +28,7 @@ const TestComponent: React.FC<
   );
 };
 
-const TestRootComponent: React.FC<IdProp> = ({ id }) => {
+const TestRootComponent: React.FC<Partial<IdProp>> = ({ id }) => {
   const treeMap = useTreeMap(scopeId, id as RegisterId);
   React.useEffect(() => {
     // console.log(

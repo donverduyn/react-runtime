@@ -1,6 +1,6 @@
 import type { Context } from 'effect';
 import { Layer, pipe } from 'effect';
-import type { RuntimeModule } from 'types';
+import type { RuntimeModule } from '@/types';
 import { createRuntimeContext } from 'utils/runtime';
 
 export const mockRuntimeModule =

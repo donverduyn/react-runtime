@@ -1,16 +1,10 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
+/* eslint-disable @typescript-eslint/no-invalid-void-type */
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge, SetOptional } from 'type-fest';
+import type { Simplify, Merge, IsNever } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { createSystem, propagateSystem } from 'components/common/System/System';
-import {
-  getStaticDeclarationId,
-  getStaticComponent,
-  getStaticProviderList,
-  getStaticDryRunId,
-} from 'components/common/System/utils/static';
 import type {
   RuntimeModule,
   PROVIDERS_PROP,
@@ -28,34 +22,93 @@ import type {
   ProviderId,
   IdProp,
   Extensible,
-} from 'types';
+  IsPrimitiveString,
+} from '@/types';
+import { createSystem, propagateSystem } from 'components/common/System/System';
+import {
+  getStaticDeclarationId,
+  getStaticComponent,
+  getStaticProviderList,
+  getStaticDryRunId,
+} from 'components/common/System/utils/static';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
-export function withRuntime<
-  C extends React.FC<any>,
-  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
-  R = unknown,
->(
-  module: RuntimeModule<R>,
-  fn?: ProviderFn<R, C, TProps>
-): (
-  Component: C
-) => React.FC<Simplify<TResult>> &
-  StaticProperties<C, RuntimeModule<R>, TProps>;
+// export function withRuntime<
+//   C extends React.FC<any>,
+//   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+//   TResult = Partial<IdProp> & React.ComponentProps<C>,
+//   R = unknown,
+// >(
+//   module: RuntimeModule<R>,
+//   fn?: ProviderFn<R, C, TProps>
+// ): (
+//   Component: C
+// ) => React.FC<Simplify<TResult>> &
+//   StaticProperties<C, RuntimeModule<R>, TProps>;
+
+// export function withRuntime<
+//   C extends React.FC<any>,
+//   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
+//   TResult = Partial<IdProp> & React.ComponentProps<C>,
+//   R = unknown,
+// >(
+//   module: RuntimeModule<R>,
+//   fnVoid?: ProviderFn<R, C>
+// ): (
+//   Component: C
+// ) => React.FC<Simplify<TResult>> &
+//   StaticProperties<C, RuntimeModule<R>, TProps>;
 
 export function withRuntime<
   C extends React.FC<any>,
-  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TProps extends Extensible<Partial<IdProp & React.ComponentProps<C>>>,
+  TKeys extends PropertyKey = IsPrimitiveString<keyof TProps> extends false
+    ? keyof TProps
+    : never,
+  TResult = Omit<React.ComponentProps<C>, TKeys> &
+    Partial<
+      IdProp &
+        Pick<React.ComponentProps<C>, TKeys> &
+        Omit<TProps, keyof React.ComponentProps<C>>
+    >,
   R = unknown,
 >(
   module: RuntimeModule<R>,
-  fnVoid?: ProviderFn<R, C>
+  fn: ProviderFn<R, React.FC<React.ComponentProps<C>>, TProps>
+): (
+  Component: C
+) => IsNever<TKeys> extends false
+  ? React.FC<Simplify<TResult>> &
+      StaticProperties<
+        React.FC<React.ComponentProps<C>>,
+        RuntimeModule<R>,
+        Omit<React.ComponentProps<C>, TKeys> & TProps
+      >
+  : any;
+
+export function withRuntime<
+  C extends React.FC<any>,
+  TProps extends Partial<IdProp & Record<string, unknown>> | void,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
+  R = unknown,
+>(
+  module: RuntimeModule<R>,
+  fnVoid: ProviderFn<
+    R,
+    React.FC<React.ComponentProps<C>>,
+    TProps &
+      (TProps extends Record<string, unknown>
+        ? Partial<IdProp & React.ComponentProps<C>>
+        : void)
+  >
 ): (
   Component: C
 ) => React.FC<Simplify<TResult>> &
-  StaticProperties<C, RuntimeModule<R>, TProps>;
+  StaticProperties<
+    React.FC<React.ComponentProps<C>>,
+    RuntimeModule<R>,
+    IdProp & React.ComponentProps<C>
+  >;
 
 //
 export function withRuntime<C extends React.FC<any>, R>(

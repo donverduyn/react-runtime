@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
 import type { Layer } from 'effect';
-import type { Simplify, SetOptional, Merge } from 'type-fest';
+import type { Simplify, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import {
   type ExtractStaticComponent,
@@ -18,7 +18,7 @@ import {
   type RuntimeModule,
   type IdProp,
   type Extensible,
-} from 'types';
+} from '@/types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { isRuntimeModule } from 'utils/runtime';
 import { createSystem, propagateSystem } from '../common/System/System';
@@ -35,7 +35,7 @@ export function withMock<
   C extends React.FC<any>,
   C1 extends React.FC<any>,
   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
 >(
   target: C1,
   props: React.ComponentProps<C1>
@@ -44,7 +44,7 @@ export function withMock<
 export function withMock<
   C extends React.FC<any>,
   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = IdProp & SetOptional<React.ComponentProps<C>, keyof TProps>,
+  TResult = Partial<IdProp> & React.ComponentProps<C>,
   R = unknown,
 >(
   module: RuntimeModule<R>,

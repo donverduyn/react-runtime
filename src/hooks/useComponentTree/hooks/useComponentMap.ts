@@ -1,5 +1,5 @@
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { DeclarationId, RegisterId, ScopeId } from 'types';
+import type { DeclarationId, RegisterId, ScopeId } from '@/types';
 
 const createComponentMap = () => {
   const idMap = new Map<RegisterId, DeclarationId>();

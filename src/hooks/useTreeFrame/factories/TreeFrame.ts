@@ -1,4 +1,4 @@
-import type { ComponentId, RegisterId } from 'types';
+import type { ComponentId, RegisterId } from '@/types';
 import { ROOT_NS, type EdgeDataFields } from 'utils/hash';
 
 type TreeFrameParentNode = Partial<{
@@ -28,7 +28,7 @@ export type TreeFrame = {
 
 export function createRootTreeFrame(): TreeFrame {
   return {
-    depth: 0,
+    depth: -1,
     parent: {
       declarationId: null,
       registerId: '__ROOT__' as RegisterId,

@@ -4,7 +4,7 @@
 
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import type { ComponentTreeApi as ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 import type { EdgeDataFields } from 'utils/hash';
 import {
   createDryRunCandidate,

@@ -1,4 +1,4 @@
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 
 export const createSingletonHook = <T, A extends [ScopeId, ...unknown[]]>(
   create: (...args: A) => T

@@ -12,7 +12,7 @@ import type {
   RegisterId,
   ProviderId,
   RuntimeModule,
-} from 'types';
+} from '@/types';
 import { createGhostRegisterId } from 'utils/hash';
 
 export type ProviderTreeApi = {

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
-import type { Merge, Simplify, Tagged } from 'type-fest';
+import type { IsStringLiteral, IsStringLiteral, Merge, Simplify, Tagged } from 'type-fest';
 import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
@@ -53,7 +53,7 @@ export type RuntimeConfig = {
   cleanupPolicy: 'onUnmount' | 'immediate'; // Disposal strategy
 };
 
-export type RuntimeModule<R, C extends React.FC<any> = React.FC<any>> = {
+export type RuntimeModule<R, C = React.FC<any>> = {
   context: RuntimeContext<R>;
   reference: () => C;
 };
@@ -80,9 +80,16 @@ export type RuntimeInstance<R> = {
 //   T extends React.Context<infer U> ? NonNullable<U> : never;
 
 // export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
-export type IdProp = { readonly id?: string };
+export type IdProp = { readonly id: string };
 
-export type Extensible<T> = T & Record<string, unknown>;
+export type Extensible<T extends Record<PropertyKey, unknown>> = T &
+  Record<string, unknown>;
+
+export type IsPrimitiveString<T> = [T] extends [string]
+  ? IsStringLiteral<T> extends true
+    ? false
+    : true
+  : false;
 
 export type ProviderApi<R> = {
   configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;

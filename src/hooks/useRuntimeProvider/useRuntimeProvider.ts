@@ -1,6 +1,6 @@
 import type { ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
 import type { ProviderTreeApi } from 'hooks/useProviderTree/useProviderTree';
-import type { RegisterId, RuntimeInstance, RuntimeKey, ScopeId } from 'types';
+import type { RegisterId, RuntimeInstance, RuntimeKey, ScopeId } from '@/types';
 import { type TreeMapStore } from '../useTreeMap/useTreeMap';
 import { useRuntimeRegistry } from './hooks/useRuntimeRegistry';
 

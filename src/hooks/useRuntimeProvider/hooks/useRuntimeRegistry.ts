@@ -7,7 +7,7 @@ import type {
   RuntimeKey,
   RuntimePayload,
   ScopeId,
-} from 'types';
+} from '@/types';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
 type RuntimeMapping = Map<RegisterId, Map<RuntimeKey, Map<number, RuntimeId>>>;

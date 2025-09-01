@@ -4,7 +4,7 @@ import type {
   RuntimeKey,
   RuntimeModule,
   ScopeId,
-} from 'types';
+} from '@/types';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';

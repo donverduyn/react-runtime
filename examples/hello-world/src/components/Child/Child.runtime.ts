@@ -1,5 +1,4 @@
-import { createRuntimeContext } from '@donverduyn/react-runtime';
-import { pipe, Layer, Context } from 'effect';
+import { createRuntimeContext, pipe, Layer, Context } from '@donverduyn/react-runtime';
 import { Child } from './Child';
 
 export const reference = () => Child;

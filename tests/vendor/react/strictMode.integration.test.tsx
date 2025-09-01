@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import { identity } from 'effect';
-import type { IdProp } from 'types';
+import type { IdProp } from '@/types';
 
 describe('strict mode/hooks', () => {
   // it('should check if two symbols are equal', () => {
@@ -325,5 +325,19 @@ describe('strict mode/hooks', () => {
       'microtask kept after render 1',
       'microtask kept after render 2',
     ]);
+  });
+  it('should call the render function twice on rerender', () => {
+    const renderFn = vi.fn();
+
+    const TestComponent: React.FC = () => {
+      renderFn();
+      return <div>Test</div>;
+    };
+
+    const { rerender } = render(<TestComponent />);
+    expect(renderFn).toHaveBeenCalledTimes(2);
+
+    rerender(<TestComponent />);
+    expect(renderFn).toHaveBeenCalledTimes(4);
   });
 });

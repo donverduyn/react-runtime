@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ComponentId } from 'types';
+import type { ComponentId } from '@/types';
 import type { SeqEntry } from '../factories/TreeFrame';
 
 function ensure(map: Map<ComponentId, SeqEntry>, ComponentId: ComponentId) {
