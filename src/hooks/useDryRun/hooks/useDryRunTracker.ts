@@ -2,9 +2,9 @@
 // For each hit we want to obtain the candidate chain.
 // then for every found candidate, we check if walking the providers resuls in the same declid order then the others. if not we return an error.
 
+import type { ScopeId } from '@/types';
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import type { ComponentTreeApi as ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
-import type { ScopeId } from '@/types';
 import type { EdgeDataFields } from 'utils/hash';
 import {
   createDryRunCandidate,

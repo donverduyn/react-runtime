@@ -201,4 +201,3 @@ export function createChildrenSketch(
 
   return { id, quality, stats };
 }
-

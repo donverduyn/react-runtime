@@ -5,12 +5,6 @@
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import ReactDOM from 'react-dom/client';
-import { getComponentTree } from 'hooks/useComponentTree/useComponentTree';
-import {
-  getProviderTree,
-  type ProviderTreeApi,
-} from 'hooks/useProviderTree/useProviderTree';
-import { getTreeMap } from 'hooks/useTreeMap/useTreeMap';
 import type {
   DeclarationId,
   ProviderEntry,
@@ -18,6 +12,12 @@ import type {
   RuntimeModule,
   ScopeId,
 } from '@/types';
+import { getComponentTree } from 'hooks/useComponentTree/useComponentTree';
+import {
+  getProviderTree,
+  type ProviderTreeApi,
+} from 'hooks/useProviderTree/useProviderTree';
+import { getTreeMap } from 'hooks/useTreeMap/useTreeMap';
 import {
   createHiddenDomRoot,
   disableAsyncGlobals,

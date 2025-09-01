@@ -1,10 +1,10 @@
-import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import type {
   RuntimeInstance,
   RuntimeKey,
   RuntimeModule,
   ScopeId,
 } from '@/types';
+import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';

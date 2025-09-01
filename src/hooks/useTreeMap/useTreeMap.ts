@@ -23,7 +23,7 @@ type TreeMapMeta = {
 export type TreeMapStore = {
   // subscribe: (id: RegisterId) => (callback: () => void) => () => void;
   // getSnapshot: () => Map<string, TreeMapNode | null>;
-  update: (id: RegisterId, parentId: RegisterId) => void
+  update: (id: RegisterId, parentId: RegisterId) => void;
   register: (id: RegisterId, parentId: RegisterId) => void;
   unregister: (id: RegisterId) => void;
   getParent: (id: RegisterId) => RegisterId | null;

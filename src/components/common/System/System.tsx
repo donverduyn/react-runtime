@@ -126,7 +126,9 @@ const usePropsProxyFactory = (name: string) =>
   );
 
 // Accumulates and merges props across renders for the component.
-const useStatefulMerger = <T extends Extensible<unknown>>(initial: T) => {
+const useStatefulMerger = <T extends Extensible<Record<string, unknown>>>(
+  initial: T
+) => {
   const accumulated = React.useRef<T>({ ...initial });
 
   const update = React.useCallback((props: Partial<T>) => {

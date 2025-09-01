@@ -2,7 +2,7 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, SetOptional, Merge } from 'type-fest';
+import type { Simplify, Merge } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import {
   type ExtractStaticComponent,

@@ -1,6 +1,5 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import type {
   DeclarationId,
   ProviderEntry,
@@ -8,6 +7,7 @@ import type {
   RuntimeModule,
   ScopeId,
 } from '@/types';
+import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 
 const createProviderMap = () => {
   const map = new Map<

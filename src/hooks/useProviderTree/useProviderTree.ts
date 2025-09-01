@@ -1,9 +1,5 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
-import type { DryRunApi } from 'hooks/useDryRun/factories/DryRunFactory';
-import { useProviderMap } from 'hooks/useProviderTree/hooks/useProviderMap';
-import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
 import type {
   DeclarationId,
   ProviderEntry,
@@ -13,6 +9,10 @@ import type {
   ProviderId,
   RuntimeModule,
 } from '@/types';
+import type { ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
+import type { DryRunApi } from 'hooks/useDryRun/factories/DryRunFactory';
+import { useProviderMap } from 'hooks/useProviderTree/hooks/useProviderMap';
+import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
 import { createGhostRegisterId } from 'utils/hash';
 
 export type ProviderTreeApi = {

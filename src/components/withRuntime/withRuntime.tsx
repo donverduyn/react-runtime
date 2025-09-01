@@ -65,12 +65,17 @@ export function withRuntime<
   TKeys extends PropertyKey = IsPrimitiveString<keyof TProps> extends false
     ? keyof TProps
     : never,
-  TResult = Omit<React.ComponentProps<C>, TKeys> &
+  // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
+
+  // when returned properties mismatch the original props, the
+  TResult = Readonly<
     Partial<
       IdProp &
         Pick<React.ComponentProps<C>, TKeys> &
         Omit<TProps, keyof React.ComponentProps<C>>
-    >,
+    > &
+      Omit<React.ComponentProps<C>, TKeys>
+  >,
   R = unknown,
 >(
   module: RuntimeModule<R>,
@@ -82,7 +87,7 @@ export function withRuntime<
       StaticProperties<
         React.FC<React.ComponentProps<C>>,
         RuntimeModule<R>,
-        Omit<React.ComponentProps<C>, TKeys> & TProps
+        IdProp & Readonly<TProps> & Omit<React.ComponentProps<C>, TKeys>
       >
   : any;
 
@@ -93,9 +98,10 @@ export function withRuntime<
   R = unknown,
 >(
   module: RuntimeModule<R>,
-  fnVoid: ProviderFn<
+  fnVoid?: ProviderFn<
     R,
     React.FC<React.ComponentProps<C>>,
+    // when the inferred return type is not void, we have to create a mismatch against the original props.
     TProps &
       (TProps extends Record<string, unknown>
         ? Partial<IdProp & React.ComponentProps<C>>
