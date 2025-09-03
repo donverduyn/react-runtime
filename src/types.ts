@@ -58,7 +58,7 @@ export type RuntimeConfig = {
 
 export type RuntimeModule<R, C = React.FC<any>> = {
   context: RuntimeContext<R>;
-  reference: () => C;
+  // reference: () => C;
 };
 
 export type RuntimeContext<R, E = never, A = never> = {
@@ -95,7 +95,7 @@ export type IsPrimitiveString<T> = [T] extends [string]
   : false;
 
 export type SafeKeys<T extends PropertyKey> =
-  IsPrimitiveString<T> extends false ? T : never;
+  IsStringLiteral<T> extends true ? T : never;
 
 export type ResultProps<
   CProps,

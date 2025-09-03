@@ -2,7 +2,7 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge } from 'type-fest';
+import type { Simplify, Merge, IsLiteral, IsUnknown, IsNever } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import {
   type PROPS_PROP,
@@ -11,10 +11,9 @@ import {
   type PropsFn,
   type ProviderId,
   type ProviderEntry,
-  type IdProp,
   type ExtensibleProps,
   type ERROR_PROP,
-  type ExtractStaticError,
+  type ResultProps,
 } from '@/types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 import { createSystem, propagateSystem } from '../common/System/System';
@@ -29,12 +28,28 @@ export function withProps<
   CProps,
   TProps extends ExtensibleProps<CProps>,
   PProps,
+  PErrors,
 >(
-  fn: PropsFn<CProps, TProps>
+  fn: PropsFn<PProps & Partial<CProps>, TProps>
 ): (
   Component: ({ [PROPS_PROP]: PProps } & React.FC<CProps>) | React.FC<CProps>
-) => React.FC<Simplify<Partial<IdProp> & CProps>> &
-  StaticProperties<React.FC<Simplify<CProps>>, TProps>;
+) => IsUnknown<PErrors> extends true
+  ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
+      StaticProperties<
+        React.FC<Simplify<CProps>>,
+        Readonly<
+          // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+          Merge<PProps, IsLiteral<keyof TProps> extends true ? TProps : {}>
+        >,
+        PErrors
+      >
+  : // constraint widening on error with overlap
+    React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
+
+// React.FC<Simplify<Partial<IdProp> & CProps>> &
+// StaticProperties<React.FC<Simplify<CProps>>, TProps>;
 
 //
 export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
@@ -81,13 +96,13 @@ function createPropsEntry<R, C extends React.FC<any>>(
   };
 }
 
-type StaticProperties<C, TProps> = Merge<
-  ExtractMeta<C>,
-  {
-    // [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-    // [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-    // [COMPONENT_PROP]: ExtractStaticComponent<C>;
-    [PROPS_PROP]: Merge<ExtractProviderProps<C>, TProps>;
-    [ERROR_PROP]: ExtractStaticError<C>;
-  }
->;
+type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
+  ? Merge<ExtractMeta<C>, { [ERROR_PROP]: TErrors }>
+  : Merge<
+      ExtractMeta<C>,
+      {
+        [PROPS_PROP]: IsNever<TProps> extends false
+          ? Merge<ExtractProviderProps<C>, TProps>
+          : ExtractProviderProps<C>;
+      }
+    >;

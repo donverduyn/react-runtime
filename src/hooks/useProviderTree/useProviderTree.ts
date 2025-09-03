@@ -104,6 +104,10 @@ export const useProviderTree = (
 
       return result;
     }
+    const combinedProviders = new Map<
+      RegisterId,
+      ResolvedProviderEntry<any, any, unknown>[]
+    >();
     const onTreeProviders = traverse(id, 0);
     const [offTreeProviders, ancestors] =
       dryRunApi?.getResult(unresolvedProviders) ?? ([new Map(), []] as never);
@@ -134,7 +138,7 @@ export const useProviderTree = (
                   ascRegId ?? ('__ROOT__' as unknown as RegisterId)
                 );
                 componentTree.register(ghostId, declId);
-                onTreeProviders.set(ghostId, providers);
+                combinedProviders.set(ghostId, providers);
                 providerMap.register(declId, ascDeclId ?? null, providers);
                 break;
               }
@@ -144,7 +148,11 @@ export const useProviderTree = (
         }
       });
     }
-    return onTreeProviders;
+
+    for (const [regId, entries] of onTreeProviders.entries()) {
+      combinedProviders.set(regId, entries);
+    }
+    return combinedProviders;
   }
 
   function lookAhead(

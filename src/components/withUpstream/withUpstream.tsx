@@ -3,7 +3,14 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge, IsNever, IsLiteral } from 'type-fest';
+import type {
+  Simplify,
+  Merge,
+  IsNever,
+  IsLiteral,
+  IsUnknown,
+  IsEmptyObject,
+} from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import { createSystem, propagateSystem } from 'components/common/System/System';
 import {
@@ -35,6 +42,39 @@ export function withUpstream<
   PErrors extends string[], // errors cumulative
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
+  fn: ProviderFn<R, PProps & Partial<CProps>, TProps>
+): (
+  Component:
+    | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
+    | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
+    | React.FC<CProps>
+  // empty object
+) => IsUnknown<PErrors> extends true
+  ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
+      StaticProperties<
+        React.FC<Simplify<CProps>>,
+        Readonly<
+          // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+          Merge<PProps, IsLiteral<keyof TProps> extends true ? TProps : {}>
+        >,
+        PErrors
+      >
+  : // constraint widening on error with overlap
+    React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
+
+/**
+ * @deprecated In the upcoming 2.0 release, we will remove support for runtime modules as argument. Instead, use the inject API from the function arguments.
+ */
+export function withUpstream<
+  R,
+  CProps, // component props static
+  TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
+  PProps, // providerProps cumulative
+  PErrors, // errors cumulative
+  // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
+>(
   module: RuntimeModule<R>,
   fn: ProviderFn<R, PProps & Partial<CProps>, TProps>
 ): (
@@ -43,24 +83,23 @@ export function withUpstream<
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
   // empty object
-) => IsNever<keyof TProps> extends true
+) => [
+  IsUnknown<PErrors>,
+  IsLiteral<keyof TProps> & IsEmptyObject<TProps>,
+] extends [true, true]
   ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
         React.FC<Simplify<CProps>>,
-        Readonly<Merge<PProps, TProps>>,
+        Readonly<
+          // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+          Merge<PProps, IsLiteral<keyof TProps> extends true ? TProps : {}>
+        >,
         PErrors
       >
-  : // contraint widening on error with overlap
-    IsLiteral<keyof TProps> extends true
-    ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
-        StaticProperties<
-          React.FC<Simplify<CProps>>,
-          Readonly<Merge<PProps, TProps>>,
-          PErrors
-        >
-    : React.FC<Simplify<CProps>> & {
-        _error: ['Type mismatch on provided props'];
-      };
+  : // constraint widening on error with overlap
+    React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
 
 // captures void return only
 export function withUpstream<
@@ -83,14 +122,22 @@ export function withUpstream<
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
-) => React.FC<Simplify<Partial<IdProp> & CProps>> &
-  StaticProperties<React.FC<Simplify<CProps>>, PProps>;
+) => IsUnknown<PErrors> extends true
+  ? React.FC<Simplify<Partial<IdProp> & CProps>> &
+      StaticProperties<React.FC<Simplify<CProps>>, PProps, PErrors>
+  : React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
 
 //
 export function withUpstream<R, C extends React.FC<any>>(
-  module: RuntimeModule<R>,
-  fn: ProviderFn<any, any>
+  module: RuntimeModule<R> | ProviderFn<any, any>,
+  fn?: ProviderFn<any, any>
 ) {
+  // const isModule = isRuntimeModule(moduleOrFn);
+  // const module = isModule ? moduleOrFn : undefined;
+  // const providerFn = isModule ? fn : moduleOrFn;
+
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;

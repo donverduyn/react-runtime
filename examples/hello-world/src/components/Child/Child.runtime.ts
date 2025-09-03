@@ -9,7 +9,7 @@ import {
 import { action, observable } from 'mobx';
 import { Child } from './Child';
 
-export const reference = () => Child;
+// export const reference = () => Child;
 
 const incrementer = Effect.gen(function* () {
   const count = yield* Count;

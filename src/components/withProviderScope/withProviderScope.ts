@@ -1,16 +1,14 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge } from 'type-fest';
+import type { Simplify, Merge, IsUnknown, IsNever } from 'type-fest';
 import {
   type PROPS_PROP,
   type ExtractProviderProps,
   type DeclarationId,
   type IdProp,
-  type Extensible,
   type ScopeId,
   type ERROR_PROP,
-  type ExtractStaticError,
 } from '@/types';
 import { createDryRun } from 'hooks/useDryRun/useDryRun';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
@@ -25,14 +23,26 @@ type PropsOrEmpty<P> = keyof P extends never ? Record<never, never> : P;
 let count = 0;
 
 export function withProviderScope<
-  C extends React.FC<any>,
   C1 extends React.FC<any>,
-  TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-  TResult = Partial<IdProp> & React.ComponentProps<C>,
+  CProps,
+  PProps,
+  PErrors,
 >(
   RootComponent: C1,
   rootProps?: PropsOrEmpty<React.ComponentProps<C1>>
-): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
+): (
+  Component:
+    | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
+    | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
+    | React.FC<CProps>
+) => IsUnknown<PErrors> extends true
+  ? React.FC<Simplify<Partial<IdProp> & CProps>> &
+      StaticProperties<React.FC<Simplify<CProps>>, PProps, PErrors>
+  : React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
+
+// React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 export function withProviderScope<
   R,
@@ -82,16 +92,16 @@ export function withProviderScope<
   };
 }
 
-type StaticProperties<C, TProps> = Merge<
-  ExtractMeta<C>,
-  {
-    // [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-    // [PROVIDERS_PROP]: ExtractStaticProviders<C>;
-    // [COMPONENT_PROP]: ExtractStaticComponent<C>;
-    [PROPS_PROP]: Merge<ExtractProviderProps<C>, TProps>;
-    [ERROR_PROP]: ExtractStaticError<C>;
-  }
->;
+type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
+  ? Merge<ExtractMeta<C>, { [ERROR_PROP]: TErrors }>
+  : Merge<
+      ExtractMeta<C>,
+      {
+        [PROPS_PROP]: IsNever<TProps> extends false
+          ? Merge<ExtractProviderProps<C>, TProps>
+          : ExtractProviderProps<C>;
+      }
+    >;
 
 function noDeclarationMessage(component: React.FC<any>) {
   return `Component with name "${getDisplayName(component)}" cannot be identified as a target for off-tree provider traversal. Use withId on the component itself, to make it discoverable and to enable additional analytics in tools like Storybook, or use withParentTag on the portable root to use the parent component as a target for provider resolution.`;

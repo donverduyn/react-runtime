@@ -3,13 +3,7 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type {
-  Simplify,
-  Merge,
-  IsNever,
-  IsLiteral,
-  IsEmptyObject,
-} from 'type-fest';
+import type { Simplify, Merge, IsNever, IsUnknown, IsLiteral } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import type {
   RuntimeModule,
@@ -38,7 +32,7 @@ export function withRuntime<
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
   PProps, // providerProps cumulative
-  PErrors extends string[],
+  PErrors,
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
   module: RuntimeModule<R>,
@@ -48,25 +42,21 @@ export function withRuntime<
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
-  // empty object
-) => [IsNever<keyof TProps>, IsEmptyObject<PProps>] extends [true, false]
+  // no errors
+) => IsUnknown<PErrors> extends true
   ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
         React.FC<Simplify<CProps>>,
-        Readonly<Merge<PProps, TProps>>,
+        Readonly<
+          // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+          Merge<PProps, IsLiteral<keyof TProps> extends true ? TProps : {}>
+        >,
         PErrors
       >
-  : // contraint widening on error with overlap
-    [IsLiteral<keyof TProps>, IsEmptyObject<PProps>] extends [true, false]
-    ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
-        StaticProperties<
-          React.FC<Simplify<CProps>>,
-          Readonly<Merge<PProps, TProps>>,
-          PErrors
-        >
-    : React.FC<Simplify<CProps>> & {
-        _error: ['Type mismatch on provided props'];
-      };
+  : // constraint widening on error with overlap
+    React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
 
 // captures void return only
 export function withRuntime<
@@ -74,7 +64,7 @@ export function withRuntime<
   CProps,
   TProps extends Partial<IdProp & Record<string, unknown>> | void,
   PProps,
-  PErrors extends string[],
+  PErrors,
 >(
   module: RuntimeModule<R>,
   fnVoid?: ProviderFn<
@@ -89,7 +79,7 @@ export function withRuntime<
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
-) => IsEmptyObject<PProps> extends false
+) => IsUnknown<PErrors> extends true
   ? React.FC<Simplify<Partial<IdProp> & CProps>> &
       StaticProperties<React.FC<Simplify<CProps>>, PProps, PErrors>
   : React.FC<Simplify<CProps>> & {

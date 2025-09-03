@@ -147,7 +147,7 @@ module.exports = {
         //     allow: ['src/modules/MyModule/context.ts'],
         //   },
         // ],
-
+        '@typescript-eslint/no-deprecated': 'warn',
         '@typescript-eslint/no-extraneous-class': [
           'warn',
           {

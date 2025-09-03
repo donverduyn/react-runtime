@@ -174,8 +174,8 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
     ) => {
       // For each RegisterId, set id in currentProps and process its entries
       // Reverse the entries before processing
-      const reversedEntries = Array.from(entries.entries()).reverse();
-      for (const [regId, entryArr] of reversedEntries) {
+      // const reversedEntries = Array.from(entries.entries()).reverse();
+      for (const [regId, entryArr] of entries.entries()) {
         currentProps.reset();
         currentProps.update({ id: regId } as never);
         for (const entry of entryArr) {
@@ -442,7 +442,7 @@ export function createSystem<R, C extends React.FC<any>>(
     );
 
     // TODO: move side effects out of resolveProviders
-    console.log(needsReconstruction.current);
+    console.log(scopeId, needsReconstruction.current);
     const targetEntries = needsReconstruction.current
       ? providerTree.resolveProviders(registerId)
       : (() => {
@@ -509,7 +509,7 @@ export const propagateSystem = <C extends React.FC<any>>(
   Component: React.FC<any>,
   Wrapper: C,
   target: React.FC<any>,
-  allProviders: ProviderEntry<any, any>[],
+  localProviders: ProviderEntry<any, any>[],
   targetName: string
 ) => {
   const meta = extractMeta(Component);
@@ -521,7 +521,7 @@ export const propagateSystem = <C extends React.FC<any>>(
   hoistDeclarationId(Memo, declarationId);
   // this happens only at the root, so we can prepend withProviderScope with other hocs.
   if (dryRunId) hoistDryRunId(Memo, dryRunId);
-  hoistProviderList(Memo, allProviders as React.ComponentProps<C>);
+  hoistProviderList(Memo, localProviders as React.ComponentProps<C>);
 
   return Memo as React.NamedExoticComponent<React.ComponentProps<C>>;
 };
