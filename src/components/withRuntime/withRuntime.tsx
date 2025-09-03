@@ -53,7 +53,6 @@ export function withRuntime<
   ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
         React.FC<Simplify<CProps>>,
-        RuntimeModule<R>,
         Readonly<Merge<PProps, TProps>>,
         PErrors
       >
@@ -62,7 +61,6 @@ export function withRuntime<
     ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
         StaticProperties<
           React.FC<Simplify<CProps>>,
-          RuntimeModule<R>,
           Readonly<Merge<PProps, TProps>>,
           PErrors
         >
@@ -93,12 +91,7 @@ export function withRuntime<
     | React.FC<CProps>
 ) => IsEmptyObject<PProps> extends false
   ? React.FC<Simplify<Partial<IdProp> & CProps>> &
-      StaticProperties<
-        React.FC<Simplify<CProps>>,
-        RuntimeModule<R>,
-        PProps,
-        PErrors
-      >
+      StaticProperties<React.FC<Simplify<CProps>>, PProps, PErrors>
   : React.FC<Simplify<CProps>> & {
       _error: ['Type mismatch on provided props'];
     };
@@ -153,21 +146,11 @@ function createRuntimeEntry<R, C extends React.FC<any>>(
   };
 }
 
-type StaticProperties<C, TModule, TProps, TErrors = unknown> = TErrors extends [
-  string,
-]
-  ? Merge<
-      ExtractMeta<C>,
-      {
-        [ERROR_PROP]: TErrors;
-      }
-    >
+type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
+  ? Merge<ExtractMeta<C>, { [ERROR_PROP]: TErrors }>
   : Merge<
       ExtractMeta<C>,
       {
-        // [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-        // [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TModule>];
-        // [COMPONENT_PROP]: ExtractStaticComponent<C>;
         [PROPS_PROP]: IsNever<TProps> extends false
           ? Merge<ExtractProviderProps<C>, TProps>
           : ExtractProviderProps<C>;

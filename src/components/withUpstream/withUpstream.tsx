@@ -24,7 +24,6 @@ import type {
   ExtensibleProps,
   ResultProps,
   ERROR_PROP,
-  ExtractStaticError,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
@@ -48,7 +47,6 @@ export function withUpstream<
   ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
         React.FC<Simplify<CProps>>,
-        RuntimeModule<R>,
         Readonly<Merge<PProps, TProps>>,
         PErrors
       >
@@ -57,7 +55,6 @@ export function withUpstream<
     ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
         StaticProperties<
           React.FC<Simplify<CProps>>,
-          RuntimeModule<R>,
           Readonly<Merge<PProps, TProps>>,
           PErrors
         >
@@ -87,7 +84,7 @@ export function withUpstream<
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
 ) => React.FC<Simplify<Partial<IdProp> & CProps>> &
-  StaticProperties<React.FC<Simplify<CProps>>, RuntimeModule<R>, PProps>;
+  StaticProperties<React.FC<Simplify<CProps>>, PProps>;
 
 //
 export function withUpstream<R, C extends React.FC<any>>(
@@ -139,21 +136,11 @@ function createUpstreamEntry<R, C extends React.FC<any>>(
   };
 }
 
-type StaticProperties<C, TModule, TProps, TErrors = unknown> = TErrors extends [
-  string,
-]
-  ? Merge<
-      ExtractMeta<C>,
-      {
-        [ERROR_PROP]: TErrors;
-      }
-    >
+type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
+  ? Merge<ExtractMeta<C>, { [ERROR_PROP]: TErrors }>
   : Merge<
       ExtractMeta<C>,
       {
-        // [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-        // [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TModule>];
-        // [COMPONENT_PROP]: ExtractStaticComponent<C>;
         [PROPS_PROP]: IsNever<TProps> extends false
           ? Merge<ExtractProviderProps<C>, TProps>
           : ExtractProviderProps<C>;

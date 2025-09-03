@@ -2,12 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type React from 'react';
 import type { Layer, ManagedRuntime } from 'effect';
+import type { MergeLeft } from 'effect/Types';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
-import type { IsStringLiteral, Merge, Simplify, Tagged } from 'type-fest';
+import type { IsStringLiteral, Simplify, Tagged } from 'type-fest';
 import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
-import type { MergeLeft } from 'effect/Types';
 
 export type ScopeId = Tagged<string, 'ScopeId'>;
 export type InstId = Tagged<string, 'InstId'>;
@@ -86,7 +86,7 @@ export type RuntimeInstance<R> = {
 export type IdProp = { readonly id: string };
 
 export type Extensible<T extends Record<PropertyKey, unknown>> = T &
-  Record<PropertyKey, unknown>
+  Record<PropertyKey, unknown>;
 
 export type IsPrimitiveString<T> = [T] extends [string]
   ? IsStringLiteral<T> extends true
@@ -118,7 +118,7 @@ export type ProviderFn<R, CProps, TResult = unknown> = (
 ) => TResult;
 
 export type PropsFn<CProps, TResult = unknown> = (
-  props: Merge<CProps, IdProp>
+  props: MergeLeft<IdProp, CProps>
 ) => TResult;
 
 export type ProviderEntryType = 'runtime' | 'upstream' | 'props';

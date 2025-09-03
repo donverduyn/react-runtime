@@ -1,7 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Merge } from 'type-fest';
 import { useIsoLayoutEffect } from 'hooks/common/useIsoLayoutEffect';
 import { useStableObject } from 'hooks/common/useStableObject';
 import { useComponentTree } from 'hooks/useComponentTree/useComponentTree';
@@ -165,10 +164,8 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
   // TODO: consider making initial optional because we have to reset anyway, or reset at the end maybe, but seems bad idea.
   const currentProps = useStatefulMerger({
     id: registerId,
-  } as unknown as Merge<
-    Partial<React.ComponentProps<C>>,
-    ExtractProviderProps<C> & IdProp
-  >);
+  } as unknown as Partial<React.ComponentProps<C> & ExtractProviderProps<C>> &
+    IdProp);
 
   return React.useCallback(
     (
@@ -214,7 +211,8 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
 
             if (entry.fn) {
               // this call triggers the runtime to be created
-              const maybeProps = entry.fn(apiProxy, propsProxy);
+              // TODO: figure out why types are misaligned with props using MergeLeft in ProviderFn type
+              const maybeProps = entry.fn(apiProxy, propsProxy as never);
               if (maybeProps) {
                 currentProps.update(maybeProps);
               }
@@ -225,7 +223,7 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
           }
 
           if (entry.type === 'props') {
-            const newProps = entry.fn(currentProps.get());
+            const newProps = entry.fn(currentProps.get() as never);
             currentProps.update(newProps ?? {});
           }
         }
