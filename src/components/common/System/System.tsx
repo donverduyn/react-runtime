@@ -28,7 +28,7 @@ import {
   type ProviderApi,
   type RuntimeApiFactory,
   type Extensible,
-  type ExtractStaticProps,
+  type ExtractProviderProps,
   type ResolvedProviderEntry,
   type ScopeId,
 } from 'types';
@@ -167,7 +167,7 @@ const useEntryBuilder = <R, C extends React.FC<any>>(
     id: registerId,
   } as unknown as Merge<
     Partial<React.ComponentProps<C>>,
-    ExtractStaticProps<C> & IdProp
+    ExtractProviderProps<C> & IdProp
   >);
 
   return React.useCallback(
@@ -433,16 +433,19 @@ export function createSystem<R, C extends React.FC<any>>(
 
     //* We need a method that takes a set of runtime keys and returns a map with runtime instances, using useSyncExternalStore. This way we can compare runtime ids, between getSnapshot calls, to return a stable map. When ids change, the component will re-render, which allows upstream fast refresh, to update downstream components that depend on upstream runtimes. In order to make this happen, runtimeRegistry, should use this method to register the component id under each runtime id associated with the provided key.
 
-    const needsReconstruction = localEntries.some((item) => {
-      if (item.type === 'upstream') {
-        const { context } = item.module;
-        const instance = runtimeProvider.getByKey(registerId, context.key);
-        return !instance;
-      }
-    });
+    const needsReconstruction = React.useRef(
+      localEntries.some((item) => {
+        if (item.type === 'upstream') {
+          const { context } = item.module;
+          const instance = runtimeProvider.getByKey(registerId, context.key);
+          return !instance;
+        }
+      })
+    );
 
     // TODO: move side effects out of resolveProviders
-    const targetEntries = needsReconstruction
+    console.log(needsReconstruction.current);
+    const targetEntries = needsReconstruction.current
       ? providerTree.resolveProviders(registerId)
       : (() => {
           const map = new Map<

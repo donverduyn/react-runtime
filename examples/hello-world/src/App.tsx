@@ -16,14 +16,14 @@ const withLogger = (component: React.FC<Props>) =>
     // }),
     withRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
-      return { store: runtime.use(AppRuntime.Store) };
+      return { store: runtime.use(AppRuntime.Count) };
     })
   );
 
 export const App = connect(AppView, withLogger);
 
 type Props = {
-  readonly store: AppRuntime.Store;
+  readonly store: AppRuntime.Count;
 };
 
 export function AppView({ store }: Props) {

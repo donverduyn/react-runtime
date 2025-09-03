@@ -3,26 +3,26 @@
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from 'react';
-import type { Simplify, Merge, IsNever } from 'type-fest';
+import type {
+  Simplify,
+  Merge,
+  IsNever,
+  IsLiteral,
+  IsEmptyObject,
+} from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import type {
   RuntimeModule,
-  PROVIDERS_PROP,
-  ExtractStaticProviders,
-  COMPONENT_PROP,
-  ExtractStaticComponent,
   PROPS_PROP,
-  ExtractStaticProps,
-  UPSTREAM_PROP,
-  ExtractStaticUpstream,
-  Down,
+  ExtractProviderProps,
   ProviderFn,
   DeclarationId,
   ProviderEntry,
   ProviderId,
   IdProp,
-  Extensible,
-  IsPrimitiveString,
+  ExtensibleProps,
+  ResultProps,
+  ERROR_PROP,
 } from '@/types';
 import { createSystem, propagateSystem } from 'components/common/System/System';
 import {
@@ -33,88 +33,75 @@ import {
 } from 'components/common/System/utils/static';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
-// export function withRuntime<
-//   C extends React.FC<any>,
-//   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-//   TResult = Partial<IdProp> & React.ComponentProps<C>,
-//   R = unknown,
-// >(
-//   module: RuntimeModule<R>,
-//   fn?: ProviderFn<R, C, TProps>
-// ): (
-//   Component: C
-// ) => React.FC<Simplify<TResult>> &
-//   StaticProperties<C, RuntimeModule<R>, TProps>;
-
-// export function withRuntime<
-//   C extends React.FC<any>,
-//   TProps extends Partial<Extensible<React.ComponentProps<C>>>,
-//   TResult = Partial<IdProp> & React.ComponentProps<C>,
-//   R = unknown,
-// >(
-//   module: RuntimeModule<R>,
-//   fnVoid?: ProviderFn<R, C>
-// ): (
-//   Component: C
-// ) => React.FC<Simplify<TResult>> &
-//   StaticProperties<C, RuntimeModule<R>, TProps>;
-
 export function withRuntime<
-  C extends React.FC<any>,
-  TProps extends Extensible<Partial<IdProp & React.ComponentProps<C>>>,
-  TKeys extends PropertyKey = IsPrimitiveString<keyof TProps> extends false
-    ? keyof TProps
-    : never,
+  R,
+  CProps, // component props static
+  TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
+  PProps, // providerProps cumulative
+  PErrors extends string[],
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
-
-  // when returned properties mismatch the original props, the
-  TResult = Readonly<
-    Partial<
-      IdProp &
-        Pick<React.ComponentProps<C>, TKeys> &
-        Omit<TProps, keyof React.ComponentProps<C>>
-    > &
-      Omit<React.ComponentProps<C>, TKeys>
-  >,
-  R = unknown,
 >(
   module: RuntimeModule<R>,
-  fn: ProviderFn<R, React.FC<React.ComponentProps<C>>, TProps>
+  fn?: ProviderFn<R, PProps & Partial<CProps>, TProps>
 ): (
-  Component: C
-) => IsNever<TKeys> extends false
-  ? React.FC<Simplify<TResult>> &
+  Component:
+    | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
+    | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
+    | React.FC<CProps>
+  // empty object
+) => [IsNever<keyof TProps>, IsEmptyObject<PProps>] extends [true, false]
+  ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
-        React.FC<React.ComponentProps<C>>,
+        React.FC<Simplify<CProps>>,
         RuntimeModule<R>,
-        IdProp & Readonly<TProps> & Omit<React.ComponentProps<C>, TKeys>
+        Readonly<Merge<PProps, TProps>>,
+        PErrors
       >
-  : any;
+  : // contraint widening on error with overlap
+    [IsLiteral<keyof TProps>, IsEmptyObject<PProps>] extends [true, false]
+    ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
+        StaticProperties<
+          React.FC<Simplify<CProps>>,
+          RuntimeModule<R>,
+          Readonly<Merge<PProps, TProps>>,
+          PErrors
+        >
+    : React.FC<Simplify<CProps>> & {
+        _error: ['Type mismatch on provided props'];
+      };
 
+// captures void return only
 export function withRuntime<
-  C extends React.FC<any>,
+  R,
+  CProps,
   TProps extends Partial<IdProp & Record<string, unknown>> | void,
-  TResult = Partial<IdProp> & React.ComponentProps<C>,
-  R = unknown,
+  PProps,
+  PErrors extends string[],
 >(
   module: RuntimeModule<R>,
   fnVoid?: ProviderFn<
     R,
-    React.FC<React.ComponentProps<C>>,
+    PProps & Partial<CProps>,
     // when the inferred return type is not void, we have to create a mismatch against the original props.
     TProps &
-      (TProps extends Record<string, unknown>
-        ? Partial<IdProp & React.ComponentProps<C>>
-        : void)
+      (TProps extends Record<string, unknown> ? Partial<IdProp & CProps> : void)
   >
 ): (
-  Component: C
-) => React.FC<Simplify<TResult>> &
-  StaticProperties<
-    React.FC<React.ComponentProps<C>>,
-    RuntimeModule<R>,
-    IdProp & React.ComponentProps<C>
-  >;
+  Component:
+    | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
+    | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
+    | React.FC<CProps>
+) => IsEmptyObject<PProps> extends false
+  ? React.FC<Simplify<Partial<IdProp> & CProps>> &
+      StaticProperties<
+        React.FC<Simplify<CProps>>,
+        RuntimeModule<R>,
+        PProps,
+        PErrors
+      >
+  : React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
 
 //
 export function withRuntime<C extends React.FC<any>, R>(
@@ -166,12 +153,23 @@ function createRuntimeEntry<R, C extends React.FC<any>>(
   };
 }
 
-type StaticProperties<C, TModule, TProps> = Merge<
-  ExtractMeta<C>,
-  {
-    [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
-    [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TModule>];
-    [COMPONENT_PROP]: ExtractStaticComponent<C>;
-    [PROPS_PROP]: Merge<ExtractStaticProps<C>, TProps>;
-  }
->;
+type StaticProperties<C, TModule, TProps, TErrors = unknown> = TErrors extends [
+  string,
+]
+  ? Merge<
+      ExtractMeta<C>,
+      {
+        [ERROR_PROP]: TErrors;
+      }
+    >
+  : Merge<
+      ExtractMeta<C>,
+      {
+        // [UPSTREAM_PROP]: ExtractStaticUpstream<C>;
+        // [PROVIDERS_PROP]: [...ExtractStaticProviders<C>, Down<TModule>];
+        // [COMPONENT_PROP]: ExtractStaticComponent<C>;
+        [PROPS_PROP]: IsNever<TProps> extends false
+          ? Merge<ExtractProviderProps<C>, TProps>
+          : ExtractProviderProps<C>;
+      }
+    >;

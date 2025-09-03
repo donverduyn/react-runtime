@@ -6,31 +6,27 @@ import {
   Schedule,
   createRuntimeContext,
 } from '@donverduyn/react-runtime';
-import { action } from 'mobx';
+import { action, observable } from 'mobx';
 import { App } from './App';
-import { createStore } from './utils/store';
-import { randomString } from './utils/string';
 
-const messageToggler = Effect.gen(function* () {
-  const store = yield* Store;
+const countStore = Effect.gen(function* () {
+  const count = yield* Count;
   yield* pipe(
     Stream.fromSchedule(Schedule.fixed(1000)),
-    Stream.mapEffect((i) =>
-      Effect.sync(action(() => store.set('message', randomString(i))))
-    ),
+    Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),
     Stream.runDrain
   );
 });
 
-export class Store extends Effect.Service<Store>()('App/Store2', {
-  effect: Effect.sync(createStore),
+export class Count extends Effect.Service<Count>()('App/Store', {
+  effect: Effect.sync(() => observable.box(0)),
 }) {}
 
 export const reference = () => App;
 
 export const layer = pipe(
-  Layer.scopedDiscard(messageToggler.pipe(Effect.forkScoped)),
-  Layer.provideMerge(Store.Default)
+  Layer.scopedDiscard(countStore.pipe(Effect.forkScoped)),
+  Layer.provideMerge(Count.Default)
 );
 
 export const context = createRuntimeContext()(layer);

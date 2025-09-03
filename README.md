@@ -31,7 +31,7 @@ Here’s what you get out of the box:
 
 - 🧠 **Keep Logic Out of the UI**: Colocate your domain logic in reusable runtime modules and keep your components focused purely on rendering.
 
-- 🔍 **Type-Driven Transparency**: TypeScript infers the entire runtime dependency graph and shows exactly what each component expects and receives — no more guessing, no digging through files.
+<!-- - 🔍 **Type-Driven Transparency**: TypeScript infers the entire runtime dependency graph and shows exactly what each component expects and receives — no more guessing, no digging through files. -->
 
 
 ## Installation

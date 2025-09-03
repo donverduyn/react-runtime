@@ -1,11 +1,13 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type React from 'react';
 import type { Layer, ManagedRuntime } from 'effect';
 import type { Booleans, Call, Objects, Tuples } from 'hotscript';
 import type { IsStringLiteral, Merge, Simplify, Tagged } from 'type-fest';
 import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
+import type { MergeLeft } from 'effect/Types';
 
 export type ScopeId = Tagged<string, 'ScopeId'>;
 export type InstId = Tagged<string, 'InstId'>;
@@ -30,6 +32,7 @@ export const PROVIDERS_PROP = '_providers';
 export const COMPONENT_PROP = '_component';
 export const PROPS_PROP = '_props';
 export const UPSTREAM_PROP = '_upstream';
+export const ERROR_PROP = '_error';
 
 export type RuntimeApi<R> = {
   instance: RuntimeInstance<R>['runtime'];
@@ -83,7 +86,7 @@ export type RuntimeInstance<R> = {
 export type IdProp = { readonly id: string };
 
 export type Extensible<T extends Record<PropertyKey, unknown>> = T &
-  Record<string, unknown>;
+  Record<PropertyKey, unknown>
 
 export type IsPrimitiveString<T> = [T] extends [string]
   ? IsStringLiteral<T> extends true
@@ -91,18 +94,31 @@ export type IsPrimitiveString<T> = [T] extends [string]
     : true
   : false;
 
+export type SafeKeys<T extends PropertyKey> =
+  IsPrimitiveString<T> extends false ? T : never;
+
+export type ResultProps<
+  CProps,
+  ExtraProps extends Record<PropertyKey, unknown>,
+> = Readonly<
+  Partial<IdProp & Pick<ExtraProps, keyof CProps>> &
+    Omit<CProps, SafeKeys<keyof ExtraProps>>
+>;
+
+export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
+
 export type ProviderApi<R> = {
   configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;
   runtime: RuntimeApi<R>;
 };
 
-export type ProviderFn<R, C extends React.FC<any>, TResult = unknown> = (
+export type ProviderFn<R, CProps, TResult = unknown> = (
   api: ProviderApi<R>,
-  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
+  props: MergeLeft<IdProp, CProps>
 ) => TResult;
 
-export type PropsFn<C extends React.FC<any>, TResult = unknown> = (
-  props: Merge<Partial<React.ComponentProps<C>>, ExtractStaticProps<C> & IdProp>
+export type PropsFn<CProps, TResult = unknown> = (
+  props: Merge<CProps, IdProp>
 ) => TResult;
 
 export type ProviderEntryType = 'runtime' | 'upstream' | 'props';
@@ -146,11 +162,22 @@ export type ExtractStaticProviders<T> = T extends { [PROVIDERS_PROP]: infer R }
     : never
   : [];
 
-export type ExtractStaticProps<T> = T extends { [PROPS_PROP]: infer P }
+export type ExtractProviderProps<T> = T extends {
+  [PROPS_PROP]: infer P;
+}
   ? P
   : Record<never, never>;
 
+export type ExtractProps<C extends React.FC<any>> = React.ComponentProps<C> &
+  ExtractProviderProps<C>;
+
 export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }
+  ? U extends unknown[]
+    ? U
+    : never
+  : [];
+
+export type ExtractStaticError<T> = T extends { [ERROR_PROP]: infer U }
   ? U extends unknown[]
     ? U
     : never
