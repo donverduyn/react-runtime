@@ -31,25 +31,28 @@ import type {
   ExtensibleProps,
   ResultProps,
   ERROR_PROP,
+  UpstreamProviderFn,
 } from 'types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
+import { isRuntimeModule } from 'utils/runtime';
 
 export function withUpstream<
-  R,
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
   PProps, // providerProps cumulative
-  PErrors extends string[], // errors cumulative
-  // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
+  PErrors, // errors cumulative
 >(
-  fn: ProviderFn<R, PProps & Partial<CProps>, TProps>
+  fn: UpstreamProviderFn<Simplify<PProps & Partial<CProps>>, TProps>
 ): (
   Component:
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
     | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
     | React.FC<CProps>
   // empty object
-) => IsUnknown<PErrors> extends true
+) => [
+  IsUnknown<PErrors>,
+  IsLiteral<keyof TProps> & IsEmptyObject<TProps>,
+] extends [true, true]
   ? React.FC<Simplify<ResultProps<CProps, TProps>>> &
       StaticProperties<
         React.FC<Simplify<CProps>>,
@@ -61,6 +64,31 @@ export function withUpstream<
       >
   : // constraint widening on error with overlap
     React.FC<Simplify<CProps>> & {
+      _error: ['Type mismatch on provided props'];
+    };
+
+// captures void return only
+export function withUpstream<
+  CProps,
+  TProps extends Partial<IdProp & Record<string, unknown>> | void,
+  PProps,
+  PErrors,
+>(
+  fnVoid: UpstreamProviderFn<
+    PProps & Partial<CProps>,
+    // when the inferred return type is not void, we have to create a mismatch against the original props.
+    TProps &
+      (TProps extends Record<string, unknown> ? Partial<IdProp & CProps> : void)
+  >
+): (
+  Component:
+    | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
+    | ({ [ERROR_PROP]: PErrors } & React.FC<CProps>)
+    | React.FC<CProps>
+) => IsUnknown<PErrors> extends true
+  ? React.FC<Simplify<Partial<IdProp> & CProps>> &
+      StaticProperties<React.FC<Simplify<CProps>>, PProps, PErrors>
+  : React.FC<Simplify<CProps>> & {
       _error: ['Type mismatch on provided props'];
     };
 
@@ -131,12 +159,27 @@ export function withUpstream<
 
 //
 export function withUpstream<R, C extends React.FC<any>>(
-  module: RuntimeModule<R> | ProviderFn<any, any>,
+  moduleOrFn: RuntimeModule<R> | UpstreamProviderFn<any, any>,
   fn?: ProviderFn<any, any>
 ) {
-  // const isModule = isRuntimeModule(moduleOrFn);
-  // const module = isModule ? moduleOrFn : undefined;
-  // const providerFn = isModule ? fn : moduleOrFn;
+  const isModule = isRuntimeModule(moduleOrFn);
+  const shouldPopulate = !isModule;
+  const module = isModule ? moduleOrFn : undefined;
+  const providerFn = isModule
+    ? (fn as ProviderFn<any, any>)
+    : (moduleOrFn as UpstreamProviderFn<any, any>);
+
+  if (shouldPopulate) {
+    // what do we do if we don't have a module provided? run the provided function and collect everything through inject.
+    // in order to make this happen, we first need to expose an inject api, then we can use the implementation to collect the arguments used.
+    // the first argument will be the runtime provider, so we can easily register, upstream entries for each. we only have to think about what else we associate with it, because earlier, we had a function for each entry, but now we just need to create an entry for each inject() use in a deduped fashion.
+    // const createRuntimeApi = useRuntimeApi(scopeId);
+    // const createApiProxy = useApiProxyFactory<R>(createRuntimeApi, name);
+    // const createPropsProxy = usePropsProxyFactory(name);
+    // const propsProxy = createPropsProxy(currentProps.get());
+    // const apiProxy = createApiProxy(entry, instances, factory, propsProxy);
+    // const result = providerFn();
+  }
 
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
@@ -145,8 +188,14 @@ export function withUpstream<R, C extends React.FC<any>>(
 
     const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
-    const provider = createUpstreamEntry<R, C>(hocId as ProviderId, module, fn);
-    const localProviders = getStaticProviderList<C, R>(Component, provider);
+
+    // TODO: find a different way to handle this
+    const provider = createUpstreamEntry<R, C>(
+      hocId as ProviderId,
+      module,
+      providerFn
+    );
+    const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target, 'withRuntime');
 
     const Wrapper = createSystem(
@@ -178,7 +227,7 @@ function createUpstreamEntry<R, C extends React.FC<any>>(
   return {
     type: 'upstream',
     id,
-    module,
+    upstreams: [module],
     fn,
   };
 }

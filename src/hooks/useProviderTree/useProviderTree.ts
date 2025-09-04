@@ -23,7 +23,14 @@ export type ProviderTreeApi = {
   ) => void;
   resolveProviders: (
     id: RegisterId,
-    rootEntries?: ProviderEntry<any, any>[]
+    registerFn: (options: {
+      descRegId: RegisterId;
+      ascDeclId: DeclarationId | undefined;
+      ascRegId: RegisterId | null;
+      declId: DeclarationId;
+      ghostId: RegisterId;
+      providers: ProviderEntry<any, any>[];
+    }) => void
   ) => Map<RegisterId, ResolvedProviderEntry<any, any, unknown>[]>;
   getById: (
     id: DeclarationId | null
@@ -45,7 +52,17 @@ export const useProviderTree = (
 ): ProviderTreeApi => {
   const providerMap = useProviderMap(scopeId);
 
-  function resolveProviders(id: RegisterId) {
+  function resolveProviders(
+    id: RegisterId,
+    registerFn: (options: {
+      descRegId: RegisterId;
+      ascDeclId: DeclarationId | undefined;
+      ascRegId: RegisterId | null;
+      declId: DeclarationId;
+      ghostId: RegisterId;
+      providers: ProviderEntry<any, any>[];
+    }) => void
+  ) {
     const seen = new Set<DeclarationId>();
     const unresolvedProviders = new Set<
       ProviderEntry<any, any> & { type: 'upstream' }
@@ -132,15 +149,18 @@ export const useProviderTree = (
               if (descRegId) {
                 // we update the descendent to point to the ghost id
                 // then we register the ghost id to point to the next or __ROOT__ if it doesn't exist.
-                treeMap.update(descRegId, ghostId);
-                treeMap.register(
-                  ghostId,
-                  ascRegId ?? ('__ROOT__' as unknown as RegisterId)
-                );
-                componentTree.register(ghostId, declId);
                 combinedProviders.set(ghostId, providers);
-                providerMap.register(declId, ascDeclId ?? null, providers);
+                registerFn({
+                  descRegId,
+                  ascDeclId,
+                  ascRegId,
+                  declId,
+                  ghostId,
+                  providers,
+                });
+
                 break;
+                // descRegId, ascRegId, ascDeclId, ghostId, declId, providers
               }
             }
             if (descRegId) break;
@@ -163,12 +183,14 @@ export const useProviderTree = (
     if (parentId === '__ROOT__') return parentId;
     const parentDeclarationId = componentTree.getDeclarationId(parentId);
     const modules = providerMap.getModulesById(parentDeclarationId);
-    if (!modules) return null;
-    if (modules.size === 0) return null;
+    if (!modules || modules.size === 0) return null;
 
-    return modules.has(item.module)
-      ? parentId
-      : lookAhead(parentId as unknown as RegisterId, item);
+    // Check if ANY of the modules injected by this provider are present in the parent
+    if (item.upstreams.some((mod) => modules.has(mod))) {
+      return parentId;
+    } else {
+      return lookAhead(parentId as unknown as RegisterId, item);
+    }
   }
 
   return {

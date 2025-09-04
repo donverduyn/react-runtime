@@ -99,7 +99,7 @@ export function withRuntime<C extends React.FC<any>, R>(
     const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
     const provider = createRuntimeEntry<R, C>(hocId as ProviderId, module, fn);
-    const localProviders = getStaticProviderList<C, R>(Component, provider);
+    const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target, 'withRuntime');
 
     const Wrapper = createSystem(
@@ -132,6 +132,7 @@ function createRuntimeEntry<R, C extends React.FC<any>>(
     type: 'runtime',
     id,
     module,
+    upstreams: [],
     fn,
   };
 }

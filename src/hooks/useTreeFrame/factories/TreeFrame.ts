@@ -1,7 +1,7 @@
 import type { ComponentId, RegisterId } from '@/types';
 import { ROOT_NS, type EdgeDataFields } from 'utils/hash';
 
-type TreeFrameParentNode = Partial<{
+export type TreeFrameParentNode = Partial<{
   [K in keyof EdgeDataFields]: EdgeDataFields[K] | null;
 }> & {
   registerId: RegisterId; // non-null, '__ROOT__' for root

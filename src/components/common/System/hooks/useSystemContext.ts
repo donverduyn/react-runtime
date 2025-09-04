@@ -9,15 +9,8 @@ type SystemContext = {
 
 export const SystemContext = React.createContext<SystemContext | null>(null);
 
-export const useSystemContext = (
-  scopeId: ScopeId,
-  dryRunId: ScopeId | null,
-  mode: 'live' | 'dry'
-) => {
-  return (
-    React.useContext(SystemContext) ??
-    createSystemContext(scopeId, dryRunId, mode)
-  );
+export const useSystemContext = () => {
+  return React.useContext(SystemContext);
 };
 
 export const createSystemContext = (

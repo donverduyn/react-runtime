@@ -21,10 +21,10 @@ export const getStaticProviderList = <
   component: C & {
     [PROVIDERS_PROP]?: ProviderEntry<R, C, P>[];
   },
-  provider?: ProviderEntry<R, C, P>
+  providers?: ProviderEntry<R, C, P>[]
 ): ResolvedProviderEntry<R, C, P>[] =>
   (component[PROVIDERS_PROP] ?? [])
-    .concat(provider ? [provider] : [])
+    .concat(providers ?? [])
     .map((item, index) => Object.assign({}, item, { level: 0, index }));
 
 export const getStaticComponent = <C extends React.FC<any>>(

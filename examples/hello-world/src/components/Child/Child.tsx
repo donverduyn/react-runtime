@@ -16,19 +16,14 @@ type Props = {
 
 export const Child = connect(
   observer(ChildView),
-  // withUpstream(({ inject, props }, React) => {
-  //   const count = inject(AppRuntime).use(AppRuntime.Count);
-  //   return { getName: () => count.get() };
-  // }),
+  withUpstream(({ inject, props }) => {
+    const count = inject(AppRuntime).use(AppRuntime.Count);
+    return { getName: () => count.get() };
+  }),
 
   withRuntime(ChildRuntime, () => {
     return { fooz: 'bar' };
   }),
-  withUpstream(AppRuntime, ({ runtime }, props) => {
-    const count = runtime.use(AppRuntime.Count);
-    return { getName: () => count.get() };
-  }),
-  // // withRuntime(ChildRuntime),
 
   withRuntime(ChildRuntime, () => {}),
   withRuntime(ChildRuntime, () => ({}))

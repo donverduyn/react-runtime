@@ -61,7 +61,7 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
     const dryRunId = getStaticDryRunId(Component);
     const target = getStaticComponent(Component) ?? Component;
     const provider = createPropsEntry<R, C>(hocId as ProviderId, fn);
-    const localProviders = getStaticProviderList<C, R>(Component, provider);
+    const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target);
 
     const Wrapper = createSystem(

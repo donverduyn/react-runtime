@@ -78,11 +78,6 @@ export type RuntimeInstance<R> = {
   config: RuntimeConfig;
 };
 
-// export type RuntimeInstance
-// export type RuntimeType<T> =
-//   T extends React.Context<infer U> ? NonNullable<U> : never;
-
-// export type GetContextType<T> = T extends RuntimeContext<infer U> ? U : never;
 export type IdProp = { readonly id: string };
 
 export type Extensible<T extends Record<PropertyKey, unknown>> = T &
@@ -107,14 +102,24 @@ export type ResultProps<
 
 export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 
-export type ProviderApi<R> = {
+export type UpstreamProviderApi<P> = {
+  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T>;
+  props: P;
+}
+
+export type UpstreamProviderFn<CProps, TResult = unknown> = (
+  api: UpstreamProviderApi<CProps>,
+) => TResult;
+
+export type ProviderApi<R, P = object> = {
   configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;
   runtime: RuntimeApi<R>;
+  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T>;
+  props: P;
 };
 
 export type ProviderFn<R, CProps, TResult = unknown> = (
-  api: ProviderApi<R>,
-  props: MergeLeft<IdProp, CProps>
+  api: ProviderApi<R, MergeLeft<IdProp, CProps>>,
 ) => TResult;
 
 export type PropsFn<CProps, TResult = unknown> = (
@@ -126,13 +131,14 @@ export type ProviderEntry<R, C extends React.FC<any>, P = any> =
   | {
       id: ProviderId;
       type: 'runtime';
-      module: RuntimeModule<R>;
+      module: RuntimeModule<any>;
+      upstreams: RuntimeModule<any>[];
       fn?: ProviderFn<R, C, P> | ProviderFn<R, C, undefined> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
-      module: RuntimeModule<R>;
+      upstreams: RuntimeModule<any>[];
       fn: ProviderFn<R, C, P> | ProviderFn<R, C>;
     }
   | {
