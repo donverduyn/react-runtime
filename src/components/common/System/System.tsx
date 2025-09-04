@@ -4,18 +4,21 @@ import * as React from 'react';
 import { useIsoLayoutEffect } from 'hooks/common/useIsoLayoutEffect';
 import { useStableObject } from 'hooks/common/useStableObject';
 import { useComponentTree } from 'hooks/useComponentTree/useComponentTree';
-import type { DryRunApi } from 'hooks/useDryRun/factories/DryRunFactory';
-import { useDryRunContext } from 'hooks/useDryRun/hooks/useDryRunContext';
-import { useDryRun } from 'hooks/useDryRun/useDryRun';
+import {
+  useDryRunContext,
+  useDryRun,
+  useDryRunTracker,
+  type DryRunApi,
+} from 'hooks/useDryRun/useDryRun';
 import { useProviderTree } from 'hooks/useProviderTree/useProviderTree';
 import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
 import {
+  useTreeFrame,
+  TreeFrameContext,
   createTreeFrame,
   type TreeFrameParentNode,
-} from 'hooks/useTreeFrame/factories/TreeFrame';
-import { TreeFrameContext } from 'hooks/useTreeFrame/hooks/useTreeFrameContext';
-import { useTreeFrame } from 'hooks/useTreeFrame/useTreeFrame';
+} from 'hooks/useTreeFrame/useTreeFrame';
 import { useTreeMap } from 'hooks/useTreeMap/useTreeMap';
 import {
   ComponentId,
@@ -36,9 +39,12 @@ import {
   type RuntimeModule,
 } from 'types';
 import { combineV5, createIdFactory, type EdgeDataFields } from 'utils/hash';
-import { createElement, copyStaticProperties, extractMeta } from 'utils/react';
-import { createChildrenSketch } from 'utils/react/children';
-import { useDryRunTracker } from '../../../hooks/useDryRun/hooks/useDryRunTracker';
+import {
+  createElement,
+  copyStaticProperties,
+  extractMeta,
+  createChildrenSketch,
+} from 'utils/react';
 import {
   createSystemContext,
   SystemContext,

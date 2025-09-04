@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { isPlainObject } from './../object';
 
+export { createChildrenSketch } from './children';
+
 export function isReactNode(value: unknown): value is React.ReactNode {
   // Fast path for primitives and null/undefined
   const type = typeof value;

@@ -1,6 +1,8 @@
 import type { ScopeId } from '@/types';
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
 import { createDryRunFactory } from './factories/DryRunFactory';
+
+export { type DryRunApi } from './factories/DryRunFactory';
 export { useDryRunTracker } from './hooks/useDryRunTracker';
 export { useDryRunContext } from './hooks/useDryRunContext';
 
