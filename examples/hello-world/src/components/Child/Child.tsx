@@ -35,7 +35,7 @@ export const Child = link(
 
     return { getName: () => count.get() };
   }),
-  withRuntime(ChildRuntime, () => {
+  withRuntime(ChildRuntime, ({ runtime }) => {
     return { log: (value: string) => console.log('Child log:', value) };
   })
 

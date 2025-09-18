@@ -17,6 +17,13 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
+.logo.effect:hover {
+  filter: drop-shadow(0 0 2em #585858);
+}
+.logo.mobx:hover {
+  filter: drop-shadow(0 0 2em #c56e3b);
+}
+
 
 @keyframes logo-spin {
   from {

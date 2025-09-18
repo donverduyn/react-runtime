@@ -2,6 +2,8 @@ import * as React from 'react';
 import { useState } from 'react';
 import { withRuntime, link } from '@donverduyn/react-runtime';
 import * as AppRuntime from './App.runtime';
+import effectLogo from './assets/effect.svg';
+import mobxLogo from './assets/mobx.svg';
 import reactLogo from './assets/react.svg';
 import { Child } from './components/Child/Child';
 // eslint-disable-next-line import/no-unresolved
@@ -37,6 +39,12 @@ export function AppView(_: Props) {
         </a>
         <a href='https://react.dev' rel='noreferrer' target='_blank'>
           <img alt='React logo' className='logo react' src={reactLogo} />
+        </a>
+        <a href='https://effect.website' rel='noreferrer' target='_blank'>
+          <img alt='React logo' className='logo effect' src={effectLogo} />
+        </a>
+        <a href='https://mobx.js.org' rel='noreferrer' target='_blank'>
+          <img alt='React logo' className='logo mobx' src={mobxLogo} />
         </a>
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
