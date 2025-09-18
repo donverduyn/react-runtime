@@ -11,6 +11,8 @@ export const createUse =
   <A, E>(effect: Effect.Effect<A, E, R>, deps: React.DependencyList = []) => {
     const instance = instances.get(localContext.key)!;
     // think about wether we want to implement a more specific solution for updating downstream components when upstream dependencies change.
+
+    // TODO:  instanceDeps is not very accurate, we should think what's the best way to guarantee updates when any dependencies change, but maybe scoping the instance map could already help at buildEntries.
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     return React.useMemo(
       () => instance.runtime.runSync(effect),

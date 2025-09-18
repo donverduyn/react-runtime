@@ -100,19 +100,6 @@ describe('isRuntimeModule', () => {
     expect(isRuntimeModule(module)).toBeFalsy();
   });
 
-  it('returns false if reference is not a function', () => {
-    const layer = Layer.empty;
-    const context = {
-      key: Symbol('RuntimeContext'),
-      layer,
-    };
-    const module = {
-      context,
-      reference: 123,
-    };
-    expect(isRuntimeModule(module)).toBeFalsy();
-  });
-
   it('returns false for non-object input', () => {
     expect(isRuntimeModule(null)).toBeFalsy();
     expect(isRuntimeModule(undefined)).toBeFalsy();

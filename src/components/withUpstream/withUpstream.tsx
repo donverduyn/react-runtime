@@ -157,7 +157,8 @@ export function withUpstream<
       _error: ['Type mismatch on provided props'];
     };
 
-//
+//* implementation
+
 export function withUpstream<R, C extends React.FC<any>>(
   moduleOrFn: RuntimeModule<R> | UpstreamProviderFn<any, any>,
   fn?: ProviderFn<any, any>
@@ -215,21 +216,18 @@ export function withUpstream<R, C extends React.FC<any>>(
       targetName
     );
 
+    // TODO: if dryRunId is NOT null, that means we need to render memo inside a component that renders the OffTreeNodes, so everything is ready before the actual root renders.
+    // return createRoot(Memo, dryRunId, provider) as never;
     return Memo as never;
   };
 }
 
 function createUpstreamEntry<R, C extends React.FC<any>>(
   id: ProviderId,
-  module: RuntimeModule<R>,
-  fn: ProviderFn<R, C>
+  module: RuntimeModule<any> | undefined,
+  fn: ProviderFn<R, C> | UpstreamProviderFn<C, any>
 ): ProviderEntry<R, C> {
-  return {
-    type: 'upstream',
-    id,
-    upstreams: [module],
-    fn,
-  };
+  return { type: 'upstream', id, fn, module };
 }
 
 type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]

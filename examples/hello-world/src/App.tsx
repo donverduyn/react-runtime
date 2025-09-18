@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { withRuntime, connect } from '@donverduyn/react-runtime';
+import { withRuntime, link } from '@donverduyn/react-runtime';
 import * as AppRuntime from './App.runtime';
 import reactLogo from './assets/react.svg';
 import { Child } from './components/Child/Child';
@@ -9,7 +9,7 @@ import viteLogo from '/vite.svg';
 import './App.css';
 
 const withLogger = (component: React.FC<Props>) =>
-  connect(
+  link(
     component,
     // withUpstream(SomeRuntime, ({ runtime }) => {
     //   console.log('SomeRuntime', runtime.instance );[]
@@ -20,7 +20,7 @@ const withLogger = (component: React.FC<Props>) =>
     })
   );
 
-export const App = connect(AppView, withLogger);
+export const App = link(AppView, withLogger);
 
 type Props = {
   readonly store: AppRuntime.Count;

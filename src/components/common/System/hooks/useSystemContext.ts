@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { ScopeId } from '@/types';
 
-type SystemContext = {
+export type SystemContext = {
   scopeId: ScopeId;
   mode: 'live' | 'dry';
   dryRunId: ScopeId | null;

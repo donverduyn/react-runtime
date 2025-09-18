@@ -46,6 +46,7 @@ export type RuntimeApiFactory<R> = {
     module: RuntimeModule<R>,
     instances: Map<RuntimeKey, RuntimeInstance<any>>
   ) => RuntimeApi<R>;
+  createInert: (stub: unknown) => RuntimeApi<R>;
 };
 
 export type RuntimeConfig = {
@@ -63,11 +64,12 @@ export type RuntimeModule<R, C = React.FC<any>> = {
 
 export type RuntimeContext<R, E = never, A = never> = {
   key: RuntimeKey;
+  name: string;
   layer: Layer.Layer<R, E, A>;
 };
 
 export type RuntimePayload<R> = {
-  entryId: string;
+  providerId: string;
   index: number;
   context: RuntimeContext<R>;
   config: Partial<RuntimeConfig>;
@@ -105,10 +107,10 @@ export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 export type UpstreamProviderApi<P> = {
   inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T>;
   props: P;
-}
+};
 
 export type UpstreamProviderFn<CProps, TResult = unknown> = (
-  api: UpstreamProviderApi<CProps>,
+  api: UpstreamProviderApi<MergeLeft<IdProp, CProps>>
 ) => TResult;
 
 export type ProviderApi<R, P = object> = {
@@ -119,7 +121,7 @@ export type ProviderApi<R, P = object> = {
 };
 
 export type ProviderFn<R, CProps, TResult = unknown> = (
-  api: ProviderApi<R, MergeLeft<IdProp, CProps>>,
+  api: ProviderApi<R, MergeLeft<IdProp, CProps>>
 ) => TResult;
 
 export type PropsFn<CProps, TResult = unknown> = (
@@ -132,13 +134,12 @@ export type ProviderEntry<R, C extends React.FC<any>, P = any> =
       id: ProviderId;
       type: 'runtime';
       module: RuntimeModule<any>;
-      upstreams: RuntimeModule<any>[];
       fn?: ProviderFn<R, C, P> | ProviderFn<R, C, undefined> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
-      upstreams: RuntimeModule<any>[];
+      module?: RuntimeModule<any> | undefined;
       fn: ProviderFn<R, C, P> | ProviderFn<R, C>;
     }
   | {
@@ -152,6 +153,11 @@ export type ResolvedProviderEntry<
   C extends React.FC<any>,
   P,
 > = ProviderEntry<R, C, P> & {
+  level: number;
+  index: number;
+};
+
+export type ResolvedRuntimeModule<R> = RuntimeModule<R> & {
   level: number;
   index: number;
 };

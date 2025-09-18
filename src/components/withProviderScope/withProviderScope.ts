@@ -51,6 +51,8 @@ export function withProviderScope<
 >(RootComponent: C1, rootProps?: PropsOrEmpty<React.ComponentProps<C1>>) {
   return (Component: C) => {
     // if the user uses an unwrapped component as a portable root, we cannot determine what the target is, so we have to throw an error, where the user is offered to options. either use withId, on the unwrapped portable root inside the app hierarchy (for production analytics in storybook, for example, to make it digestible), or to suggest to use withParentTag so we can use the parent as target and collect candidate chains from there. Since the portable root doesn't have providers itself, we know we can't miss any providers by using the parent as target. Note that withParentTag, will assign a declaration id to the component itself, but since it's not available in the app hierarchy, it won't be registered, but that's why we rely on the declid of the provided parent tag as an argument.
+
+    // TODO: consider if we use a non wrapped component before withProviderScope. This would make it impossible to target in the dry run, but see the TODOs in the integration test for a possible solution.
     const declarationId = getStaticDeclarationId(
       Component
     ) as DeclarationId | null;
@@ -62,6 +64,8 @@ export function withProviderScope<
     const target = getStaticComponent(Component) ?? Component;
     const localProviders = getStaticProviderList<C, R>(Component);
     const targetName = getDisplayName(target);
+
+    // TODO: we need a way to store these synchronous operations in a function as a static property so we can reply all of them at the last hoc, otherwise you cannot use other hocs afterwards.
 
     const dryRunId = `dry-run-${String(count++)}` as ScopeId;
     // makes api instance available under dryRunId

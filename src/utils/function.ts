@@ -1,7 +1,7 @@
-export function tryFnSync(cb: () => void = () => {}) {
+export function tryFnSync<R>(cb: () => R, errorCb?: () => R): R | undefined {
   try {
-    cb();
+    return cb();
   } catch {
-    /* empty */
+    return errorCb ? errorCb() : undefined;
   }
 }

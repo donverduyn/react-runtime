@@ -6,7 +6,7 @@ import type {
   RuntimeModule,
 } from '@/types';
 
-export const connect = pipe;
+export const link = pipe;
 
 export const isRuntimeContext = <T>(
   input: unknown
@@ -29,11 +29,7 @@ export const isRuntimeModule = <T>(
     typeof input === 'object' &&
     input !== null &&
     'context' in input &&
-    'reference' in input &&
-    isRuntimeContext(input.context) &&
-    typeof input.reference === 'function'
-
-    // isFunctionalComponent((input.reference as () => React.FC<any>)())
+    isRuntimeContext(input.context)
   );
 };
 
@@ -69,10 +65,11 @@ export const isRuntimeInstance = <T>(
 };
 
 export const createRuntimeContext =
-  () =>
+  (options: { name: string }) =>
   <R, E, A>(layer: Layer.Layer<R, E, A>) => {
     const context: RuntimeContext<R, E, A> = {
       key: Symbol('RuntimeContext'),
+      name: options.name,
       layer,
     };
     return context;

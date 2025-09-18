@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ROOT_NS, combineV5 } from './hash';
+import { LIB_NS, combineV5 } from './hash';
 
 describe('parent-first ids', () => {
   // it('edge is determined by immediate parent + ordinal', () => {
@@ -14,7 +14,7 @@ describe('parent-first ids', () => {
   // });
 
   it('combine accumulates along the path', () => {
-    const root = ROOT_NS;
+    const root = LIB_NS;
     const n1 = combineV5(root, 'Root', 'R');
     const n2 = combineV5(n1, 'Child', 'C1');
     const n3 = combineV5(n2, 'Leaf', 'L');

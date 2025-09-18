@@ -16,7 +16,7 @@ type InferReturn<F> = F extends (...args: any[]) => infer R ? R : never;
 
 export function createFn<R>(
   localContext: RuntimeContext<R>,
-  instances: Map<RuntimeKey, RuntimeInstance<any>>
+  instance: Map<RuntimeKey, RuntimeInstance<any>>
 ): {
   <Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
     target: Fn
@@ -49,6 +49,7 @@ export function createFn<R>(
     const instanceDeps = Array.from(instances.values()).filter(Boolean);
     const fnRef = React.useRef(fn);
 
+    // TODO: hooks like this might be generalizable on the container level, so we have single hook that takes dependencies from arguments to update when needed. Maybe just use a dictionary to hold multiple values, and find a way to associate them with their dependencies. We might be able to use useSyncExternalStore, which gives more control over when to update/write/read
     React.useEffect(() => {
       fnRef.current = fn;
     }, [instanceDeps, instance, fn, ...deps]);
@@ -58,6 +59,7 @@ export function createFn<R>(
       [instanceDeps, instance, ...deps]
     );
 
+    // TODO: same thing here, we likely need some kind of store that registers values together with deps but where we can have a single hook for ALL runtime APis and just inject the hook its api into them so we can use it.
     const stream = React.useMemo(
       () =>
         pipe(
@@ -74,6 +76,7 @@ export function createFn<R>(
     );
 
     React.useEffect(() => {
+      // TODO: check if we can delegate this to the container in which we call buildEntries, because we don't want to have extra hooks here, since we don't know how much inject calls will be used over time.
       const scope = Effect.runSync(Scope.make());
       instance.runtime.runFork(
         stream.pipe(Effect.forkScoped, Scope.extend(scope))
@@ -86,3 +89,61 @@ export function createFn<R>(
     return emitter.emit as (...args: T) => Promise<A>;
   };
 }
+
+type Subscriber = () => void;
+
+export class MultiMemoStore<T> {
+  private values = new Map<string, T>();
+  private subscribers = new Map<string, Set<Subscriber>>();
+
+  set(key: string, value: T) {
+    this.values.set(key, value);
+    this.notify(key);
+  }
+
+  get(key: string): T | undefined {
+    return this.values.get(key);
+  }
+
+  subscribe(key: string, cb: Subscriber) {
+    if (!this.subscribers.has(key)) {
+      this.subscribers.set(key, new Set());
+    }
+    this.subscribers.get(key)!.add(cb);
+  }
+
+  unsubscribe(key: string, cb: Subscriber) {
+    const subs = this.subscribers.get(key);
+    if (subs) {
+      subs.delete(cb);
+      if (subs.size === 0) {
+        this.subscribers.delete(key);
+      }
+    }
+  }
+
+  private notify(key: string) {
+    const subs = this.subscribers.get(key);
+    if (subs) {
+      subs.forEach((cb) => cb());
+    }
+  }
+}
+
+function useMultiMemoStore<T>(keys: string[], store: MultiMemoStore<T>) {
+  return React.useSyncExternalStore(
+    (cb) => {
+      // Subscribe to changes for any key
+      keys.forEach(key => store.subscribe(key, cb));
+      return () => keys.forEach(key => store.unsubscribe(key, cb));
+    },
+    () => keys.map(key => store.get(key))
+  );
+}
+
+const store = new MultiMemoStore<number>();
+store.set('a', 1);
+store.set('b', 2);
+
+// const values = useMultiMemoStore(['a', 'b'], store);
+// values will be [1, 2]

@@ -19,7 +19,8 @@
     "postCreateCommand": {
 		"yarn": "yarn && cd examples/hello-world && yarn",
         "nvm": "bash -i -c 'nvm i 22 && nvm alias default 22 && nvm use default'",
-        "chown": "sudo chown vscode node_modules"
+        "chown": "sudo chown vscode node_modules",
+        "playwright": "rm -rf /home/vscode/.cache/ms-playwright && yarn run playwright:install"
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
@@ -31,7 +32,8 @@
 				"vitest.explorer",
 				"dakara.dakara-foldplus",
 				"Gruntfuggly.todo-tree",
-				"YoavBls.pretty-ts-errors"
+				"YoavBls.pretty-ts-errors",
+				"ms-playwright.playwright"
 			]
 		}
 	}

@@ -22,7 +22,7 @@
       ".*/**/*.test.tsx",
       "**/*.test.ts",
       "**/*.test.tsx",
-      "tests/**/*",
+      "tests/**/*", "src/components/common/System/components/OffTreeContainer.integration.test.tsx",
     ],
     "references": [
       {

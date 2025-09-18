@@ -1,3 +1,4 @@
+import { Layer, ManagedRuntime } from 'effect';
 import type {
   RuntimeInstance,
   RuntimeKey,
@@ -23,7 +24,16 @@ const createRuntimeApi = () => {
     };
   }
 
-  return { create };
+  function createInert<R>(stubValue: unknown) {
+    return {
+      instance: ManagedRuntime.make<R, never>(Layer.empty as Layer.Layer<R>),
+      use: () => stubValue as never,
+      useFn: () => () => Promise.resolve(stubValue) as never,
+      useRun: () => undefined as never,
+    };
+  }
+
+  return { create, createInert };
 };
 
 const useRuntimeApiInstance = createSingletonHook(createRuntimeApi);

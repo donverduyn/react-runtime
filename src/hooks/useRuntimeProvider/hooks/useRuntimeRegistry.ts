@@ -8,15 +8,8 @@ import type {
   RuntimePayload,
   ScopeId,
 } from '@/types';
+import { cloneNestedMap, deepMergeMaps } from 'utils/map';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
-
-type RuntimeMapping = Map<RegisterId, Map<RuntimeKey, Map<number, RuntimeId>>>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RuntimeRegistry = Map<RuntimeId, RuntimeInstance<any>>;
-
-// type ListenerMap = Map<RuntimeId, (() => void)[]>;
-type DisposerMap = Map<RegisterId, Map<RuntimeId, NodeJS.Timeout>>;
-type PromotionMap = Map<RegisterId, boolean>;
 
 export const defaultConfig = {
   debug: false,
@@ -26,12 +19,53 @@ export const defaultConfig = {
   replace: false,
 } satisfies Partial<RuntimeConfig>;
 
-export function createRuntimeRegistry(scopeId: ScopeId) {
-  const runtimeMapping: RuntimeMapping = new Map();
-  const registry: RuntimeRegistry = new Map();
-  const disposerMap: DisposerMap = new Map();
-  const promotionMap: PromotionMap = new Map();
+export function createRuntimeRegistry(_: ScopeId) {
+  const runtimeMapping: Map<
+    RegisterId,
+    Map<RuntimeKey, Map<number, RuntimeId>>
+  > = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const registry: Map<RuntimeId, RuntimeInstance<any>> = new Map();
+  const isolatedMapping: Map<
+    RegisterId,
+    Map<RuntimeKey, Map<number, RuntimeId>>
+  > = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isolatedRegistry: Map<RuntimeId, RuntimeInstance<any>> = new Map();
+  const disposerMap: Map<
+    RegisterId,
+    Map<RuntimeId, NodeJS.Timeout>
+  > = new Map();
+  const promotionMap: Map<RegisterId, boolean> = new Map();
   // const listeners: ListenerMap = new Map();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function registerIsolated(id: RegisterId, payload: RuntimePayload<any>) {
+    const exists = getById(id, payload.context.key, payload.index);
+    if (exists) return exists;
+    const { context, config, providerId: entryId } = payload;
+    const runtimeId = entryId as RuntimeId;
+    let runtimeKeyMap = isolatedMapping.get(id);
+    if (!runtimeKeyMap) {
+      runtimeKeyMap = new Map();
+      isolatedMapping.set(id, runtimeKeyMap);
+    }
+    if (!runtimeKeyMap.has(context.key)) {
+      runtimeKeyMap.set(context.key, new Map());
+    }
+    const runtimeIdMap = runtimeKeyMap.get(context.key)!;
+    runtimeIdMap.set(payload.index, runtimeId);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const instance: RuntimeInstance<any> = {
+      runtime: ManagedRuntime.make(context.layer),
+      config: Object.assign({}, defaultConfig, config),
+    };
+    isolatedRegistry.set(runtimeId, instance);
+
+    const currentId = runtimeKeyMap.get(context.key)?.get(payload.index);
+    return isolatedRegistry.get(currentId!)!;
+  }
 
   function register(
     id: RegisterId,
@@ -40,7 +74,8 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
   ) {
     const exists = getById(id, payload.context.key, payload.index);
     if (exists) return exists;
-    const { context, config, entryId } = payload;
+
+    const { context, config, providerId: entryId } = payload;
     const runtimeId = entryId as RuntimeId;
     const promoted = promotionMap.get(id);
     if (promoted === undefined) {
@@ -119,8 +154,8 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
     }
   }
 
-  function subscribe(id: RuntimeKey) {
-    return (fn: () => void) => {
+  function subscribe(_: RuntimeKey) {
+    return (__: () => void) => {
       // listeners.set(fn);
       return () => {
         // listeners.delete(fn);
@@ -128,14 +163,63 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
     };
   }
 
-  function getById(id: RegisterId, key: RuntimeKey, index: number) {
-    const runtimeId = runtimeMapping.get(id)?.get(key)?.get(index);
+  function getById(
+    id: RegisterId,
+    key: RuntimeKey,
+    index: number,
+    snapshot?: typeof runtimeMapping | null
+  ) {
+    const keyMap = snapshot ?? runtimeMapping;
+    const runtimeId = keyMap.get(id)?.get(key)?.get(index);
     return (runtimeId && registry.get(runtimeId)) ?? null;
   }
+
+  // function commitIsolatedById(id: RegisterId) {
+  //   const keyMap = isolatedMapping.get(id);
+  //   if (!keyMap) return;
+  //   // register keyMap into main registry
+  //   runtimeMapping.set(id, keyMap);
+
+  //   // register isolated instances into main registry and delete from isolated registry.
+  //   keyMap.forEach((idMap) => {
+  //     idMap.forEach((runtimeId) => {
+  //       const instance = isolatedRegistry.get(runtimeId);
+  //       if (instance) {
+  //         isolatedRegistry.delete(runtimeId);
+  //         registry.set(runtimeId, instance);
+  //       }
+  //     });
+  //   });
+  //   // clean up
+  //   isolatedMapping.delete(id);
+  //   // initiate promotion state for the id, so gcUnpromoted can work correctly, with aborted renders.
+  //   promotionMap.set(id, false);
+
+  //   return keyMap.entries().reduce((instances, [key, idMap]) => {
+  //     idMap.forEach((runtimeId) => {
+  //       const instance = isolatedRegistry.get(runtimeId);
+  //       if (instance) {
+  //         registry.set(runtimeId, instance);
+  //         instances.set(key, instance);
+  //       }
+  //     });
+  //     return instances;
+  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  //   }, new Map<RuntimeKey, RuntimeInstance<any>>());
+  //   // commit happens in the render phase, so promotion happens pre-commit when layoutEffect runs.
+  // }
 
   function promoteById(id: RegisterId) {
     promotionMap.set(id, true);
   }
+
+  // TODO: dispose instead brute force delete, because we might want to rehydrate after suspense. maybe we can check whether the registerId eligable for hydration, since we already know which components will be unable to hydrate previous runtime instances, based on whether they have a salt.
+
+  // TODO: also consider what we do, when postUnmountTTL is 0 during strict mode double invoke,
+
+  // TODO: consider checking if the runtime is in use, before disposing, so it doesn't matter if queueMicrotask is triggered after a component remounts again, which would normally not remove the disposal amount in this case, leading to the instance being disposed while in use.
+
+  // TODO: think whether this is valid, that we use something that ought to be disposed, since if we reconstruct off tree, this could need a rerender from the top to reinstantiate the runtime that was incorrectly created from a disposed suspended render.
 
   function gcUnpromoted(id: RegisterId) {
     const promoted = promotionMap.get(id);
@@ -151,27 +235,86 @@ export function createRuntimeRegistry(scopeId: ScopeId) {
         }
       });
     });
+    const isolatedKeyMap = isolatedMapping.get(id);
+    isolatedKeyMap?.forEach((runtimeIds) => {
+      runtimeIds.forEach((runtimeId) => {
+        const instance = registry.get(runtimeId);
+        if (instance) {
+          void registry.get(runtimeId)?.runtime.dispose();
+          registry.delete(runtimeId);
+        }
+      });
+    });
     disposerMap.delete(id);
     runtimeMapping.delete(id);
     promotionMap.delete(id);
+  }
+
+  // we also need a way to immediately dispose isolated instances, so we might want to have separate method to export and call that method from gcUnpromoted
+
+  function gcIsolated(id: RegisterId) {
+    const keyMap = isolatedMapping.get(id);
+    if (!keyMap) return; // if gc'd
+
+    keyMap.forEach((idMap) => {
+      idMap.forEach((runtimeId) => {
+        const instance = isolatedRegistry.get(runtimeId);
+        if (instance) {
+          void instance.runtime.dispose();
+          isolatedRegistry.delete(runtimeId);
+        }
+      });
+    });
+  }
+
+  function getSnapshot() {
+    return cloneNestedMap(runtimeMapping);
+  }
+
+  function mergeIsolatedById(registerId: RegisterId) {
+    const keyMap = isolatedMapping.get(registerId) ?? null;
+    const collected = keyMap?.values().reduce((instances, idMap) => {
+      idMap.forEach((runtimeId) => {
+        const instance = isolatedRegistry.get(runtimeId);
+        return instance ? instances.set(runtimeId, instance) : instances;
+      });
+      return instances;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }, new Map<RuntimeId, RuntimeInstance<any>>());
+
+    if (!keyMap) return;
+    // register keyMap into main registry
+    const currentValue = runtimeMapping.get(registerId);
+    const newValue = currentValue
+      ? deepMergeMaps(currentValue, keyMap)
+      : keyMap;
+    runtimeMapping.set(registerId, newValue);
+
+    keyMap.forEach((idMap) => {
+      idMap.forEach((runtimeId) => {
+        const instance = collected?.get(runtimeId);
+        if (instance) {
+          registry.set(runtimeId, instance);
+        }
+      });
+    });
   }
 
   return {
     keepAlive,
     promoteById,
     gcUnpromoted,
+    registerIsolated,
+    // commitIsolatedById,
+    gcIsolated,
     register,
     unregister,
     getById,
+    mergeIsolatedById,
+    getSnapshot,
     subscribe,
     registry, // exposed for advanced use/testing
   };
 }
 
 export const useRuntimeRegistry = createSingletonHook(createRuntimeRegistry);
-
-const noDisposerMapMessage = (id: RegisterId) =>
-  `No disposer map found for component ${id}. This may indicate a bug in the runtime management logic.`;
-
-const noTimeoutMessage = (id: RegisterId, runtimeId: RuntimeId) =>
-  `No timeout found for component ${id} and runtime ${runtimeId}.`;

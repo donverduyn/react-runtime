@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { pipe as connect, Context } from 'effect';
+import { pipe as link, Context, pipe } from 'effect';
 import { describe, it, expect } from 'vitest';
 import { withProviderScope } from 'components/withProviderScope/withProviderScope';
 import { mockRuntimeModule } from 'tests/utils/mockRuntimeModule';
@@ -10,7 +10,7 @@ import { withUpstream } from './withUpstream';
 class Tag extends Context.Tag('Tag')<Tag, string>() {}
 
 type ParentProps = {
-  readonly children: React.ReactNode;
+  readonly children?: React.ReactNode;
 };
 
 type ChildProps = {
@@ -19,7 +19,10 @@ type ChildProps = {
 };
 
 const ParentView: React.FC<ParentProps> = ({ children }) => (
-  <div>{children}</div>
+  <div>
+    <h1>Parent</h1>
+    {children}
+  </div>
 );
 
 const ChildView: React.FC<ChildProps> = (props) => (
@@ -37,11 +40,12 @@ describe('withUpstream', () => {
     expect(true).toBeTruthy();
   });
   it('should allow child to resolve parent runtime value', () => {
-    const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
+    const ParentRuntime = mockRuntimeModule(Tag, parentText);
 
-    const Parent = connect(ParentView, withRuntime(ParentRuntime));
-    const Child = connect(
+    const Parent = link(ParentView, withRuntime(ParentRuntime));
+    const Child = link(
       ChildView,
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       withUpstream(ParentRuntime, ({ runtime }) => ({
         parentValue: runtime.use(Tag),
         childValue: childText,
@@ -49,21 +53,22 @@ describe('withUpstream', () => {
     );
 
     const { getByText } = render(
-      <Parent id='parent'>
-        <Child id='child' />
+      <Parent>
+        <Child />
       </Parent>
     );
     expect(getByText(parentText)).toBeDefined();
   });
 
   it('should allow child to fallback to parent runtime if its own is not provided', () => {
-    const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
-    const ChildRuntime = mockRuntimeModule(Tag, childText)(() => Child);
+    const ParentRuntime = mockRuntimeModule(Tag, parentText);
+    const ChildRuntime = mockRuntimeModule(Tag, childText);
 
-    const Parent = connect(ParentView, withRuntime(ParentRuntime));
+    const Parent = link(ParentView, withRuntime(ParentRuntime));
 
-    const Child = connect(
+    const Child = link(
       ChildView,
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       withUpstream(ParentRuntime, ({ runtime }) => ({
         parentValue: runtime.use(Tag),
       })),
@@ -73,8 +78,8 @@ describe('withUpstream', () => {
     );
 
     const { getByText, debug } = render(
-      <Parent id='parent'>
-        <Child id='child' />
+      <Parent>
+        <Child />
       </Parent>
     );
     debug();
@@ -82,13 +87,14 @@ describe('withUpstream', () => {
   });
 
   it('should allow child to resolve both its own and parent runtime values', () => {
-    const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
-    const ChildRuntime = mockRuntimeModule(Tag, childText)(() => Child);
+    const ParentRuntime = mockRuntimeModule(Tag, parentText);
+    const ChildRuntime = mockRuntimeModule(Tag, childText);
 
-    const Parent = connect(ParentView, withRuntime(ParentRuntime));
+    const Parent = link(ParentView, withRuntime(ParentRuntime));
 
-    const Child = connect(
+    const Child = link(
       ChildView,
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       withUpstream(ParentRuntime, ({ runtime }) => ({
         parentValue: runtime.use(Tag),
       })),
@@ -97,24 +103,26 @@ describe('withUpstream', () => {
       }))
     );
 
-    const { getByText } = render(
-      <Parent id='parent'>
-        <Child id='child' />
+    const { getByText, debug } = render(
+      <Parent>
+        <Child />
       </Parent>
     );
+    debug();
     expect(getByText(parentText)).toBeDefined();
     expect(getByText(childText)).toBeDefined();
   });
 
-  it.todo('should reconstuct parent runtime in portable scenarios', () => {
-    const ParentRuntime = mockRuntimeModule(Tag, parentText)(() => Parent);
-    const ChildRuntime = mockRuntimeModule(Tag, childText)(() => Child);
+  it('should reconstuct parent runtime in portable scenarios', () => {
+    const ParentRuntime = mockRuntimeModule(Tag, parentText, 'ParentRuntime');
+    const ChildRuntime = mockRuntimeModule(Tag, childText, 'ChildRuntime');
 
     // TODO: if no candidates are found, we fall back to the provided component to withProviderScope. This also allows picking providers from components that do not render in the same tree or through children.
-    const Parent = connect(ParentView, withRuntime(ParentRuntime));
+    const Parent = link(ParentView, withRuntime(ParentRuntime));
 
-    const Child = connect(
+    const Child = link(
       ChildView,
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       withUpstream(ParentRuntime, ({ runtime }) => ({
         parentValue: runtime.use(Tag),
       })),
@@ -123,9 +131,30 @@ describe('withUpstream', () => {
       }))
     );
 
-    const Test = connect(Child, withProviderScope(Parent));
-    const { getByText } = render(<Test id='child' />);
+    const Test = link(Child, withProviderScope(Parent, {}));
+    const { getByText } = render(<Test />);
 
+    expect(getByText(parentText)).toBeDefined();
+    expect(getByText(childText)).toBeDefined();
+  });
+  it('should support the inject() api', () => {
+    const ParentRuntime = mockRuntimeModule(Tag, parentText);
+    const Parent = link(ParentView, withRuntime(ParentRuntime));
+
+    const Child = pipe(
+      ChildView,
+      withUpstream(({ inject }) => ({
+        parentValue: inject(ParentRuntime).use(Tag),
+        childValue: childText,
+      }))
+    );
+
+    const { getByText, debug } = render(
+      <Parent>
+        <Child />
+      </Parent>
+    );
+    debug();
     expect(getByText(parentText)).toBeDefined();
     expect(getByText(childText)).toBeDefined();
   });

@@ -55,6 +55,10 @@ export function createTreeMapNode(
 function createTreeMap(_: ScopeId): TreeMapStore {
   const nodeMap: Map<string, TreeMapNode | null> = new Map();
   const childToParent: Map<RegisterId, RegisterId> = new Map();
+  // TODO: think about whether we really want to track parent to child relationships, because it makes more sense to subscribe be register id under RuntimeModule per register id. this way we can easily notify subscribers based on registered register ids if a runtime reference changes (this can happen through props change when they are passed into configure function in withRuntime).
+
+  // we also have to think about what are other sources that could require updating memoized values from runtime api, because primarily it's where anything that comes out of runtimes is consumed. At least, we have to take into account that a provider function can use any value from other injected runtimes. the current approach of mapping over instances makes sense, although it would have to be scoped per provider (i think it already does). the other source would be the props injected into the hoc. we might be able to track property access and then use each of these values as dependencies. another nice thing is that instances is populated with the actual instance, so if we use the reference for the deps, we automatically have our memoized values updated and what is even better is that it reads as it populates, so only the modules that were injected before the one for which we create the runtime api is used as a dependency, which is correct since the later injected ones cannot be used.
+
   const parentToChildren: Map<RegisterId, RegisterId[]> = new Map();
   const listeners: Map<string, () => void> = new Map();
 

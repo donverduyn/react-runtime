@@ -96,9 +96,14 @@ module.exports = {
       },
       extends: ['plugin:vitest/legacy-all'],
       rules: {
+        'vitest/max-expects': ['warn', { max: 8 }],
         'vitest/max-nested-describe': ['error', { max: 3 }],
         'vitest/no-hooks': 'off',
         'vitest/prefer-expect-assertions': 'off',
+        'vitest/prefer-lowercase-title': [
+          'warn',
+          { ignoreTopLevelDescribe: true },
+        ],
       },
     },
     // node environment
@@ -205,17 +210,34 @@ module.exports = {
           'warn',
           {
             args: 'all',
-            argsIgnorePattern: '^_$',
+            argsIgnorePattern: '^_+$',
             caughtErrors: 'all',
-            caughtErrorsIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_+$',
             ignoreRestSiblings: true,
             vars: 'local',
-            varsIgnorePattern: '^_$',
+            varsIgnorePattern: '^_+$',
           },
         ],
         '@typescript-eslint/unbound-method': 'off',
         'prefer-const': 'warn',
         'prefer-spread': 'off',
+      },
+    },
+    {
+      files: ['./**/*.tsx', './.*/**/*.tsx'],
+      // all React files excluding test files
+      excludedFiles: [
+        './**/*.test.tsx',
+        './**/*.test.ts',
+        './.*/**/*.test.tsx',
+        './.*/**/*.test.ts',
+      ],
+      extends: ['plugin:react-perf/all'],
+      plugins: ['react-perf'],
+      rules: {
+        'react-perf/jsx-no-jsx-as-prop': 'warn',
+        'react-perf/jsx-no-new-function-as-prop': 'warn',
+        'react-perf/jsx-no-new-object-as-prop': 'warn',
       },
     },
     {
@@ -225,13 +247,13 @@ module.exports = {
         'plugin:react/jsx-runtime',
         'plugin:react/all',
         'plugin:react-hooks/recommended',
-        'plugin:react-perf/all',
+        // 'plugin:react-perf/all',
       ],
       plugins: [
         'react',
         'react-hooks',
         'react-refresh',
-        'react-perf',
+        // 'react-perf',
         // '@emotion',
       ],
       rules: {
@@ -245,9 +267,9 @@ module.exports = {
         'react/jsx-first-prop-new-line': ['off', 'multiline'],
         'react-hooks/exhaustive-deps': 'warn',
         'react-hooks/rules-of-hooks': 'error',
-        'react-perf/jsx-no-jsx-as-prop': 'warn',
-        'react-perf/jsx-no-new-function-as-prop': 'warn',
-        'react-perf/jsx-no-new-object-as-prop': 'warn',
+        // 'react-perf/jsx-no-jsx-as-prop': 'warn',
+        // 'react-perf/jsx-no-new-function-as-prop': 'warn',
+        // 'react-perf/jsx-no-new-object-as-prop': 'warn',
         'react-refresh/only-export-components': [
           'warn',
           { allowConstantExport: true },

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import { pipe as connect } from 'effect';
+import { pipe as link } from 'effect';
 import { describe, it } from 'vitest';
 import { withProps } from './withProps';
 
@@ -29,7 +29,7 @@ const text = 'parent-text';
 
 describe('withProps', () => {
   it('should render the wrapped component', () => {
-    const Component = connect(
+    const Component = link(
       () => <div>{text}</div>,
       withProps(() => ({}))
     );
@@ -38,7 +38,7 @@ describe('withProps', () => {
     expect(getByText(text)).toBeDefined();
   });
   it('should inject props into wrapped component', () => {
-    const Component = connect(
+    const Component = link(
       ComponentView,
       withProps(() => ({ value: text }))
     );
@@ -48,7 +48,7 @@ describe('withProps', () => {
   });
 
   it('should allow props to be computed from other props', () => {
-    const Component = connect(
+    const Component = link(
       (props: { name: string; value: string }) => <div>{props.value}</div>,
       withProps((props) => ({ name: props.value ?? 'default-name' }))
     );

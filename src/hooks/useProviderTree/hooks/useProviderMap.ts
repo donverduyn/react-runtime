@@ -14,27 +14,11 @@ const createProviderMap = () => {
     DeclarationId,
     Map<ProviderId, ProviderEntry<any, any>>
   >();
-  const moduleMap = new Map<DeclarationId, Set<RuntimeModule<any>>>();
-  const childToParent = new Map<DeclarationId, DeclarationId | null>();
 
-  function register(
-    id: DeclarationId,
-    parentId: DeclarationId | null,
-    entries: ProviderEntry<any, any>[]
-  ) {
-    if (!childToParent.has(id)) {
-      childToParent.set(id, parentId);
-    }
+  function register(id: DeclarationId, entries: ProviderEntry<any, any>[]) {
     if (!map.has(id)) {
       map.set(id, new Map());
-      moduleMap.set(id, new Set());
     }
-    const modules = moduleMap.get(id)!;
-    entries.forEach((entry) => {
-      if (entry.type === 'runtime' && !modules.has(entry.module)) {
-        modules.add(entry.module);
-      }
-    });
 
     const entryMap = map.get(id)!;
     entries.forEach((entry) => {
@@ -48,24 +32,20 @@ const createProviderMap = () => {
   function unregister(id: DeclarationId) {
     if (map.has(id)) {
       map.delete(id);
-      moduleMap.delete(id);
-      childToParent.delete(id);
     }
   }
-  function getParent(id: DeclarationId) {
-    return childToParent.get(id) ?? null;
+
+  function getModulesById(id: DeclarationId) {
+    const entryMap = map.get(id)!;
+    return Array.from(entryMap.values()).reduce(
+      (set, entry) => (entry.type === 'runtime' ? set.add(entry.module) : set),
+      new Set<RuntimeModule<any>>()
+    );
   }
-  function getById(id: DeclarationId | null) {
-    return id ? (map.get(id) ?? null) : null;
-  }
-  function getModulesById(id: DeclarationId | null) {
-    return id ? (moduleMap.get(id) ?? null) : null;
-  }
+
   return {
     register,
     unregister,
-    getParent,
-    getById,
     getModulesById,
   };
 };

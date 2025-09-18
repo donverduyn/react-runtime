@@ -132,7 +132,6 @@ function createRuntimeEntry<R, C extends React.FC<any>>(
     type: 'runtime',
     id,
     module,
-    upstreams: [],
     fn,
   };
 }

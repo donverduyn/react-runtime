@@ -1,54 +1,133 @@
-// we want to collect a set of candidate hits.
-// For each hit we want to obtain the candidate chain.
-// then for every found candidate, we check if walking the providers resuls in the same declid order then the others. if not we return an error.
-
-import type { ScopeId } from '@/types';
+import moize from 'moize';
+import type { RegisterId, ScopeId } from '@/types';
 import { createSingletonHook } from 'hooks/common/factories/SingletonFactory';
-import type { ComponentTreeApi as ComponentTreeApi } from 'hooks/useComponentTree/useComponentTree';
-import type { EdgeDataFields } from 'utils/hash';
+import type { TreeMapStore } from 'hooks/useTreeMap/useTreeMap';
+import { type EdgeDataFields } from 'utils/hash';
 import {
-  createDryRunCandidate,
+  createDryRunCandidateDto,
   DryRunCandidateId,
   type DryRunCandidate,
+  type DryRunCandidateAncestor,
+  type DryRunCandidateDto,
 } from '../factories/DryRunCandidate';
 
-// candidate collection happens through the frame instance ids combined with the treeMap for the grandparent lookup and further, and the provider map to map each component id to its declaration id. think about dropping declid from the frame.
-
-// when dry run returns the candidates with the chains, includes the candidate hit declid, instid and children sketch. this information is used in the live tree to filter the candidates, when a descendent component mounts.
-// late subtree mounts can cause additional dependencies to be added, so in this case we resolve providers through all candidate chains and compare the results. if they deviate we show an error.
-
-// don't forget we need to use a scope for all singleton maps, to isolate the dry runs from the live tree.
-
-// also think about passing the live scopeId to the dry run, so the dry run knows which scope to use to store the candidate hits. let the dry run use its dryRunScopeId to create the other maps and dispose afterwards.
-
-// also think about the reconstruction in the live tree. after accepting one of the resolved provider chains, use ghost instance ids for each level, and map the these ids to decl ids. Then think about merging with the current tree map or use a separate map and allow swithing over when hitting __ROOT__
-
-// also think about building an cumSig using the tree frame. we use this frame to carry properties that we need for the dry run and which some of the methods from here should accept.
-
 export type DryRunTracker = {
-  getCandidates(edge: EdgeDataFields | null): DryRunCandidate[];
+  getAuthorativeCandidate(
+    edge: EdgeDataFields
+  ): readonly [DryRunCandidate, boolean];
+  registerAncestor(ancestor: DryRunCandidateAncestor): void;
   registerCandidate(
     self: EdgeDataFields,
     depth: number,
     firstDescendent: EdgeDataFields | null
-  ): DryRunCandidate;
+  ): void;
   unregisterCandidate(id: DryRunCandidateId): void;
 };
 
+const validateCandidates = moize(
+  (candidates: DryRunCandidate[]) => {
+    if (candidates.length > 1) {
+      console.warn(
+        `\x1b[38;5;208m[Warning]\x1b[0m Multiple dry run candidates found. Automatically picking one with props: ${
+          candidates[0]
+            ? `\x1b[36m${JSON.stringify(candidates[0].self.props)}\x1b[0m`
+            : ''
+        }. \x1b[2mPlease ensure that the provided id prop matches with one of the component instances in the tree, or that the component is not rendered multiple times in the same scope with the same id or props.\x1b[0m`
+      );
+    }
+    if (candidates.length === 0) {
+      console.info(
+        `\x1b[38;5;39m[Notice]\x1b[0m \x1b[2mNo structural matches found. Resolving as a direct descendent of the provider scope root. To silence this message, use:\x1b[0m\n ` +
+          `\x1b[38;5;229mwithProviderScope\x1b[0m` + // whitish yellow function
+          `\x1b[38;5;33m(\x1b[0m` + // vibrant blue (
+          `\x1b[38;5;39mRoot\x1b[0m` + // brighter, vivid blue variable
+          `\x1b[38;5;153m,\x1b[0m ` + // light blue comma
+          `\x1b[38;5;227m{\x1b[0m` + // pink {
+          `\x1b[38;5;153m structural\x1b[0m: ` + // light blue property
+          `\x1b[38;5;39mfalse\x1b[0m` + // blue boolean
+          `\x1b[38;5;227m }\x1b[0m` + // pink }
+          `\x1b[38;5;33m)\x1b[0m` // vibrant blue )
+      );
+    }
+  },
+  // TODO: think about how we want trigger logs only once. It seems that because we use singleton hooks with multiple scopes in multiple places, we get logs multiple times.
+  { isDeepEqual: true }
+);
+
 const createDryRunTracker = (
   _: ScopeId,
-  componentTree: ComponentTreeApi
+  treeMap: TreeMapStore
 ): DryRunTracker => {
-  const candidateMap = new Map<DryRunCandidateId, DryRunCandidate>();
+  const candidateMap = new Map<DryRunCandidateId, DryRunCandidateDto>();
+  // even though we could store everything in component instance api, and pull from there, we don't want to track everything by default in the live tree, since we write at every render.
+  const ancestorMap = new Map<RegisterId, DryRunCandidateAncestor>();
 
-  function getCandidates(self: EdgeDataFields | null) {
-    const values = Array.from(candidateMap.values());
-    return self
-      ? values.filter(
-          // TODO: we might be able to filter on firstDescendent too, but right now we only promote at the root. this would require us to promote again in the first descendent. the only question is, why should we, if we already have to validate between all sets at the root, then we know any subset is valid too, and it's unsafe to wait for the first descendent (if it exists), to decide since the dependencies at the root are already instantiated by that point. We might want to consider it though, to save a few checks on late subtree mounts for validation, since the candidate set would be substantially smaller, albeit it's not a very common case.
-          (candidate) => candidate.self.componentId === self.componentId
+  //* since dry run will only ever run before react runs, the results from this function are always deterministic and can be cached. Also this function always gets called with the same argument, so this doesn't lead to extra memory consumption. Note that we also prevent validation from running again which makes sense to do, as duplicate logs don't.
+
+  const getAuthorativeCandidate = moize((self: EdgeDataFields) => {
+    // we reference ancestorIds from candidateMap to avoid duplication of data.
+    const values = Array.from(candidateMap.values()).map<DryRunCandidate>(
+      (dto) =>
+        Object.assign({}, dto, {
+          ancestors: dto.ancestors.map((id) => ancestorMap.get(id)!),
+        })
+    );
+    let result: DryRunCandidate[] = [];
+    let isStructuralMatch = true;
+    if (!self.props.id) {
+      // pick the first candidate, and collect all candidates with the same id prop
+      const authorative = values[0];
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      result = (authorative ? [authorative] : []).concat(
+        values.filter(
+          (candidate) =>
+            candidate.self.props.id === authorative.self.props.id &&
+            candidate !== authorative
         )
-      : values;
+      );
+    } else {
+      result = values.filter((candidate) =>
+        candidate.self.componentId === self.componentId && self.props.id
+          ? candidate.self.props.id === self.props.id
+          : true
+      );
+    }
+    // show warning if result > 1
+    validateCandidates(result);
+
+    if (result.length === 0) {
+      // TODO: last item in ancestor map is always the root, but we might want to use a better way to target it directly from the map.
+      const rootAncestor = Array.from(ancestorMap.values())[
+        ancestorMap.size - 1
+      ];
+      // go for a fallback candidate and use the root as the single ancestor
+      // const candidateId = uuid();
+      const targetAncestor: DryRunCandidateAncestor = {
+        declId: self.declarationId,
+        id: self.registerId,
+        props: self.props,
+        upstreamModules: new Map(),
+        localProviders: [],
+      };
+      const candidate = {
+        id: self.registerId as unknown as DryRunCandidateId,
+        depth: 1,
+        self: self,
+        firstDescendent: null,
+        ancestors: [targetAncestor, rootAncestor],
+      };
+
+      result.push(candidate);
+      isStructuralMatch = false;
+    }
+
+    return [result[0], isStructuralMatch] as const;
+  });
+
+  function registerAncestor(ancestor: DryRunCandidateAncestor) {
+    if (!ancestorMap.has(ancestor.id)) {
+      ancestorMap.set(ancestor.id, ancestor);
+    }
   }
 
   function registerCandidate(
@@ -56,22 +135,35 @@ const createDryRunTracker = (
     depth: number,
     firstDescendent: EdgeDataFields | null
   ) {
-    const ancestors = componentTree.resolveAncestors(self.registerId);
-    const candidate = createDryRunCandidate(
+    // TODO: consider what is the right place to obtain the ancestors, or rename resolveAncestors to resolveAncestorIds.
+    const ancestorIds = resolveAncestorIds(self.registerId);
+    const candidate = createDryRunCandidateDto(
       self,
       firstDescendent,
       depth,
-      ancestors
+      ancestorIds
     );
     candidateMap.set(candidate.id, candidate);
-    return candidate;
+    // return candidate;
+  }
+
+  // this is used by DryRunTracker to create candidates
+  function resolveAncestorIds(id: RegisterId) {
+    const ancestors: RegisterId[] = [];
+    let currentId: RegisterId | null = id;
+    while (currentId && currentId !== '__ROOT__') {
+      ancestors.push(currentId);
+      currentId = treeMap.getParent(currentId);
+    }
+    return ancestors;
   }
 
   function unregisterCandidate(id: DryRunCandidateId) {
     candidateMap.delete(id);
   }
   return {
-    getCandidates,
+    getAuthorativeCandidate,
+    registerAncestor,
     registerCandidate,
     unregisterCandidate,
   };
@@ -79,11 +171,8 @@ const createDryRunTracker = (
 
 const useDryRunTrackerInstance = createSingletonHook(createDryRunTracker);
 
-export const useDryRunTracker = (
-  scopeId: ScopeId,
-  componentTree: ComponentTreeApi
-) => {
-  return useDryRunTrackerInstance(scopeId, componentTree);
+export const useDryRunTracker = (scopeId: ScopeId, treeMap: TreeMapStore) => {
+  return useDryRunTrackerInstance(scopeId, treeMap);
 };
 
 // getter for external access

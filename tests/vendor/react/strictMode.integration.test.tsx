@@ -47,11 +47,7 @@ describe('strict mode/hooks', () => {
       const [show, setShow] = React.useState(true);
       return (
         <div>
-          <button
-            // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-            onClick={() => setShow((s) => !s)}
-            type='button'
-          >
+          <button onClick={() => setShow((s) => !s)} type='button'>
             toggle
           </button>
           {show ? <Child /> : null}
@@ -339,5 +335,153 @@ describe('strict mode/hooks', () => {
 
     rerender(<TestComponent />);
     expect(renderFn).toHaveBeenCalledTimes(4);
+  });
+
+  it('should log timing for effects and cleanups', async () => {
+    const logs: string[] = [];
+    const snapshots: string[][] = [];
+
+    function log(label: string) {
+      logs.push(label);
+      queueMicrotask(
+        ((logs2: string[]) => () => {
+          // Take a snapshot after each log
+          snapshots.push([...logs2]);
+        })([...logs])
+      );
+      logs.length = 0; // Clear for next tick
+    }
+
+    function TestComponent() {
+      React.useLayoutEffect(() => {
+        log('layoutEffect');
+        return () => log('layoutEffect cleanup');
+      }, []);
+
+      React.useEffect(() => {
+        log('effect');
+        return () => log('effect cleanup');
+      }, []);
+
+      return <div>Test</div>;
+    }
+
+    // In your test:
+    render(<TestComponent />);
+    // Wait for microtasks to flush
+    await Promise.resolve();
+
+    console.log(snapshots);
+  });
+
+  it('should run layoutEffect only once', () => {
+    const layoutEffectFn = vi.fn();
+
+    const TestComponent = () => {
+      const disposed = React.useRef(false);
+
+      React.useLayoutEffect(() => {
+        if (!disposed.current) {
+          layoutEffectFn();
+        } else {
+          disposed.current = false;
+        }
+        return () => {
+          disposed.current = true;
+        };
+      }, []);
+
+      return <div>Test</div>;
+    };
+
+    render(<TestComponent />);
+
+    expect(layoutEffectFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render the parent twice, before rendering the child twice', () => {
+    const renderFn = vi.fn();
+
+    const Child: React.FC = () => {
+      renderFn('child');
+      React.useLayoutEffect(() => {
+        renderFn('child layoutEffect');
+        return () => {
+          renderFn('child layoutEffect cleanup');
+        };
+      });
+      React.useEffect(() => {
+        renderFn('child effect');
+        return () => {
+          renderFn('child effect cleanup');
+        };
+      });
+      return <div>Child</div>;
+    };
+
+    const Parent: React.FC = () => {
+      renderFn('parent');
+      React.useLayoutEffect(() => {
+        renderFn('parent layoutEffect');
+        return () => {
+          renderFn('parent layoutEffect cleanup');
+        };
+      });
+      React.useEffect(() => {
+        renderFn('parent effect');
+        return () => {
+          renderFn('parent effect cleanup');
+        };
+      });
+      return (
+        <div>
+          <Child />
+        </div>
+      );
+    };
+
+    render(<Parent />);
+
+    expect(renderFn).toHaveBeenCalledTimes(16);
+    expect(renderFn.mock.calls).toEqual([
+      ['parent'],
+      ['parent'],
+      ['child'],
+      ['child'],
+      // unmount/remount phase
+      // bottom to top
+      ['child layoutEffect'],
+      ['parent layoutEffect'],
+      // second time bottom to top
+      ['child effect'],
+      ['parent effect'],
+      // top to bottom
+      ['parent layoutEffect cleanup'],
+      ['child layoutEffect cleanup'],
+      // seond time top to bottom
+      ['parent effect cleanup'],
+      ['child effect cleanup'],
+      // mount phase
+      // bottom to top (pre-commit)
+      ['child layoutEffect'],
+      ['parent layoutEffect'],
+      // second time bottom to top (after commit)
+      ['child effect'],
+      ['parent effect'],
+    ]);
+  });
+
+  it('should render the jsx from the second render', () => {
+    let renderCount = 0;
+
+    const TestComponent: React.FC = () => {
+      renderCount++;
+      return <div data-testid='render-count'>{renderCount}</div>;
+    };
+
+    renderCount = 0;
+    const screen = render(<TestComponent />);
+    // The DOM should show the value from the second render
+    expect(screen.getByTestId('render-count').textContent).toBe('2');
   });
 });

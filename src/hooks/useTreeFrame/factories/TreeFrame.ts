@@ -1,5 +1,5 @@
 import type { ComponentId, RegisterId } from '@/types';
-import { ROOT_NS, type EdgeDataFields } from 'utils/hash';
+import { CUM_SIG_NS, type EdgeDataFields } from 'utils/hash';
 
 export type TreeFrameParentNode = Partial<{
   [K in keyof EdgeDataFields]: EdgeDataFields[K] | null;
@@ -33,7 +33,7 @@ export function createRootTreeFrame(): TreeFrame {
       declarationId: null,
       registerId: '__ROOT__' as RegisterId,
       childrenSketch: null,
-      cumSig: ROOT_NS,
+      cumSig: CUM_SIG_NS,
     },
     seq: new Map<ComponentId, SeqEntry>(),
   };
