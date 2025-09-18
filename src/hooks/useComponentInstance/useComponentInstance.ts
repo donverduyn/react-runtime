@@ -7,7 +7,7 @@ import type {
   RuntimeModule,
   ScopeId,
 } from '@/types';
-import { deepMergeMaps } from 'utils/map';
+import { deepMergeMapsInPlace } from 'utils/map';
 
 export type ComponentInstanceApi = {
   register: (
@@ -47,13 +47,14 @@ export const useComponentInstance = (_: ScopeId): ComponentInstanceApi => {
     idMap.set(id, declarationId);
     const current = moduleMap.get(id);
     const newValue = current
-      ? deepMergeMaps(current, upstreamModules)
+      ? deepMergeMapsInPlace(current, upstreamModules)
       : upstreamModules;
     moduleMap.set(id, newValue);
   }
 
   function dispose(id: RegisterId) {
     idMap.delete(id);
+    moduleMap.delete(id);
   }
 
   return {

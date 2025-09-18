@@ -4,10 +4,6 @@ import {
   link,
   withRuntime,
   type ExtractProps,
-  Effect,
-  Schedule,
-  Stream,
-  Console,
 } from '@donverduyn/react-runtime';
 // import { Effect, Schedule, Stream } from 'effect';
 import { observer } from 'mobx-react-lite';
@@ -49,14 +45,6 @@ export const Child = link(
 
 function ChildView(props: Props) {
   const { getName, log } = props as ExtractProps<typeof Child>;
-
-  console.log('Child rendered', Date.now());
-  React.useEffect(() => {
-    console.log('Child mounted', Date.now());
-    return () => {
-      console.log('Child unmounted', Date.now());
-    };
-  }, []);
   return (
     <div>
       <h2>{getName()}</h2>

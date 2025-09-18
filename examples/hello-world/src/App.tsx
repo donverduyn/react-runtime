@@ -12,7 +12,7 @@ const withLogger = (component: React.FC<Props>) =>
   link(
     component,
     // withUpstream(SomeRuntime, ({ runtime }) => {
-    //   console.log('SomeRuntime', runtime.instance );[]
+    //   console.log('SomeRuntime', runtime.instance );
     // }),
     withRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
@@ -26,15 +26,9 @@ type Props = {
   readonly store: AppRuntime.Count;
 };
 
-export function AppView({ store }: Props) {
+export function AppView(_: Props) {
   const [count, setCount] = useState(0);
-  console.log('App rendered', Date.now());
-  React.useEffect(() => {
-    console.log('App mounted', Date.now());
-    return () => {
-      console.log('App unmounted', Date.now());
-    };
-  });
+
   return (
     <>
       <div>
@@ -47,7 +41,7 @@ export function AppView({ store }: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
-        {/* @ts-expect-error wrong signature for jsx */}
+        {/* @ts-expect-error wrong signature for jsx, //TODO: fix this */}
         {count % 2 === 0 ? <Child id='2' /> : null}
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

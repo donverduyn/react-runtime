@@ -41,29 +41,27 @@ export function mergeSetsFromMaps<K, T>(
 
 type AnyMap = Map<any, any>;
 
-export function deepMergeMaps<A extends AnyMap, B extends AnyMap>(
+export function deepMergeMapsInPlace<A extends AnyMap, B extends AnyMap>(
   mapA: A,
   mapB: B
 ): A {
-  const result = new Map(mapA);
-
   for (const [key, valueB] of mapB) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const valueA = mapA.get(key);
 
     if (valueA instanceof Map && valueB instanceof Map) {
       // Recurse for nested maps
-      result.set(key, deepMergeMaps(valueA, valueB));
+      deepMergeMapsInPlace(valueA, valueB);
     } else if (valueA instanceof Set && valueB instanceof Set) {
       // Merge sets
-      result.set(key, new Set([...valueA, ...valueB]));
+      valueB.forEach((item) => valueA.add(item));
     } else {
       // Otherwise overwrite or take from mapB
-      result.set(key, valueB);
+      mapA.set(key, valueB);
     }
   }
 
-  return result as never;
+  return mapA;
 }
 
 export function cloneNestedMap<M extends Map<any, any>>(map: M): M {

@@ -8,7 +8,7 @@ import type {
   RuntimePayload,
   ScopeId,
 } from '@/types';
-import { cloneNestedMap, deepMergeMaps } from 'utils/map';
+import { cloneNestedMap, deepMergeMapsInPlace } from 'utils/map';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
 export const defaultConfig = {
@@ -72,8 +72,8 @@ export function createRuntimeRegistry(_: ScopeId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: RuntimePayload<any>
   ) {
+    console.log('register', id.substring(0, 3), payload);
     const exists = getById(id, payload.context.key, payload.index);
-    if (exists) return exists;
 
     const { context, config, providerId: entryId } = payload;
     const runtimeId = entryId as RuntimeId;
@@ -81,6 +81,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     if (promoted === undefined) {
       promotionMap.set(id, false);
     }
+    if (exists) return exists;
     let runtimeKeyMap = runtimeMapping.get(id);
     if (!runtimeKeyMap) {
       runtimeKeyMap = new Map();
@@ -105,6 +106,7 @@ export function createRuntimeRegistry(_: ScopeId) {
   }
 
   function dispose(id: RegisterId, runtimeId: RuntimeId, cleanup: () => void) {
+    console.log('dispose', id.substring(0, 3), runtimeId);
     void registry.get(runtimeId)?.runtime.dispose();
     registry.delete(runtimeId);
     const componentDisposerMap = disposerMap.get(id);
@@ -126,6 +128,7 @@ export function createRuntimeRegistry(_: ScopeId) {
 
   // called on unmount
   function unregister(id: RegisterId, cleanup?: () => void) {
+    console.log('unregister', id.substring(0, 3));
     const keyMap = runtimeMapping.get(id);
     if (!keyMap) return; // if gc'd
     if (!disposerMap.has(id)) {
@@ -146,6 +149,7 @@ export function createRuntimeRegistry(_: ScopeId) {
   }
 
   function keepAlive(id: RegisterId) {
+    console.log('keepalive', id.substring(0, 3));
     // use the disposer map to clear the timeouts
     const map = disposerMap.get(id);
     if (map) {
@@ -286,7 +290,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     // register keyMap into main registry
     const currentValue = runtimeMapping.get(registerId);
     const newValue = currentValue
-      ? deepMergeMaps(currentValue, keyMap)
+      ? deepMergeMapsInPlace(currentValue, keyMap)
       : keyMap;
     runtimeMapping.set(registerId, newValue);
 

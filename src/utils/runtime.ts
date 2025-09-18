@@ -69,7 +69,8 @@ export const createRuntimeContext =
   <R, E, A>(layer: Layer.Layer<R, E, A>) => {
     const context: RuntimeContext<R, E, A> = {
       key: Symbol('RuntimeContext'),
-      name: options.name,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      name: options?.name ?? 'runtime_name',
       layer,
     };
     return context;

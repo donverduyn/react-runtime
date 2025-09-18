@@ -5,6 +5,7 @@ import { App } from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    {/* @ts-expect-error //TODO: fix this */}
     <App id='1' />
   </StrictMode>
 );

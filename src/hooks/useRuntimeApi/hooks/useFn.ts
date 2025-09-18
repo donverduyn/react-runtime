@@ -134,10 +134,10 @@ function useMultiMemoStore<T>(keys: string[], store: MultiMemoStore<T>) {
   return React.useSyncExternalStore(
     (cb) => {
       // Subscribe to changes for any key
-      keys.forEach(key => store.subscribe(key, cb));
-      return () => keys.forEach(key => store.unsubscribe(key, cb));
+      keys.forEach((key) => store.subscribe(key, cb));
+      return () => keys.forEach((key) => store.unsubscribe(key, cb));
     },
-    () => keys.map(key => store.get(key))
+    () => keys.map((key) => store.get(key))
   );
 }
 

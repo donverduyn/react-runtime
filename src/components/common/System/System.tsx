@@ -295,18 +295,10 @@ export function createSystem<R, C extends React.FC<any>>(
     queueMicrotask(runtimeProviderApi.gcUnpromoted);
 
     useIsoLayoutEffect(() => {
-      // only trigger on first call in strict mode.
-      if (!disposed.current) {
-        // if render is not aborted by suspense triggers, promote, otherwise let instances be disposed in gcUnpromoted. this can also happen if a descendent throws a promise and the suspense boundary is an ancestor of this component.
-        runtimeProviderApi.promote();
-        runtimeProviderApi.keepAlive();
-      } else {
-        disposed.current = false;
-      }
-      return () => {
-        runtimeProviderApi.unregister();
-        disposed.current = true;
-      };
+      // TODO: promote and keepalive generally need to happen together, because it acknowledges that what was instantiated can be kept and when remounted can be kept alive, so we might want to combine these.
+      runtimeProviderApi.promote();
+      runtimeProviderApi.keepAlive();
+      return runtimeProviderApi.unregister;
     }, []);
 
     const buildEntries = useEntryBuilder<R, C>(scopeId, name);
@@ -372,7 +364,9 @@ export function createSystem<R, C extends React.FC<any>>(
       );
       providerTree.register(declarationId, localProviders);
 
-      const mergedProps = Object.assign({}, resultProps, props);
+      const mergedProps = Object.assign({}, props, resultProps, {
+        registerId: registerId.substring(0, 3),
+      });
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const memoTarget = React.useMemo(() => React.memo(target), []);
       const childrenNode =
