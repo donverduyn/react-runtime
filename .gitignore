@@ -24,7 +24,6 @@ Thumbs.db
 .env.*.local
 
 # IDE and editor files
-.vscode/
 .idea/
 *.swp
 *.swo

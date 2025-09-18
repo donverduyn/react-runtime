@@ -27,5 +27,5 @@ export class Count extends Effect.Service<Count>()('App/Store', {
 export const context = pipe(
   Layer.scopedDiscard(incrementer.pipe(Effect.forkScoped)),
   Layer.provideMerge(Count.Default),
-  createRuntimeContext()
+  createRuntimeContext({ name: 'ChildRuntime' })
 );

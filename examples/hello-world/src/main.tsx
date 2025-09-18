@@ -8,12 +8,3 @@ createRoot(document.getElementById('root')!).render(
     <App id='1' />
   </StrictMode>
 );
-
-    const Component = () => {
-      React.useEffect(() => {
-        console.log('useEffect');
-        return () => {
-          console.log('useEffect cleanup')
-        }
-      }, []);
-    };

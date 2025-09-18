@@ -4,17 +4,24 @@ import {
   Effect,
   Stream,
   Schedule,
+  Console,
   createRuntimeContext,
+  Scope,
 } from '@donverduyn/react-runtime';
+// import { Scope } from 'effect';
 import { action, observable } from 'mobx';
-import { App } from './App';
 
 const countStore = Effect.gen(function* () {
   const count = yield* Count;
+  const scope = yield* Scope.make();
   yield* pipe(
     Stream.fromSchedule(Schedule.fixed(1000)),
     Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),
-    Stream.runDrain
+    Stream.tap(() => Console.log('tick')),
+    Stream.ensuring(Console.log('ensuring')),
+    Stream.runDrain,
+    Effect.forkScoped,
+    Scope.extend(scope)
   );
 });
 
@@ -22,11 +29,9 @@ export class Count extends Effect.Service<Count>()('App/Store', {
   effect: Effect.sync(() => observable.box(0)),
 }) {}
 
-export const reference = () => App;
-
 export const layer = pipe(
-  Layer.scopedDiscard(countStore.pipe(Effect.forkScoped)),
+  Layer.scopedDiscard(countStore),
   Layer.provideMerge(Count.Default)
 );
 
-export const context = createRuntimeContext()(layer);
+export const context = createRuntimeContext({ name: 'AppRuntime' })(layer);
