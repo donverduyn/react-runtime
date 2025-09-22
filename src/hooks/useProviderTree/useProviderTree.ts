@@ -83,13 +83,15 @@ export const useProviderTree = (
       return array;
     }, [] as DryRunCandidateAncestor[]);
 
+    // TODO: consider that if we don't have a structural match, that we also do not have any props to mock, which means, that all expected props must be provided by the user from the original component.
+
     const result = isStructuralMatch
       ? tryFnSync(() => extractProviders(ancestors, unresolvedModules))
       : extractProviders(ancestors, unresolvedModules);
 
     if (!result) {
       throw new Error(
-        "Couldn't resolve upstream dependencies as a direct descendent of the root. If the provided root, does render your component through children, you can provide children to the root via the second argument in of withProviderScope"
+        "Couldn't resolve upstream dependencies as a direct descendent of the root. If the provided root does render your component through children, you can provide children to the root, via the second argument in of withProviderScope"
       );
     }
 
@@ -191,7 +193,9 @@ export const useProviderTree = (
   ) {
     // obtain index of the candidate self in the ancestors array, as sometimes we start at the first descendent.
     const startIdx = Array.from(ancestors.values()).findIndex((a) =>
-      a.localProviders.find((p) => p.type === 'runtime' && p.module === module)
+      a.localProviders.some(
+        (p) => p.type === 'runtime' && p.module.context === module.context
+      )
     );
 
     const seen = new Set<RegisterId>();

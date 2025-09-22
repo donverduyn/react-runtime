@@ -8,10 +8,10 @@ It takes a context and an effect and runs the effect in the runtime provided by 
 */
 
 export const createRun =
-  <R>(
+  <R, P>(
     localContext: RuntimeContext<R>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    instances: Map<RuntimeKey, RuntimeInstance<any>>
+    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) =>
   <A, E>(
     effect: Effect.Effect<A, E, R | Scope.Scope>,

@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid';
 import type {
   RuntimeModule,
   PROPS_PROP,
-  ExtractProviderProps,
+  ExtractStaticProps,
   ProviderFn,
   DeclarationId,
   ProviderEntry,
@@ -18,7 +18,7 @@ import type {
   ResultProps,
   ERROR_PROP,
 } from '@/types';
-import { createSystem, propagateSystem } from 'components/common/System/System';
+import { CreateSystem, PropagateSystem } from 'components/common/System/System';
 import {
   getStaticDeclarationId,
   getStaticComponent,
@@ -27,7 +27,7 @@ import {
 } from 'components/common/System/utils/static';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
-export function withRuntime<
+export function WithRuntime<
   R,
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
@@ -59,7 +59,7 @@ export function withRuntime<
     };
 
 // captures void return only
-export function withRuntime<
+export function WithRuntime<
   R,
   CProps,
   TProps extends Partial<IdProp & Record<string, unknown>> | void,
@@ -87,7 +87,7 @@ export function withRuntime<
     };
 
 //
-export function withRuntime<C extends React.FC<any>, R>(
+export function WithRuntime<C extends React.FC<any>, R>(
   module: RuntimeModule<R>,
   fn?: ProviderFn<any, any>
 ) {
@@ -102,14 +102,14 @@ export function withRuntime<C extends React.FC<any>, R>(
     const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target, 'withRuntime');
 
-    const Wrapper = createSystem(
+    const Wrapper = CreateSystem(
       declarationId,
       Component,
       target,
       targetName,
       provider
     );
-    const Memo = propagateSystem(
+    const Memo = PropagateSystem(
       declarationId,
       dryRunId,
       Component,
@@ -142,7 +142,7 @@ type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
       ExtractMeta<C>,
       {
         [PROPS_PROP]: IsNever<TProps> extends false
-          ? Merge<ExtractProviderProps<C>, TProps>
-          : ExtractProviderProps<C>;
+          ? Merge<ExtractStaticProps<C>, TProps>
+          : ExtractStaticProps<C>;
       }
     >;

@@ -1,6 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable react/jsx-filename-extension */
-const withParentTag =
+const WithParentTag =
   () =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <C extends React.FC<any>>(Component: React.FC<any>) => {

@@ -197,3 +197,15 @@ export function deepFreeze<T>(obj: T): DeepFreeze<T> {
 
   return Object.freeze(obj) as DeepFreeze<T>;
 }
+
+export function stableStringify(obj: unknown): string {
+  if (obj === null || obj === undefined) return String(obj);
+  if (typeof obj === 'function') return obj.toString();
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
+  if (typeof obj === 'object') {
+    const keys = Object.keys(obj).sort();
+    // @ts-expect-error
+    return `{${keys.map((k) => `${k}:${stableStringify(obj[k] as never)}`).join(',')}}`;
+  }
+  return JSON.stringify(obj); // primitives
+}

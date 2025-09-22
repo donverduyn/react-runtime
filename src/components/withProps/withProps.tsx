@@ -6,7 +6,7 @@ import type { Simplify, Merge, IsLiteral, IsUnknown, IsNever } from 'type-fest';
 import { v4 as uuid } from 'uuid';
 import {
   type PROPS_PROP,
-  type ExtractProviderProps,
+  type ExtractStaticProps,
   type DeclarationId,
   type PropsFn,
   type ProviderId,
@@ -16,7 +16,7 @@ import {
   type ResultProps,
 } from '@/types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { createSystem, propagateSystem } from '../common/System/System';
+import { CreateSystem, PropagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
@@ -24,7 +24,7 @@ import {
   getStaticProviderList,
 } from '../common/System/utils/static';
 
-export function withProps<
+export function WithProps<
   CProps,
   TProps extends ExtensibleProps<CProps>,
   PProps,
@@ -52,7 +52,7 @@ export function withProps<
 // StaticProperties<React.FC<Simplify<CProps>>, TProps>;
 
 //
-export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
+export function WithProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
   return (Component: C) => {
     const declarationId = (getStaticDeclarationId(Component) ??
       uuid()) as DeclarationId;
@@ -64,14 +64,14 @@ export function withProps<R, C extends React.FC<any>>(fn: PropsFn<C>) {
     const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target);
 
-    const Wrapper = createSystem(
+    const Wrapper = CreateSystem(
       declarationId,
       Component,
       target,
       targetName,
       provider
     );
-    const Memo = propagateSystem(
+    const Memo = PropagateSystem(
       declarationId,
       dryRunId,
       Component,
@@ -102,7 +102,7 @@ type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
       ExtractMeta<C>,
       {
         [PROPS_PROP]: IsNever<TProps> extends false
-          ? Merge<ExtractProviderProps<C>, TProps>
-          : ExtractProviderProps<C>;
+          ? Merge<ExtractStaticProps<C>, TProps>
+          : ExtractStaticProps<C>;
       }
     >;

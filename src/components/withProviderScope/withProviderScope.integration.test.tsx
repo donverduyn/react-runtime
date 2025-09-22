@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
 import { Context } from 'effect';
-import { withRuntime } from 'components/withRuntime/withRuntime';
-import { withUpstream } from 'components/withUpstream/withUpstream';
+import { WithRuntime } from 'components/withRuntime/withRuntime';
+import { WithUpstream } from 'components/withUpstream/withUpstream';
 import { mockRuntimeModule } from 'tests/utils/mockRuntimeModule';
 import { link } from 'utils/link';
-import { withProviderScope } from './withProviderScope';
+import { WithProviderScope } from './withProviderScope';
 
 class Tag extends Context.Tag('TestTag')<Tag, string>() {}
 
@@ -26,7 +26,7 @@ describe('withProviderScope', () => {
       );
     };
 
-    const Root = link(RootView, withRuntime(RootModule));
+    const Root = link(RootView, WithRuntime(RootModule));
 
     const ChildView: React.FC<{ readonly tag: string }> = ({ tag }) => (
       <span>{tag}</span>
@@ -34,7 +34,7 @@ describe('withProviderScope', () => {
     const Child = link(
       ChildView,
       // eslint-disable-next-line @typescript-eslint/no-deprecated
-      withUpstream(RootModule, ({ runtime }) => ({
+      WithUpstream(RootModule, ({ runtime }) => ({
         tag: runtime.use(Tag),
       }))
     );
@@ -48,7 +48,7 @@ describe('withProviderScope', () => {
     // TODO: suggest users to use withParentTag for improving the performance of the dry run matching, by picking the first matched candidate. Still show a log that indicates which ancestry path was used for the matched candidate, so the user can intervein if a descendent has the exact same structure over two levels (very unlikely, but possible, think targeting components inside list items with the same structure).
 
     // TODO: Only consider using dry run pruning when withParentTag is used, because otherwise, there's not enough information to reliably prune (without the user being informed) and we prefer to show users all other candidates that matched the same component and props with their ancestry path.
-    const TestComponent = link(Child, withProviderScope(Root));
+    const TestComponent = link(Child, WithProviderScope(Root));
     const { getByText, debug } = render(<TestComponent />);
     debug();
     expect(getByText(tagValue)).toBeDefined();

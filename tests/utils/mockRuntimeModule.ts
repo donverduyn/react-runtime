@@ -1,7 +1,7 @@
 import type { Context } from 'effect';
 import { Layer, pipe } from 'effect';
 import type { RuntimeModule } from '@/types';
-import { createRuntimeContext } from 'utils/runtime';
+import { createRuntimeContext } from 'utils/effect/runtime';
 
 export const mockRuntimeModule = <
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

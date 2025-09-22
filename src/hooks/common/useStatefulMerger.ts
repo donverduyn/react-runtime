@@ -1,9 +1,11 @@
 import * as React from 'react';
-import type { Extensible } from "types";
+import type { Extensible } from 'types';
 import { useStableObject } from './shared/useStableObject';
 
 // Accumulates and merges props across renders for the component.
-export const useStatefulMerger = <T extends Extensible<Record<string, unknown>>>(
+export const useStatefulMerger = <
+  T extends Extensible<Record<string, unknown>>,
+>(
   initial: T
 ) => {
   const accumulated = React.useRef<T>({ ...initial });

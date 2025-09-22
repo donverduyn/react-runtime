@@ -1,4 +1,4 @@
-import { Effect, identity, Layer, ManagedRuntime, pipe } from 'effect';
+import { Layer, ManagedRuntime, pipe } from 'effect';
 import type {
   RuntimeConfig,
   RuntimeContext,
@@ -76,7 +76,4 @@ export const createRuntimeContext =
     return context;
   };
 
-export const fromLayer = <A, E, R, TResult = Effect.Effect<A, E, R>>(
-  layer: Effect.Effect<A, E, R>,
-  cb: (arg: A) => TResult = identity as (arg: A) => TResult
-) => pipe(layer, Effect.andThen(cb));
+

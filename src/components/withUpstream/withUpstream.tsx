@@ -12,7 +12,7 @@ import type {
   IsEmptyObject,
 } from 'type-fest';
 import { v4 as uuid } from 'uuid';
-import { createSystem, propagateSystem } from 'components/common/System/System';
+import { CreateSystem, PropagateSystem } from 'components/common/System/System';
 import {
   getStaticDeclarationId,
   getStaticComponent,
@@ -22,7 +22,7 @@ import {
 import type {
   RuntimeModule,
   PROPS_PROP,
-  ExtractProviderProps,
+  ExtractStaticProps,
   ProviderFn,
   DeclarationId,
   ProviderEntry,
@@ -33,10 +33,10 @@ import type {
   ERROR_PROP,
   UpstreamProviderFn,
 } from 'types';
+import { isRuntimeModule } from 'utils/effect/runtime';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { isRuntimeModule } from 'utils/runtime';
 
-export function withUpstream<
+export function WithUpstream<
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
   PProps, // providerProps cumulative
@@ -68,7 +68,7 @@ export function withUpstream<
     };
 
 // captures void return only
-export function withUpstream<
+export function WithUpstream<
   CProps,
   TProps extends Partial<IdProp & Record<string, unknown>> | void,
   PProps,
@@ -95,7 +95,7 @@ export function withUpstream<
 /**
  * @deprecated In the upcoming 2.0 release, we will remove support for runtime modules as argument. Instead, use the inject API from the function arguments.
  */
-export function withUpstream<
+export function WithUpstream<
   R,
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
@@ -130,7 +130,7 @@ export function withUpstream<
     };
 
 // captures void return only
-export function withUpstream<
+export function WithUpstream<
   R,
   CProps,
   TProps extends Partial<IdProp & Record<string, unknown>> | void,
@@ -159,7 +159,7 @@ export function withUpstream<
 
 //* implementation
 
-export function withUpstream<R, C extends React.FC<any>>(
+export function WithUpstream<R, C extends React.FC<any>>(
   moduleOrFn: RuntimeModule<R> | UpstreamProviderFn<any, any>,
   fn?: ProviderFn<any, any>
 ) {
@@ -199,14 +199,14 @@ export function withUpstream<R, C extends React.FC<any>>(
     const localProviders = getStaticProviderList<C, R>(Component, [provider]);
     const targetName = getDisplayName(target, 'withRuntime');
 
-    const Wrapper = createSystem(
+    const Wrapper = CreateSystem(
       declarationId,
       Component,
       target,
       targetName,
       provider
     );
-    const Memo = propagateSystem(
+    const Memo = PropagateSystem(
       declarationId,
       dryRunId,
       Component,
@@ -236,7 +236,7 @@ type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
       ExtractMeta<C>,
       {
         [PROPS_PROP]: IsNever<TProps> extends false
-          ? Merge<ExtractProviderProps<C>, TProps>
-          : ExtractProviderProps<C>;
+          ? Merge<ExtractStaticProps<C>, TProps>
+          : ExtractStaticProps<C>;
       }
     >;

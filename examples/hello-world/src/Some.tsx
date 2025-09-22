@@ -1,14 +1,14 @@
-import { withRuntime, withUpstream } from '@donverduyn/react-runtime';
+import { WithRuntime, WithUpstream } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
 import * as FooRuntime from './Foo.runtime';
 import * as SomeRuntime from './Some.runtime';
 
 export const Some = pipe(
   SomeView,
-  withUpstream(FooRuntime, ({ runtime }) => {
+  WithUpstream(FooRuntime, ({ runtime }) => {
     // console.log('FooRuntime', runtime.runtime.id);
   }),
-  withRuntime(SomeRuntime, ({ configure }) => {
+  WithRuntime(SomeRuntime, ({ configure }) => {
     const runtime = configure();
     // console.log('SomeRuntime', runtime.runtime.id);
   })

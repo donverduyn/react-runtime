@@ -2,7 +2,7 @@ import * as React from 'react';
 import { render } from '@testing-library/react';
 import { pipe as link } from 'effect';
 import { describe, it } from 'vitest';
-import { withProps } from './withProps';
+import { WithProps } from './withProps';
 
 type ComponentProps = {
   readonly value: string;
@@ -31,7 +31,7 @@ describe('withProps', () => {
   it('should render the wrapped component', () => {
     const Component = link(
       () => <div>{text}</div>,
-      withProps(() => ({}))
+      WithProps(() => ({}))
     );
 
     const { getByText } = render(<Component id='test' />);
@@ -40,7 +40,7 @@ describe('withProps', () => {
   it('should inject props into wrapped component', () => {
     const Component = link(
       ComponentView,
-      withProps(() => ({ value: text }))
+      WithProps(() => ({ value: text }))
     );
 
     const { getByText } = render(<Component id='test' />);
@@ -50,7 +50,7 @@ describe('withProps', () => {
   it('should allow props to be computed from other props', () => {
     const Component = link(
       (props: { name: string; value: string }) => <div>{props.value}</div>,
-      withProps((props) => ({ name: props.value ?? 'default-name' }))
+      WithProps((props) => ({ name: props.value ?? 'default-name' }))
     );
 
     const { getByText } = render(<Component id='test' value={text} />);

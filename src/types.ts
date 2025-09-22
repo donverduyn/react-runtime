@@ -8,6 +8,7 @@ import type { IsStringLiteral, Simplify, Tagged } from 'type-fest';
 import type { createUse } from 'hooks/useRuntimeApi/hooks/use';
 import type { createFn } from 'hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from 'hooks/useRuntimeApi/hooks/useRun';
+// import type { Subscribable } from 'utils/effect';
 
 export type ScopeId = Tagged<string, 'ScopeId'>;
 export type InstId = Tagged<string, 'InstId'>;
@@ -34,19 +35,19 @@ export const PROPS_PROP = '_props';
 export const UPSTREAM_PROP = '_upstream';
 export const ERROR_PROP = '_error';
 
-export type RuntimeApi<R> = {
-  instance: RuntimeInstance<R>['runtime'];
-  use: ReturnType<typeof createUse<R>>;
-  useFn: ReturnType<typeof createFn<R>>;
-  useRun: ReturnType<typeof createRun<R>>;
+export type RuntimeApi<R, P> = {
+  instance: RuntimeInstance<R, P>['runtime'];
+  use: ReturnType<typeof createUse<R, P>>;
+  useFn: ReturnType<typeof createFn<R, P>>;
+  useRun: ReturnType<typeof createRun<R, P>>;
 };
 
-export type RuntimeApiFactory<R> = {
+export type RuntimeApiFactory<R, P> = {
   create: (
     module: RuntimeModule<R>,
-    instances: Map<RuntimeKey, RuntimeInstance<any>>
-  ) => RuntimeApi<R>;
-  createInert: (stub: unknown) => RuntimeApi<R>;
+    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
+  ) => RuntimeApi<R, P>;
+  createInert: (stub: unknown) => RuntimeApi<R, P>;
 };
 
 export type RuntimeConfig = {
@@ -75,15 +76,25 @@ export type RuntimePayload<R> = {
   config: Partial<RuntimeConfig>;
 };
 
-export type RuntimeInstance<R> = {
+export type RuntimeInstance<R, P> = {
   runtime: ManagedRuntime.ManagedRuntime<R, never>;
   config: RuntimeConfig;
+  propsProxy: Subscribable<NoInfer<P>>;
 };
 
 export type IdProp = { readonly id: string };
 
 export type Extensible<T extends Record<PropertyKey, unknown>> = T &
   Record<PropertyKey, unknown>;
+
+export type Key = string | symbol;
+export type SubscribeFn<T> = (value: T) => void;
+export type UnsubscribeFn = () => void;
+
+export type Subscribable<T> = {
+  subscribe: (key: keyof T | Key, fn: SubscribeFn<T[keyof T]>) => UnsubscribeFn;
+  value: T;
+};
 
 export type IsPrimitiveString<T> = [T] extends [string]
   ? IsStringLiteral<T> extends true
@@ -105,7 +116,7 @@ export type ResultProps<
 export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 
 export type UpstreamProviderApi<P> = {
-  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T>;
+  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T, P>;
   props: P;
 };
 
@@ -114,9 +125,9 @@ export type UpstreamProviderFn<CProps, TResult = unknown> = (
 ) => TResult;
 
 export type ProviderApi<R, P = object> = {
-  configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;
-  runtime: RuntimeApi<R>;
-  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T>;
+  configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R, P>;
+  runtime: RuntimeApi<R, P>;
+  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T, P>;
   props: P;
 };
 
@@ -174,14 +185,14 @@ export type ExtractStaticProviders<T> = T extends { [PROVIDERS_PROP]: infer R }
     : never
   : [];
 
-export type ExtractProviderProps<T> = T extends {
+export type ExtractStaticProps<T> = T extends {
   [PROPS_PROP]: infer P;
 }
   ? P
   : Record<never, never>;
 
 export type ExtractProps<C extends React.FC<any>> = React.ComponentProps<C> &
-  ExtractProviderProps<C>;
+  ExtractStaticProps<C>;
 
 export type ExtractStaticUpstream<T> = T extends { [UPSTREAM_PROP]: infer U }
   ? U extends unknown[]

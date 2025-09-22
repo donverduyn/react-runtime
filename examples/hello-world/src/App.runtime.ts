@@ -15,7 +15,7 @@ const countStore = Effect.gen(function* () {
   const count = yield* Count;
   const scope = yield* Scope.make();
   yield* pipe(
-    Stream.fromSchedule(Schedule.fixed(1000)),
+    Stream.fromSchedule(Schedule.fixed(1000 / 60)),
     Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),
     Stream.tap(() => Console.log('tick')),
     Stream.ensuring(Console.log('ensuring')),
@@ -34,4 +34,5 @@ export const layer = pipe(
   Layer.provideMerge(Count.Default)
 );
 
+console.log('loading file that creates context');
 export const context = createRuntimeContext({ name: 'AppRuntime' })(layer);

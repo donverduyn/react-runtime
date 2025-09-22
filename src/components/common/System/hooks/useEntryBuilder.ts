@@ -6,7 +6,7 @@ import { useRuntimeApi } from 'hooks/useRuntimeApi/useRuntimeApi';
 import type { useRuntimeProvider } from 'hooks/useRuntimeProvider/useRuntimeProvider';
 import type {
   ScopeId,
-  ExtractProviderProps,
+  ExtractStaticProps,
   IdProp,
   ResolvedProviderEntry,
   RegisterId,
@@ -151,7 +151,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
 
   const currentProps = useStatefulMerger({
     id: null as never,
-  } as unknown as Partial<React.ComponentProps<C> & ExtractProviderProps<C>> &
+  } as unknown as Partial<React.ComponentProps<C> & ExtractStaticProps<C>> &
     IdProp);
 
   return React.useCallback(
@@ -206,14 +206,15 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
           // if currentUpstreamModuleMap exists, it means we are in the live tree but have received data from the dry-run and have to recreate an off-tree node. technically, we don't need to do this, because everything renders top to bottom, which means what ever will be injected will already be available, but we might want to use this later to add mocked instances from withMock.
           // we want to keep localUpstream fresh with the actual results of the current build, because the dry run can include the dependencies conditionally, which are no longer part of the current build. That's why don't add to localUpstream. after we return the upstreamModules they are updated through useComponentInstance, so resolveProviderData, can resolve the new tree correctly, to discover dependencies of dependencies.
           for (const module of currentUpstreamModuleMap.get(provider.id)!) {
-            populated.set(
+            const instance = runtimeProvider.getByKey(
+              registerId,
               module.context.key,
-              runtimeProvider.getByKey(
-                registerId,
-                module.context.key,
-                provider.index
-              )[0]!
-            );
+              provider.index,
+              snapshot
+            )[0]!;
+
+            // TODO: find out why sometimes, what is in currentUpstreamModuleMap, is not instantiated, or at least not available. this could have to do with isolated runs maybe?
+            if (instance) populated.set(module.context.key, instance);
           }
         }
 

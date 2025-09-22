@@ -4,7 +4,7 @@ import * as React from 'react';
 import type { Simplify, Merge, IsUnknown, IsNever } from 'type-fest';
 import {
   type PROPS_PROP,
-  type ExtractProviderProps,
+  type ExtractStaticProps,
   type DeclarationId,
   type IdProp,
   type ScopeId,
@@ -12,7 +12,7 @@ import {
 } from '@/types';
 import { createDryRun } from 'hooks/useDryRun/useDryRun';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { createSystem, propagateSystem } from '../common/System/System';
+import { CreateSystem, PropagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
   getStaticDeclarationId,
@@ -22,7 +22,7 @@ import {
 type PropsOrEmpty<P> = keyof P extends never ? Record<never, never> : P;
 let count = 0;
 
-export function withProviderScope<
+export function WithProviderScope<
   C1 extends React.FC<any>,
   CProps,
   PProps,
@@ -44,11 +44,11 @@ export function withProviderScope<
 
 // React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
-export function withProviderScope<
+export function WithProviderScope<
   R,
   C extends React.FC<any>,
   C1 extends React.FC<any>,
->(RootComponent: C1, rootProps?: PropsOrEmpty<React.ComponentProps<C1>>) {
+>(RootComponent: C1, rootProps?: React.ComponentProps<C1>) {
   return (Component: C) => {
     // if the user uses an unwrapped component as a portable root, we cannot determine what the target is, so we have to throw an error, where the user is offered to options. either use withId, on the unwrapped portable root inside the app hierarchy (for production analytics in storybook, for example, to make it digestible), or to suggest to use withParentTag so we can use the parent as target and collect candidate chains from there. Since the portable root doesn't have providers itself, we know we can't miss any providers by using the parent as target. Note that withParentTag, will assign a declaration id to the component itself, but since it's not available in the app hierarchy, it won't be registered, but that's why we rely on the declid of the provided parent tag as an argument.
 
@@ -69,9 +69,9 @@ export function withProviderScope<
 
     const dryRunId = `dry-run-${String(count++)}` as ScopeId;
     // makes api instance available under dryRunId
-    createDryRun(dryRunId, RootComponent, rootProps, declarationId);
+    createDryRun(dryRunId, RootComponent, rootProps ?? {}, declarationId);
 
-    const Wrapper = createSystem(
+    const Wrapper = CreateSystem(
       declarationId,
       Component,
       target,
@@ -79,7 +79,7 @@ export function withProviderScope<
       undefined,
       dryRunId
     );
-    const Memo = propagateSystem(
+    const Memo = PropagateSystem(
       declarationId,
       dryRunId,
       Component,
@@ -102,8 +102,8 @@ type StaticProperties<C, TProps, TErrors = unknown> = TErrors extends [string]
       ExtractMeta<C>,
       {
         [PROPS_PROP]: IsNever<TProps> extends false
-          ? Merge<ExtractProviderProps<C>, TProps>
-          : ExtractProviderProps<C>;
+          ? Merge<ExtractStaticProps<C>, TProps>
+          : ExtractStaticProps<C>;
       }
     >;
 

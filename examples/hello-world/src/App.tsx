@@ -1,6 +1,10 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { withRuntime, link } from '@donverduyn/react-runtime';
+import {
+  WithRuntime,
+  link,
+  WithProviderScope,
+} from '@donverduyn/react-runtime';
 import * as AppRuntime from './App.runtime';
 import effectLogo from './assets/effect.svg';
 import mobxLogo from './assets/mobx.svg';
@@ -16,13 +20,15 @@ const withLogger = (component: React.FC<Props>) =>
     // withUpstream(SomeRuntime, ({ runtime }) => {
     //   console.log('SomeRuntime', runtime.instance );
     // }),
-    withRuntime(AppRuntime, ({ configure }) => {
+    WithRuntime(AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
       return { store: runtime.use(AppRuntime.Count) };
     })
   );
 
-export const App = link(AppView, withLogger);
+const App = link(AppView, withLogger);
+
+export const Root = link(Child, WithProviderScope(App));
 
 type Props = {
   readonly store: AppRuntime.Count;

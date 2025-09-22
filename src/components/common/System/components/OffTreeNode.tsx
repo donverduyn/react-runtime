@@ -43,37 +43,33 @@ export const OffTreeNode = React.memo(
     const { discoveryFn, ...rest } = props;
 
     //* use isolated runtime providers, to avoid different results between re-renders, except for use-public, because it always executes the same code. For example, in use-stub, it's possible for a function to throw, missing potential hook registrations. If between re-renders, the available dependencies change, suddenly the function passes, and the rules of hooks are broken.
-    const snapshot = React.useMemo(
-      () => props.runtimeProviderApi.getSnapshot(),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      []
-    );
+    const snapshot = React.useRef(props.runtimeProviderApi.getSnapshot());
 
     // const id = React.useId();
 
     // console.log(props.registerId, props.strategy, id, snapshot);
-    const discovery = props.discoveryFn(Object.assign({}, rest, { snapshot }));
+    const discovery = props.discoveryFn(
+      Object.assign({}, rest, { snapshot: snapshot.current })
+    );
 
     //* after stubbed run
     if (props.strategy === 'use-stub') {
-      return (
-        <>
-          {Array.from(discovery.offTreeMap.values())
-            .reverse()
-            .map((ancestor) => (
-              // use use-isolated, assuming everything is available from the previously rendered nodes. If not, we have a use-all fallback. This happens when a new dependency is injected post mount.
-              <OffTreeNode
-                key={ancestor.id}
-                declarationId={ancestor.declId}
-                discoveryFn={props.discoveryFn}
-                localProviders={ancestor.localProviders}
-                nodeProps={ancestor.props}
-                registerId={ancestor.id}
-                runtimeProviderApi={props.runtimeProviderApi}
-                strategy='use-isolated'
-              />
-            ))}
-          {/* the goal here is to validate if we actually have all dependencies we need now, by running a real but isolated buildEntries call using the 'use-isolated' strategy */}
+      return Array.from(discovery.offTreeMap.values())
+        .reverse()
+        .map((ancestor) => (
+          // use use-isolated, assuming everything is available from the previously rendered nodes. If not, we have a use-all fallback. This happens when a new dependency is injected post mount.
+          <OffTreeNode
+            key={ancestor.id}
+            declarationId={ancestor.declId}
+            discoveryFn={props.discoveryFn}
+            localProviders={ancestor.localProviders}
+            nodeProps={ancestor.props}
+            registerId={ancestor.id}
+            runtimeProviderApi={props.runtimeProviderApi}
+            strategy='use-isolated'
+          />
+        ))
+        .concat(
           <OffTreeNode
             key={props.registerId}
             declarationId={props.declarationId}
@@ -84,8 +80,8 @@ export const OffTreeNode = React.memo(
             runtimeProviderApi={props.runtimeProviderApi}
             strategy='use-isolated-check'
           />
-        </>
-      );
+        );
+      /* the goal here is to validate if we actually have all dependencies we need now, by running a real but isolated buildEntries call using the 'use-isolated' strategy */
     } else if (props.strategy === 'use-isolated') {
       // we get here after doing an isolated buildEntries call, after the initial results from the stubbed run have been used to instantiate.
       if (discovery.succeeded) {
@@ -95,6 +91,7 @@ export const OffTreeNode = React.memo(
       } else {
         return (
           <OffTreeNode
+            key={props.registerId}
             declarationId={props.declarationId}
             discoveryFn={props.discoveryFn}
             localProviders={props.localProviders}
@@ -116,24 +113,23 @@ export const OffTreeNode = React.memo(
         return null;
       }
     } else if (props.strategy === 'use-all') {
-      return (
-        <>
-          {Array.from(discovery.offTreeMap.values())
-            .reverse()
-            .map((ancestor) => {
-              return (
-                <OffTreeNode
-                  key={ancestor.id}
-                  declarationId={ancestor.declId}
-                  discoveryFn={props.discoveryFn}
-                  localProviders={ancestor.localProviders}
-                  nodeProps={ancestor.props}
-                  registerId={ancestor.id}
-                  runtimeProviderApi={props.runtimeProviderApi}
-                  strategy='use-isolated-check'
-                />
-              );
-            })}
+      return Array.from(discovery.offTreeMap.values())
+        .reverse()
+        .map((ancestor) => {
+          return (
+            <OffTreeNode
+              key={ancestor.id}
+              declarationId={ancestor.declId}
+              discoveryFn={props.discoveryFn}
+              localProviders={ancestor.localProviders}
+              nodeProps={ancestor.props}
+              registerId={ancestor.id}
+              runtimeProviderApi={props.runtimeProviderApi}
+              strategy='use-isolated-check'
+            />
+          );
+        })
+        .concat(
           <OffTreeNode
             // do a final run
             key={props.registerId}
@@ -146,8 +142,7 @@ export const OffTreeNode = React.memo(
             runtimeProviderApi={props.runtimeProviderApi}
             strategy='use-public'
           />
-        </>
-      );
+        );
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (props.strategy === 'use-public') {
       if (!discovery.succeeded) {

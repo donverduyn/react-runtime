@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cloneDeep, deepFreeze } from './object';
+import { cloneDeep, deepFreeze, stableStringify } from './object';
 
 describe('Object utils', () => {
   it('clones primitives correctly', () => {
@@ -144,5 +144,62 @@ describe.todo('deepFreeze', () => {
     expect(deepFreeze(null)).toBeNull();
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     expect(deepFreeze(undefined)).toBeUndefined();
+  });
+});
+
+describe('stableStringify', () => {
+  it('stringifies primitives correctly', () => {
+    expect(stableStringify(null)).toBe('null');
+    expect(stableStringify(undefined)).toBe('undefined');
+    expect(stableStringify(123)).toBe('123');
+    expect(stableStringify('abc')).toBe('"abc"');
+    expect(stableStringify(true)).toBe('true');
+  });
+
+  it('stringifies simple objects with sorted keys', () => {
+    const obj = { b: 2, a: 1 };
+    const result = stableStringify(obj);
+    expect(result).toBe('{a:1,b:2}');
+  });
+
+  it('stringifies nested objects', () => {
+    const obj = { x: { b: 2, a: 1 }, y: [3, 4] };
+    const result = stableStringify(obj);
+    expect(result).toBe('{x:{a:1,b:2},y:[3,4]}');
+  });
+
+  it('stringifies arrays correctly', () => {
+    const arr = [3, 1, { a: 2 }];
+    const result = stableStringify(arr);
+    expect(result).toBe('[3,1,{a:2}]');
+  });
+
+  it('stringifies functions as their source code', () => {
+    const fn1 = function foo() {
+      return 1;
+    };
+    const fn2 = () => 2;
+    expect(stableStringify(fn1)).toBe(fn1.toString());
+    expect(stableStringify(fn2)).toBe(fn2.toString());
+  });
+
+  it('handles objects with functions', () => {
+    const obj = { a: 1, fn: () => 42 };
+    const result = stableStringify(obj);
+    expect(result).toBe(`{a:1,fn:${obj.fn.toString()}}`);
+  });
+
+  it('stringifies nested arrays and objects consistently', () => {
+    const obj = { a: [1, { b: 2, c: () => 3 }] };
+    const result = stableStringify(obj);
+    // @ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    expect(result).toBe(`{a:[1,{b:2,c:${obj.a[1].c.toString()}}]}`);
+  });
+
+  it('produces deterministic output regardless of key order', () => {
+    const obj1 = { a: 1, b: 2 };
+    const obj2 = { b: 2, a: 1 };
+    expect(stableStringify(obj1)).toBe(stableStringify(obj2));
   });
 });

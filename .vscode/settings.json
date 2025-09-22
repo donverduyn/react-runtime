@@ -12,5 +12,8 @@
     "editor.wordWrapColumn": 80,
     "playwright.env": {
       "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
-    }
+    },
+  // "editor.inlayHints.enabled": "on",
+  "editor.inlayHints.maximumLength": 240,
+  "orta.vscode-twoslash-queries.maxLength": 240,
 }

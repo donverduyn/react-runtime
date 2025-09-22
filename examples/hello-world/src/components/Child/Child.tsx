@@ -1,23 +1,57 @@
 import * as React from 'react';
 import {
-  withUpstream,
+  WithUpstream,
   link,
-  withRuntime,
+  WithRuntime,
   type ExtractProps,
+  Context,
+  type ExtractStaticProps,
+  type Stream,
 } from '@donverduyn/react-runtime';
 // import { Effect, Schedule, Stream } from 'effect';
 import { observer } from 'mobx-react-lite';
 import * as AppRuntime from '../../App.runtime';
 import * as ChildRuntime from './Child.runtime';
+import moize from 'moize';
+import type { Simplify } from 'type-fest';
+import type { PropKey } from '../../../../../src/utils/effect';
 
 type Props = {
   readonly getName: () => number;
   readonly log: (value: string) => void;
 };
 
+// export const getPropsTag = moize.shallow(
+//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//   <C extends React.FC<any>>() =>
+//     class Props extends Context.Tag('Props')<
+//       Props,
+//       Simplify<
+//         {
+//           [K in Exclude<
+//             keyof React.ComponentProps<C> & (string | symbol),
+//             keyof ExtractStaticProps<C>
+//           >]: Stream.Stream<
+//             NonNullable<React.ComponentProps<C>[K]>,
+//             never,
+//             PropKey<K>
+//           >;
+//         } & {
+//           [K in keyof ExtractStaticProps<C> & (string | symbol)]: Stream.Stream<
+//             ExtractStaticProps<C>[K],
+//             never,
+//             PropKey<K>
+//           >;
+//         }
+//       >
+//     >() {}
+// );
+
+// const PropsTag = getPropsTag<typeof Child>();
+
 export const Child = link(
   observer(ChildView),
-  withUpstream(({ inject, props }) => {
+  WithUpstream(({ inject, props }) => {
     const count = inject(AppRuntime).use(AppRuntime.Count);
 
     // TODO: instead of lifting the function into a stream and using push/pull conversion, consider just a single synchronous effect call so we can sycnhronously obtain a stream. in most cases the push/pull conversion doesn't make sense anyway, so we might want to either have a method or a different way to chose between sync or push/pull. previously we thought about having something like rxjs with switchMap, mergeMap, concatMap, exhaustMap, because the essence of push pull is really, do you want the effect to control the pace, or the consumer.
@@ -35,7 +69,8 @@ export const Child = link(
 
     return { getName: () => count.get() };
   }),
-  withRuntime(ChildRuntime, ({ runtime }) => {
+  WithRuntime(ChildRuntime, ({ runtime }) => {
+    runtime.use(ChildRuntime.Count); // Count can rely on Props from the layer which reads from the proxy. Since this function is processed in the last hoc, together with the others, at every step we need the proxy to be available, but we can think about when we are going to pull from the proxy. the thing is, we can't really defer executation of runtime.use, since we currently rely on synchronously having the return here, which also means we must have the props available, wo we have to choices, accept you cannot have a canonical set of props available, OR bubble up through these functions such that the resulting props are backfilled at each step using partial application
     return { log: (value: string) => console.log('Child log:', value) };
   })
 

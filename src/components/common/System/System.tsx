@@ -57,7 +57,7 @@ import {
   hoistProviderList,
 } from './utils/static';
 
-export function createSystem<R, C extends React.FC<any>>(
+export function CreateSystem<R, C extends React.FC<any>>(
   declarationId: DeclarationId,
   Component: C,
   target: React.FC<any>,
@@ -277,6 +277,10 @@ export function createSystem<R, C extends React.FC<any>>(
     // - ✅ Finishing logic in OffTreeNode
 
     // - Fix typings, to show error when mismatched overridden prop
+
+    // consider what we want to do if constructing a node after a stubbed frun fails, since it runs in isolated now. what should happen afterwards, and also what should happen if a missing dependency pops up post mount from that point. does it have the ability to recurse from there, which was the indended plan.
+
+    // discover why fast refresh fails on certain files in the project and shows a dependencies missing error.
 
     const nullableDryRunInstance =
       systemContext.dryRunId !== null
@@ -742,7 +746,7 @@ export function createSystem<R, C extends React.FC<any>>(
   return Wrapper;
 }
 
-export const propagateSystem = <C extends React.FC<any>>(
+export const PropagateSystem = <C extends React.FC<any>>(
   declarationId: DeclarationId,
   dryRunId: ScopeId | null,
   Component: React.FC<any>,

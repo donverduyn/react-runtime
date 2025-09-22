@@ -14,9 +14,9 @@ It returns a promise that resolves to the value of the effect.
 type InferArgs<F> = F extends (...args: infer A) => any ? A : never;
 type InferReturn<F> = F extends (...args: any[]) => infer R ? R : never;
 
-export function createFn<R>(
+export function createFn<R, P>(
   localContext: RuntimeContext<R>,
-  instance: Map<RuntimeKey, RuntimeInstance<any>>
+  instance: Map<RuntimeKey, RuntimeInstance<any, P>>
 ): {
   <Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
     target: Fn
@@ -37,9 +37,9 @@ export function createFn<R>(
   // >;
 };
 
-export function createFn<R>(
+export function createFn<R, P>(
   localContext: RuntimeContext<R>,
-  instances: Map<RuntimeKey, RuntimeInstance<any>>
+  instances: Map<RuntimeKey, RuntimeInstance<any, P>>
 ) {
   return <T extends unknown[], A, E>(
     fn: (...args: T) => Effect.Effect<A, E, R | Scope.Scope>,

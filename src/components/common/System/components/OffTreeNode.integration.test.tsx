@@ -56,6 +56,7 @@ describe('OffTreeNode', () => {
       return (
         <div>
           <OffTreeNode
+            key={registerId}
             declarationId={declarationId}
             discoveryFn={discoverFn}
             localProviders={entries}

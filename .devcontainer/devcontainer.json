@@ -33,11 +33,14 @@
 				"dakara.dakara-foldplus",
 				"Gruntfuggly.todo-tree",
 				"YoavBls.pretty-ts-errors",
-				"ms-playwright.playwright"
+				"ms-playwright.playwright",
+				"Orta.vscode-twoslash-queries"
 			]
 		}
-	}
-
+	},
+  "remoteEnv": {
+    "EDITOR": "code"
+  }
 	// Configure tool-specific properties.
 	// "customizations": {},
 
