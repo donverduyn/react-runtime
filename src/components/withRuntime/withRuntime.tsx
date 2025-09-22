@@ -17,6 +17,7 @@ import type {
   ExtensibleProps,
   ResultProps,
   ERROR_PROP,
+  RuntimeContext,
 } from '@/types';
 import { CreateSystem, PropagateSystem } from 'components/common/System/System';
 import {
@@ -35,7 +36,7 @@ export function WithRuntime<
   PErrors,
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fn?: ProviderFn<R, PProps & Partial<CProps>, TProps>
 ): (
   Component:
@@ -66,7 +67,7 @@ export function WithRuntime<
   PProps,
   PErrors,
 >(
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fnVoid?: ProviderFn<
     R,
     PProps & Partial<CProps>,
@@ -88,7 +89,7 @@ export function WithRuntime<
 
 //
 export function WithRuntime<C extends React.FC<any>, R>(
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fn?: ProviderFn<any, any>
 ) {
   return (Component: C) => {
@@ -125,7 +126,7 @@ export function WithRuntime<C extends React.FC<any>, R>(
 
 function createRuntimeEntry<R, C extends React.FC<any>>(
   id: ProviderId,
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fn?: ProviderFn<R, C>
 ): ProviderEntry<R, C> {
   return {

@@ -7,6 +7,7 @@ import type {
   ProviderId,
   RegisterId,
   ResolvedProviderEntry,
+  RuntimeContext,
   RuntimeModule,
 } from '@/types';
 import type { EdgeDataFields } from 'utils/hash';
@@ -32,7 +33,7 @@ export type DryRunCandidateAncestor = {
   id: RegisterId;
   declId: DeclarationId;
   props: Record<string, unknown>;
-  upstreamModules: Map<ProviderId, Set<RuntimeModule<any>>>;
+  upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>;
   localProviders: ResolvedProviderEntry<any, any, unknown>[];
 };
 

@@ -8,4 +8,4 @@ export * from '@/types';
 export * from 'utils/effect/runtime';
 export * from 'utils/react';
 // TODO: remove this after monorepo setup shares package.json
-export * from 'effect';
+// export * from 'effect';

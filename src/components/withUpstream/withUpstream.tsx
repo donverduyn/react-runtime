@@ -32,8 +32,9 @@ import type {
   ResultProps,
   ERROR_PROP,
   UpstreamProviderFn,
+  RuntimeContext,
 } from 'types';
-import { isRuntimeModule } from 'utils/effect/runtime';
+import { isRuntimeContext } from 'utils/effect/runtime';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
 
 export function WithUpstream<
@@ -103,7 +104,7 @@ export function WithUpstream<
   PErrors, // errors cumulative
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fn: ProviderFn<R, PProps & Partial<CProps>, TProps>
 ): (
   Component:
@@ -137,7 +138,7 @@ export function WithUpstream<
   PProps,
   PErrors,
 >(
-  module: RuntimeModule<R>,
+  module: RuntimeContext<R>,
   fnVoid: ProviderFn<
     R,
     PProps & Partial<CProps>,
@@ -160,10 +161,10 @@ export function WithUpstream<
 //* implementation
 
 export function WithUpstream<R, C extends React.FC<any>>(
-  moduleOrFn: RuntimeModule<R> | UpstreamProviderFn<any, any>,
+  moduleOrFn: RuntimeContext<R> | UpstreamProviderFn<any, any>,
   fn?: ProviderFn<any, any>
 ) {
-  const isModule = isRuntimeModule(moduleOrFn);
+  const isModule = isRuntimeContext(moduleOrFn);
   const shouldPopulate = !isModule;
   const module = isModule ? moduleOrFn : undefined;
   const providerFn = isModule
@@ -224,7 +225,7 @@ export function WithUpstream<R, C extends React.FC<any>>(
 
 function createUpstreamEntry<R, C extends React.FC<any>>(
   id: ProviderId,
-  module: RuntimeModule<any> | undefined,
+  module: RuntimeContext<any> | undefined,
   fn: ProviderFn<R, C> | UpstreamProviderFn<C, any>
 ): ProviderEntry<R, C> {
   return { type: 'upstream', id, fn, module };

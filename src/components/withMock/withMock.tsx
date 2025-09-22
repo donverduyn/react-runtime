@@ -9,14 +9,14 @@ import {
   type PROPS_PROP,
   type ExtractStaticProps,
   type DeclarationId,
-  type RuntimeModule,
+  type RuntimeContext,
   type IdProp,
   type Extensible,
   type ERROR_PROP,
   type ExtractStaticError,
 } from '@/types';
 import { getDisplayName, type ExtractMeta } from 'utils/react';
-import { isRuntimeModule } from 'utils/effect/runtime';
+import { isRuntimeContext } from 'utils/effect/runtime';
 import { CreateSystem, PropagateSystem } from '../common/System/System';
 import {
   getStaticComponent,
@@ -25,7 +25,7 @@ import {
   getStaticProviderList,
 } from '../common/System/utils/static';
 
-// the idea of withMock, is that we accept a component that has already been composed, instead of using it as a target to render, we read the static properties from it, the entries and the original component. of the composed component. then we recreate what would've been done in the last hoc of the composed component, but this time, we provide mocked values for either props or layer. The only thing we have to think about is, how do we mock the layer of a specific hoc. do we use the module and its key together with the mocked layer, and do we support props through the same withMock hoc. We might be able to get this working by supporting multiple variants of arguments. this way a user can use multiple withMock hocs in tests.
+// the idea of withMock, is that we accept a component that has already been composed, instead of using it as a target to render, we read the static properties from it, the entries and the original component. of the composed component. then we recreate what would've been done in the last hoc of the composed component, but this time, we provide mocked values for either props or layer. The only thing we have to think about is, how do we mock the layer of a specific hoc. do we use the Context and its key together with the mocked layer, and do we support props through the same withMock hoc. We might be able to get this working by supporting multiple variants of arguments. this way a user can use multiple withMock hocs in tests.
 
 export function WithMock<
   C extends React.FC<any>,
@@ -43,20 +43,20 @@ export function WithMock<
   TResult = Partial<IdProp> & React.ComponentProps<C>,
   R = unknown,
 >(
-  module: RuntimeModule<R>,
+  Context: RuntimeContext<R>,
   layer: Layer.Layer<R>
 ): (Component: C) => React.FC<Simplify<TResult>> & StaticProperties<C, TProps>;
 
 //
 export function WithMock<R, C extends React.FC<any>, C1 extends React.FC<any>>(
-  moduleOrComponent: RuntimeModule<R> | C1,
+  ContextOrComponent: RuntimeContext<R> | C1,
   input: Layer.Layer<R> | React.ComponentProps<C1>
 ) {
-  const isModule = isRuntimeModule<R>(moduleOrComponent);
-  const module = isModule ? moduleOrComponent : undefined;
-  const component = !isModule ? moduleOrComponent : undefined;
+  const isContext = isRuntimeContext<R>(ContextOrComponent);
+  const Context = isContext ? ContextOrComponent : undefined;
+  const component = !isContext ? ContextOrComponent : undefined;
 
-  // TODO: handle both cases where we either have a module or component.
+  // TODO: handle both cases where we either have a Context or component.
   // TODO: make mocks available during dry runs. think about how we want to validate that all mocks are provided when a certain provider scope root is used.
 
   return (Component: C) => {

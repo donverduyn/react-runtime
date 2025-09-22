@@ -1,5 +1,6 @@
 import { Layer, ManagedRuntime } from 'effect';
 import type {
+  RuntimeContext,
   RuntimeInstance,
   RuntimeKey,
   RuntimeModule,
@@ -11,20 +12,20 @@ import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';
 
 const createRuntimeApi = () => {
-  function create<R>(
-    module: RuntimeModule<R>,
+  function create<R, P>(
+    module: RuntimeContext<R>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    instances: Map<RuntimeKey, RuntimeInstance<any>>
+    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) {
     return {
-      instance: instances.get(module.context.key)!.runtime,
-      use: createUse(module.context, instances),
-      useFn: createFn(module.context, instances),
-      useRun: createRun(module.context, instances),
+      instance: instances.get(module.key)!.runtime,
+      use: createUse(module, instances),
+      useFn: createFn(module, instances),
+      useRun: createRun(module, instances),
     };
   }
 
-  function createInert<R>(stubValue: unknown) {
+  function createInert<R, P>(stubValue: unknown) {
     return {
       instance: ManagedRuntime.make<R, never>(Layer.empty as Layer.Layer<R>),
       use: () => stubValue as never,

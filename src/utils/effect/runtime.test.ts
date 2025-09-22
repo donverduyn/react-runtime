@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Layer } from 'effect';
 import { describe, it, expect } from 'vitest';
 import { isFunctionalComponent } from '../react';
-import { isRuntimeContext, isRuntimeModule } from './runtime';
+import { isRuntimeContext } from './runtime';
 
 // Dummy React components for testing
 const FunctionalComponent: React.FC = () => React.createElement('div');
@@ -78,32 +78,32 @@ describe('isRuntimeContext', () => {
   });
 });
 
-describe('isRuntimeModule', () => {
-  it('returns true for a valid runtime module', () => {
-    const layer = Layer.empty;
-    const context = {
-      key: Symbol('RuntimeContext'),
-      layer,
-    };
-    const module = {
-      context,
-      reference: () => FunctionalComponent,
-    };
-    expect(isRuntimeModule<number>(module)).toBeTruthy();
-  });
+// describe('isRuntimeModule', () => {
+//   it('returns true for a valid runtime module', () => {
+//     const layer = Layer.empty;
+//     const context = {
+//       key: Symbol('RuntimeContext'),
+//       layer,
+//     };
+//     const module = {
+//       context,
+//       reference: () => FunctionalComponent,
+//     };
+//     expect(isRuntimeModule<number>(module)).toBeTruthy();
+//   });
 
-  it('returns false if context is invalid', () => {
-    const module = {
-      context: {},
-      reference: () => FunctionalComponent,
-    };
-    expect(isRuntimeModule(module)).toBeFalsy();
-  });
+//   it('returns false if context is invalid', () => {
+//     const module = {
+//       context: {},
+//       reference: () => FunctionalComponent,
+//     };
+//     expect(isRuntimeModule(module)).toBeFalsy();
+//   });
 
-  it('returns false for non-object input', () => {
-    expect(isRuntimeModule(null)).toBeFalsy();
-    expect(isRuntimeModule(undefined)).toBeFalsy();
-    expect(isRuntimeModule(123)).toBeFalsy();
-    expect(isRuntimeModule('string')).toBeFalsy();
-  });
-});
+//   it('returns false for non-object input', () => {
+//     expect(isRuntimeModule(null)).toBeFalsy();
+//     expect(isRuntimeModule(undefined)).toBeFalsy();
+//     expect(isRuntimeModule(123)).toBeFalsy();
+//     expect(isRuntimeModule('string')).toBeFalsy();
+//   });
+// });

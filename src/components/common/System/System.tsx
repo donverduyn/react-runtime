@@ -28,6 +28,7 @@ import {
   type ScopeId,
   type RuntimeModule,
   type ProviderId,
+  type RuntimeContext,
 } from 'types';
 import { tryFnSync } from 'utils/function';
 import { combineV5, createIdFactory, type EdgeDataFields } from 'utils/hash';
@@ -305,7 +306,11 @@ export function CreateSystem<R, C extends React.FC<any>>(
       return runtimeProviderApi.unregister;
     }, []);
 
-    const buildEntries = useEntryBuilder<R, C>(scopeId, name);
+    const buildEntries = useEntryBuilder<
+      R,
+      C,
+      Partial<IdProp & React.ComponentProps<C>>
+    >(scopeId, name);
 
     //* from here on we start returning jsx.
     //* we need to distinguish between three modes.
@@ -451,8 +456,8 @@ export function CreateSystem<R, C extends React.FC<any>>(
                 : [set, upstream];
             },
             [
-              new Set<RuntimeModule<unknown>>(),
-              new Map<ProviderId, Set<RuntimeModule<unknown>>>(),
+              new Set<RuntimeContext<unknown>>(),
+              new Map<ProviderId, Set<RuntimeContext<unknown>>>(),
             ]
           );
 
@@ -510,7 +515,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
           const [resolved] = providerTree.resolveProviderData(
             options.registerId,
             dryRun,
-            result ? result.missingUpstream : new Set<RuntimeModule<unknown>>()
+            result ? result.missingUpstream : new Set<RuntimeContext<unknown>>()
           );
 
           return {
@@ -570,7 +575,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
           const [resolved] = providerTree.resolveProviderData(
             options.registerId,
             dryRun,
-            result ? result.missingUpstream : new Set<RuntimeModule<unknown>>()
+            result ? result.missingUpstream : new Set<RuntimeContext<unknown>>()
           );
 
           return {

@@ -5,7 +5,7 @@ import {
   link,
   WithProviderScope,
 } from '@donverduyn/react-runtime';
-import * as AppRuntime from './App.runtime';
+import * as fromApp from './App.runtime';
 import effectLogo from './assets/effect.svg';
 import mobxLogo from './assets/mobx.svg';
 import reactLogo from './assets/react.svg';
@@ -20,9 +20,9 @@ const withLogger = (component: React.FC<Props>) =>
     // withUpstream(SomeRuntime, ({ runtime }) => {
     //   console.log('SomeRuntime', runtime.instance );
     // }),
-    WithRuntime(AppRuntime, ({ configure }) => {
+    WithRuntime(fromApp.AppRuntime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
-      return { store: runtime.use(AppRuntime.Count) };
+      return { store: runtime.use(fromApp.Count) };
     })
   );
 

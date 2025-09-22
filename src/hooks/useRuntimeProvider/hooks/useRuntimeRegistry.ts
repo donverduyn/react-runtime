@@ -8,6 +8,7 @@ import type {
   RuntimePayload,
   ScopeId,
 } from '@/types';
+import { createProxy } from 'utils/effect';
 import { cloneNestedMap, deepMergeMapsInPlace } from 'utils/map';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
@@ -25,13 +26,13 @@ export function createRuntimeRegistry(_: ScopeId) {
     Map<RuntimeKey, Map<number, RuntimeId>>
   > = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const registry: Map<RuntimeId, RuntimeInstance<any>> = new Map();
+  const registry: Map<RuntimeId, RuntimeInstance<any, any>> = new Map();
   const isolatedMapping: Map<
     RegisterId,
     Map<RuntimeKey, Map<number, RuntimeId>>
   > = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isolatedRegistry: Map<RuntimeId, RuntimeInstance<any>> = new Map();
+  const isolatedRegistry: Map<RuntimeId, RuntimeInstance<any, any>> = new Map();
   const disposerMap: Map<
     RegisterId,
     Map<RuntimeId, NodeJS.Timeout>
@@ -40,7 +41,7 @@ export function createRuntimeRegistry(_: ScopeId) {
   // const listeners: ListenerMap = new Map();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function registerIsolated(id: RegisterId, payload: RuntimePayload<any>) {
+  function registerIsolated<P>(id: RegisterId, payload: RuntimePayload<any>) {
     const exists = getById(id, payload.context.key, payload.index);
     if (exists) return exists;
     const { context, config, providerId: entryId } = payload;
@@ -57,9 +58,10 @@ export function createRuntimeRegistry(_: ScopeId) {
     runtimeIdMap.set(payload.index, runtimeId);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const instance: RuntimeInstance<any> = {
+    const instance: RuntimeInstance<any, P> = {
       runtime: ManagedRuntime.make(context.layer),
       config: Object.assign({}, defaultConfig, config),
+      propsProxy: createProxy({} as Record<never, never> & P),
     };
     isolatedRegistry.set(runtimeId, instance);
 
@@ -67,7 +69,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     return isolatedRegistry.get(currentId!)!;
   }
 
-  function register(
+  function register<P>(
     id: RegisterId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: RuntimePayload<any>
@@ -95,9 +97,10 @@ export function createRuntimeRegistry(_: ScopeId) {
     runtimeIdMap.set(payload.index, runtimeId);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const instance: RuntimeInstance<any> = {
+    const instance: RuntimeInstance<any, P> = {
       runtime: ManagedRuntime.make(context.layer),
       config: Object.assign({}, defaultConfig, config),
+      propsProxy: createProxy({} as Record<never, never> & P),
     };
     registry.set(runtimeId, instance);
 

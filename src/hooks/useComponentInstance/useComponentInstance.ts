@@ -4,6 +4,7 @@ import type {
   DeclarationId,
   ProviderId,
   RegisterId,
+  RuntimeContext,
   RuntimeModule,
   ScopeId,
 } from '@/types';
@@ -13,20 +14,20 @@ export type ComponentInstanceApi = {
   register: (
     id: RegisterId,
     declarationId: DeclarationId,
-    upstreamModules: Map<ProviderId, Set<RuntimeModule<any, any>>>
+    upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>
   ) => void;
   dispose: (id: RegisterId) => void;
   getDeclarationId: (id: RegisterId) => DeclarationId | null;
   getUpstreamById: (
     id: RegisterId
-  ) => Map<ProviderId, Set<RuntimeModule<any, any>>>;
+  ) => Map<ProviderId, Set<RuntimeContext<any>>>;
 };
 
 export const useComponentInstance = (_: ScopeId): ComponentInstanceApi => {
   const idMap = new Map<RegisterId, DeclarationId>();
   const moduleMap = new Map<
     RegisterId,
-    Map<ProviderId, Set<RuntimeModule<any, any>>>
+    Map<ProviderId, Set<RuntimeContext<any>>>
   >();
   function getDeclarationId(id: RegisterId) {
     return idMap.get(id) || null;
@@ -35,14 +36,14 @@ export const useComponentInstance = (_: ScopeId): ComponentInstanceApi => {
   function getUpstreamById(id: RegisterId) {
     const result = moduleMap.get(id);
     if (!result)
-      moduleMap.set(id, new Map<ProviderId, Set<RuntimeModule<any>>>());
+      moduleMap.set(id, new Map<ProviderId, Set<RuntimeContext<any>>>());
     return moduleMap.get(id)!;
   }
 
   function register(
     id: RegisterId,
     declarationId: DeclarationId,
-    upstreamModules: Map<ProviderId, Set<RuntimeModule<any, any>>>
+    upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>
   ) {
     idMap.set(id, declarationId);
     const current = moduleMap.get(id);

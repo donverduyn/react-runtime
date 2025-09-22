@@ -4,6 +4,7 @@ import type {
   DeclarationId,
   ProviderEntry,
   ProviderId,
+  RuntimeContext,
   RuntimeModule,
   ScopeId,
 } from '@/types';
@@ -39,7 +40,7 @@ const createProviderMap = () => {
     const entryMap = map.get(id)!;
     return Array.from(entryMap.values()).reduce(
       (set, entry) => (entry.type === 'runtime' ? set.add(entry.module) : set),
-      new Set<RuntimeModule<any>>()
+      new Set<RuntimeContext<any>>()
     );
   }
 

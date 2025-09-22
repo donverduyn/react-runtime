@@ -1,10 +1,5 @@
 import { Layer, ManagedRuntime, pipe } from 'effect';
-import type {
-  RuntimeConfig,
-  RuntimeContext,
-  RuntimeInstance,
-  RuntimeModule,
-} from '@/types';
+import type { RuntimeConfig, RuntimeContext, RuntimeInstance } from '@/types';
 
 export const link = pipe;
 
@@ -22,16 +17,16 @@ export const isRuntimeContext = <T>(
   );
 };
 
-export const isRuntimeModule = <T>(
-  input: unknown
-): input is RuntimeModule<T> => {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'context' in input &&
-    isRuntimeContext(input.context)
-  );
-};
+// export const isRuntimeModule = <T>(
+//   input: unknown
+// ): input is RuntimeModule<T> => {
+//   return (
+//     typeof input === 'object' &&
+//     input !== null &&
+//     'context' in input &&
+//     isRuntimeContext(input.context)
+//   );
+// };
 
 export const isRuntimeConfig = (input: unknown): input is RuntimeConfig => {
   return (
@@ -75,5 +70,3 @@ export const createRuntimeContext =
     };
     return context;
   };
-
-

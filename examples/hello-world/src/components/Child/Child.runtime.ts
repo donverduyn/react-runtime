@@ -1,15 +1,6 @@
-import {
-  createRuntimeContext,
-  pipe,
-  Layer,
-  Effect,
-  Schedule,
-  Stream,
-} from '@donverduyn/react-runtime';
+import { createRuntimeContext } from '@donverduyn/react-runtime';
+import { Effect, pipe, Schedule, Layer, Stream } from 'effect';
 import { action, observable } from 'mobx';
-import { Child } from './Child';
-
-// export const reference = () => Child;
 
 const incrementer = Effect.gen(function* () {
   const count = yield* Count;
@@ -24,8 +15,11 @@ export class Count extends Effect.Service<Count>()('App/Store', {
   effect: Effect.sync(() => observable.box(0)),
 }) {}
 
-export const context = pipe(
+const layer = pipe(
   Layer.scopedDiscard(incrementer.pipe(Effect.forkScoped)),
-  Layer.provideMerge(Count.Default),
-  createRuntimeContext({ name: 'ChildRuntime' })
+  Layer.provideMerge(Count.Default)
+);
+
+export const ChildRuntime = createRuntimeContext({ name: 'ChildRuntime' })(
+  layer
 );

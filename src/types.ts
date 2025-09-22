@@ -44,7 +44,7 @@ export type RuntimeApi<R, P> = {
 
 export type RuntimeApiFactory<R, P> = {
   create: (
-    module: RuntimeModule<R>,
+    module: RuntimeContext<R>,
     instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) => RuntimeApi<R, P>;
   createInert: (stub: unknown) => RuntimeApi<R, P>;
@@ -76,10 +76,10 @@ export type RuntimePayload<R> = {
   config: Partial<RuntimeConfig>;
 };
 
-export type RuntimeInstance<R, P> = {
+export type RuntimeInstance<R, P = object> = {
   runtime: ManagedRuntime.ManagedRuntime<R, never>;
   config: RuntimeConfig;
-  propsProxy: Subscribable<NoInfer<P>>;
+  propsProxy: Subscribable<NoInfer<P>> & P;
 };
 
 export type IdProp = { readonly id: string };
@@ -116,7 +116,7 @@ export type ResultProps<
 export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 
 export type UpstreamProviderApi<P> = {
-  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T, P>;
+  inject: <R>(module: RuntimeContext<R>) => RuntimeApi<R, P>;
   props: P;
 };
 
@@ -127,7 +127,7 @@ export type UpstreamProviderFn<CProps, TResult = unknown> = (
 export type ProviderApi<R, P = object> = {
   configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R, P>;
   runtime: RuntimeApi<R, P>;
-  inject: <T>(module: RuntimeModule<T>) => RuntimeApi<T, P>;
+  inject: <R>(module: RuntimeContext<R>) => RuntimeApi<R, P>;
   props: P;
 };
 
@@ -144,13 +144,13 @@ export type ProviderEntry<R, C extends React.FC<any>, P = any> =
   | {
       id: ProviderId;
       type: 'runtime';
-      module: RuntimeModule<any>;
+      module: RuntimeContext<any>;
       fn?: ProviderFn<R, C, P> | ProviderFn<R, C, undefined> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
-      module?: RuntimeModule<any> | undefined;
+      module?: RuntimeContext<any> | undefined;
       fn: ProviderFn<R, C, P> | ProviderFn<R, C>;
     }
   | {

@@ -15,14 +15,15 @@
     },
     "exclude": [
       "**/node_modules/**/*",
+      "tests/artifacts/**/*",
       "dist/**/*",
     ],
     "include": [
+      "tests/**/*",
       ".*/**/*.test.ts",
       ".*/**/*.test.tsx",
       "**/*.test.ts",
       "**/*.test.tsx",
-      "tests/**/*", "src/components/common/System/components/OffTreeContainer.integration.test.tsx",
     ],
     "references": [
       {

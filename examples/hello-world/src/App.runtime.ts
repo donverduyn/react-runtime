@@ -1,14 +1,5 @@
-import {
-  pipe,
-  Layer,
-  Effect,
-  Stream,
-  Schedule,
-  Console,
-  createRuntimeContext,
-  Scope,
-} from '@donverduyn/react-runtime';
-// import { Scope } from 'effect';
+import { createRuntimeContext } from '@donverduyn/react-runtime';
+import { pipe, Layer, Effect, Stream, Schedule, Console, Scope } from 'effect';
 import { action, observable } from 'mobx';
 
 const countStore = Effect.gen(function* () {
@@ -35,4 +26,4 @@ export const layer = pipe(
 );
 
 console.log('loading file that creates context');
-export const context = createRuntimeContext({ name: 'AppRuntime' })(layer);
+export const AppRuntime = createRuntimeContext({ name: 'AppRuntime' })(layer);

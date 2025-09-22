@@ -8,6 +8,7 @@ import ReactDOM from 'react-dom/client';
 import type {
   DeclarationId,
   RegisterId,
+  RuntimeContext,
   RuntimeModule,
   ScopeId,
 } from '@/types';
@@ -32,7 +33,7 @@ import { createDryRunContextObject } from './DryRunContextObject';
 
 export type DryRunApi = {
   getOffTreeData(
-    rootModules: Set<RuntimeModule<any, any>>
+    rootModules: Set<RuntimeContext<any, any>>
   ): readonly [
     Map<RegisterId, DryRunCandidateAncestor>,
     DryRunCandidate,

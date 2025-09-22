@@ -1,6 +1,6 @@
 import type { Context } from 'effect';
 import { Layer, pipe } from 'effect';
-import type { RuntimeModule } from '@/types';
+import type { RuntimeContext, RuntimeModule } from '@/types';
 import { createRuntimeContext } from 'utils/effect/runtime';
 
 export const mockRuntimeModule = <
@@ -10,6 +10,6 @@ export const mockRuntimeModule = <
   tag: T,
   value: Context.Tag.Service<T>,
   name: string = 'untitled'
-): RuntimeModule<T['Identifier']> => ({
-  context: pipe(Layer.succeed(tag, value), createRuntimeContext({ name })),
-});
+): RuntimeContext<T['Identifier']> => 
+  pipe(Layer.succeed(tag, value), createRuntimeContext({ name }))
+

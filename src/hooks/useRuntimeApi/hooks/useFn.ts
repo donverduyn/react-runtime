@@ -27,7 +27,7 @@ export function createFn<R, P>(
   >;
 
   // <R1, Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
-  //   target: RuntimeModule<R1> | RuntimeInstance<R1>,
+  //   target: RuntimeContext<R1> | RuntimeInstance<R1>,
   //   fn: Fn,
   //   deps?: React.DependencyList
   // ): (

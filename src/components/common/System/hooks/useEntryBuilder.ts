@@ -20,10 +20,11 @@ import type {
   RuntimeConfig,
   UpstreamProviderApi,
   ProviderId,
+  RuntimeContext,
 } from 'types';
 
-export const useApiProxyFactory = <R>(
-  runtimeApi: RuntimeApiFactory<R>,
+export const useApiProxyFactory = <R, P>(
+  runtimeApi: RuntimeApiFactory<R, P>,
   name: string
 ) =>
   React.useCallback(
@@ -33,11 +34,11 @@ export const useApiProxyFactory = <R>(
       },
       propsProxy: ProviderApi<R>['props'],
       collectFn: (
-        module: RuntimeModule<any>
-      ) => Map<RuntimeKey, RuntimeInstance<any>>,
+        module: RuntimeContext<any>
+      ) => Map<RuntimeKey, RuntimeInstance<any, any>>,
       factory?: (
         overrides?: Partial<RuntimeConfig>
-      ) => RuntimeApi<R> | undefined,
+      ) => RuntimeApi<R, P> | undefined,
       options?: EntryBuilderOptions
     ) => {
       return new Proxy<ProviderApi<R> | UpstreamProviderApi<any>>({} as never, {
@@ -54,15 +55,15 @@ export const useApiProxyFactory = <R>(
             }
           }
           if (prop === 'inject') {
-            return (module: RuntimeModule<any>) => {
+            return (module: RuntimeContext<any>) => {
               const instances = collectFn(module);
               // best effort stubbing to proceed module collection.
-              if (!instances.has(module.context.key)) {
+              if (!instances.has(module.key)) {
                 if (options?.stub) {
                   return runtimeApi.createInert(options.stub.value);
                 } else {
                   //* we catch this when we run buildEntries, whenever we expect it to throw here.
-                  throw new Error(noUpstreamMessage(name, module.context.key));
+                  throw new Error(noUpstreamMessage(name, module.key));
                 }
               }
 
@@ -97,8 +98,8 @@ export const usePropsProxyFactory = (name: string) =>
 
 //* useRuntimeFactory calls register, which instantiates the runtime instance and stores it in runtimeProvider.
 
-const useRuntimeFactory = <R, C extends React.FC<any>>(
-  runtimeApi: RuntimeApiFactory<R>,
+const useRuntimeFactory = <R, C extends React.FC<any>, P>(
+  runtimeApi: RuntimeApiFactory<R, P>,
   name: string
 ) =>
   React.useCallback(
@@ -108,8 +109,8 @@ const useRuntimeFactory = <R, C extends React.FC<any>>(
         type: 'runtime';
       },
       callback: (
-        instance: RuntimeInstance<any>
-      ) => Map<RuntimeKey, RuntimeInstance<any>>,
+        instance: RuntimeInstance<any, P>
+      ) => Map<RuntimeKey, RuntimeInstance<any, P>>,
       runtimeProvider: ReturnType<typeof useRuntimeProvider>,
       options?: EntryBuilderOptions
     ) =>
@@ -118,7 +119,7 @@ const useRuntimeFactory = <R, C extends React.FC<any>>(
         const payload = {
           providerId: provider.id,
           index: provider.index,
-          context: provider.module.context,
+          context: provider.module,
           config: overrides,
         };
         if (options?.dryRun) return runtimeApi.createInert(options.stub?.value);
@@ -140,14 +141,14 @@ type EntryBuilderOptions = {
   stub: { value: unknown } | undefined;
 };
 
-export const useEntryBuilder = <R, C extends React.FC<any>>(
+export const useEntryBuilder = <R, C extends React.FC<any>, P>(
   scopeId: ScopeId,
   name: string
 ) => {
   const createRuntimeApi = useRuntimeApi(scopeId);
-  const createApiProxy = useApiProxyFactory<R>(createRuntimeApi, name);
+  const createApiProxy = useApiProxyFactory<R, P>(createRuntimeApi, name);
   const createPropsProxy = usePropsProxyFactory(name);
-  const createRuntime = useRuntimeFactory<R, C>(createRuntimeApi, name);
+  const createRuntime = useRuntimeFactory<R, C, P>(createRuntimeApi, name);
 
   const currentProps = useStatefulMerger({
     id: null as never,
@@ -158,7 +159,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
     (
       providerEntries: ResolvedProviderEntry<R, C, unknown>[],
       // currentUpstreamModuleMap either comes from dry run ancestor data, componentInstanceApi getModules or is undefined during the first render on-tree. Can be appended using withMock.
-      currentUpstreamModuleMap: Map<ProviderId, Set<RuntimeModule<any>>> | null,
+      currentUpstreamModuleMap: Map<ProviderId, Set<RuntimeContext<any>>> | null,
       initialProps: Record<string, unknown>,
       registerId: RegisterId,
       runtimeProvider: ReturnType<typeof useRuntimeProvider>,
@@ -177,10 +178,10 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
       ) as EntryBuilderOptions;
       // const runtimeProvider = runtimeProviderApi.getSnapshot();
       // collect upstreamModules to register with useComponentInstance. This is very important, because we rely on this data being updated, before we call resolveProviderData on providerTree, which relies on these upstreamModules to traverse upward, and discover dependencies of dependencies.
-      const missingUpstream = new Set<RuntimeModule<any>>();
+      const missingUpstream = new Set<RuntimeContext<any>>();
       const upstreamModuleSource = new Map<
         ProviderId,
-        Set<RuntimeModule<any>>
+        Set<RuntimeContext<any>>
       >();
 
       // initialProps comes from dry run or from the component props.
@@ -194,10 +195,10 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
       // }
 
       for (const provider of providerEntries.values()) {
-        const localUpstream = new Set<RuntimeModule<any>>();
+        const localUpstream = new Set<RuntimeContext<any>>();
 
         // TODO: instances is used to refresh hooks like use, useFn, useRun etc, because if any dependency changes, we have to refresh the effects. we have to think about how we keep this stable, because right now any rerender would create a new map.
-        const populated = new Map<RuntimeKey, RuntimeInstance<any>>();
+        const populated = new Map<RuntimeKey, RuntimeInstance<any, any>>();
         if (
           currentUpstreamModuleMap &&
           currentUpstreamModuleMap.has(provider.id) &&
@@ -208,13 +209,13 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
           for (const module of currentUpstreamModuleMap.get(provider.id)!) {
             const instance = runtimeProvider.getByKey(
               registerId,
-              module.context.key,
+              module.key,
               provider.index,
               snapshot
             )[0]!;
 
             // TODO: find out why sometimes, what is in currentUpstreamModuleMap, is not instantiated, or at least not available. this could have to do with isolated runs maybe?
-            if (instance) populated.set(module.context.key, instance);
+            if (instance) populated.set(module.key, instance);
           }
         }
 
@@ -225,17 +226,17 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
             localUpstream.add(provider.module);
             const [instance] = runtimeProvider.getByKey(
               registerId,
-              provider.module.context.key,
+              provider.module.key,
               provider.index,
               mergedOptions.isolated || mergedOptions.dryRun ? snapshot : null
             );
             if (instance) {
-              populated.set(provider.module.context.key, instance);
+              populated.set(provider.module.key, instance);
             } else if (mergedOptions.stub) {
               missingUpstream.add(provider.module);
             } else {
               throw new Error(
-                `\x1b[38;5;180m💡 Hey, ${provider.module.context.name} is not available from upstream.\x1b[0m`
+                `\x1b[38;5;180m💡 Hey, ${provider.module.name} is not available from upstream.\x1b[0m`
               );
             }
             factory = instance
@@ -252,17 +253,17 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
             (module) => {
               // this happens for each inject() call
               localUpstream.add(module);
-              if (!populated.has(module.context.key)) {
+              if (!populated.has(module.key)) {
                 const [instance] = runtimeProvider.getByKey(
                   registerId,
-                  module.context.key,
+                  module.key,
                   provider.index,
                   mergedOptions.isolated || mergedOptions.dryRun
                     ? snapshot
                     : null
                 );
                 if (instance) {
-                  populated.set(module.context.key, instance);
+                  populated.set(module.key, instance);
                 } else {
                   missingUpstream.add(module);
                 }
@@ -283,11 +284,11 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
           //* forgot why we need to know why instances come from off-tree nodes, but it will be handy at some point.
           const [exists, _] = runtimeProvider.getByKey(
             registerId,
-            provider.module.context.key
+            provider.module.key
           );
 
           if (exists) {
-            populated.set(provider.module.context.key, exists);
+            populated.set(provider.module.key, exists);
           }
           const factory = !exists
             ? createRuntime(
@@ -295,7 +296,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
                 provider,
                 (instance) =>
                   // returns instances map with the new instance added
-                  populated.set(provider.module.context.key, instance),
+                  populated.set(provider.module.key, instance),
                 runtimeProvider,
                 mergedOptions
               )
@@ -309,14 +310,14 @@ export const useEntryBuilder = <R, C extends React.FC<any>>(
               propsProxy,
               (module) => {
                 localUpstream.add(module);
-                if (!populated.has(module.context.key)) {
+                if (!populated.has(module.key)) {
                   const [instance] = runtimeProvider.getByKey(
                     registerId,
-                    module.context.key,
+                    module.key,
                     provider.index
                   );
                   if (instance) {
-                    populated.set(module.context.key, instance);
+                    populated.set(module.key, instance);
                   } else {
                     missingUpstream.add(module);
                   }
