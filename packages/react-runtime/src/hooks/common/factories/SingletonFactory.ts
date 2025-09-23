@@ -12,7 +12,7 @@
 //   };
 // };
 
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 
 function getRegistryMap<T>(factoryKey: string): Map<string, T> {
   const g = globalThis as unknown as {

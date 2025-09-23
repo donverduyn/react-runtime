@@ -37,7 +37,7 @@ import type {
   ERROR_PROP,
   UpstreamProviderFn,
   RuntimeContext,
-} from 'types';
+} from '@/types';
 
 export function WithUpstream<
   CProps, // component props static

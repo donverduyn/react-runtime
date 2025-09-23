@@ -9,7 +9,7 @@ import type {
   RegisterId,
   ResolvedProviderEntry,
   ScopeId,
-} from 'types';
+} from '@/types';
 import { OffTreeNode } from './OffTreeNode';
 
 type ComponentProps = {

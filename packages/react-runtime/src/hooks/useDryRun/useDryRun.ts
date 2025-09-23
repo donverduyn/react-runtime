@@ -1,5 +1,5 @@
 import { createSingletonHook } from '@/hooks/common/factories/SingletonFactory';
-import type { ScopeId } from 'types';
+import type { ScopeId } from '@/types';
 import { createDryRunFactory } from './factories/DryRunFactory';
 
 export { type DryRunApi } from './factories/DryRunFactory';

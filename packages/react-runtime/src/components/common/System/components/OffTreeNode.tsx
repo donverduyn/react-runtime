@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { DryRunCandidateAncestor } from '@/hooks/useDryRun/factories/DryRunCandidate';
 import type { useRuntimeProvider } from '@/hooks/useRuntimeProvider/useRuntimeProvider';
-import type { DeclarationId, RegisterId, ResolvedProviderEntry } from 'types';
+import type { DeclarationId, RegisterId, ResolvedProviderEntry } from '@/types';
 
 type DiscoveryFnResult = {
   offTreeMap: Map<RegisterId, DryRunCandidateAncestor>;

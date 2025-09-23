@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Extensible } from 'types';
+import type { Extensible } from '@/types';
 import { useStableObject } from './shared/useStableObject';
 
 // Accumulates and merges props across renders for the component.

@@ -37,7 +37,7 @@ import {
   type ScopeId,
   type ProviderId,
   type RuntimeContext,
-} from 'types';
+} from '@/types';
 import { OffTreeContainer } from './components/OffTreeContainer';
 import { OffTreeNode } from './components/OffTreeNode';
 import { RenderContainer } from './components/RenderContainer';

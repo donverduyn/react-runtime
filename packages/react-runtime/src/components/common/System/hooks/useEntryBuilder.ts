@@ -20,7 +20,7 @@ import type {
   UpstreamProviderApi,
   ProviderId,
   RuntimeContext,
-} from 'types';
+} from '@/types';
 
 export const useApiProxyFactory = <R, P>(
   runtimeApi: RuntimeApiFactory<R, P>,
