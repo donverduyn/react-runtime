@@ -2536,10 +2536,10 @@ eastasianwidth@^0.2.0:
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
 
-effect@3.14.8, effect@^3.17.14:
-  version "3.14.8"
-  resolved "https://registry.yarnpkg.com/effect/-/effect-3.14.8.tgz#8f830e73b2175fb6dced5375abf22838e4c086b9"
-  integrity sha512-cHV6Mc2gb1e6l+CxhCeZm1JOzE4C9Mp7MhqHNFuAcSds2c2f23ZAb1ef4gBRHMIcdJ5sr3KGm+Xn+4z/UByE8w==
+effect@3.17.14, effect@^3.17.14:
+  version "3.17.14"
+  resolved "https://registry.yarnpkg.com/effect/-/effect-3.17.14.tgz#d30dff19df84f6c574e462fa846744819621831b"
+  integrity sha512-VpIZz72+cg3357vLkNHN8CG+Uq2X0QHNv3qkyGInvG3lG5K7Ala1JliGIAdgNvwzaN37J27FuzVD8m0kEiv2Ig==
   dependencies:
     "@standard-schema/spec" "^1.0.0"
     fast-check "^3.23.1"
