@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.options.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": ".cache/tsc/workspace/node",
+    "allowJs": true,
+    "types": ["node"]
+  },
+  "exclude": [
+    "**/node_modules/**/*",
+    "**/dist/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/.*/**/*.test.ts",
+    "**/.*/**/*.test.tsx",
+    "index.ts"
+  ],
+  "include": ["*.ts", "rollup.config.js"],
+  "references": [
+    {
+      "path": "./../../tsconfig.node.json"
+    }
+  ]
+}

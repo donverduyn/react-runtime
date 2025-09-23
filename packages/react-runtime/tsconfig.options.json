@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "composite": true,
+    "incremental": true,
+    "noErrorTruncation": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": true,
+    "strict": true,
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "*": ["src/*"],
+      "@/tests/*": ["tests/*"],
+      "@*": ["src/*"]
+    }
+  }
+}

@@ -1,55 +1,21 @@
-import * as React from 'react';
 import {
   WithUpstream,
   link,
   WithRuntime,
   type ExtractProps,
-  type ExtractStaticProps,
 } from '@donverduyn/react-runtime';
-// import { Effect, Schedule, Stream } from 'effect';
 import { observer } from 'mobx-react-lite';
 import * as fromApp from '../../App.runtime';
 import * as fromChild from './Child.runtime';
-import moize from 'moize';
-import type { Simplify } from 'type-fest';
-import type { PropKey } from '../../../../../src/utils/effect';
 
 type Props = {
   readonly getName: () => number;
   readonly log: (value: string) => void;
 };
 
-// export const getPropsTag = moize.shallow(
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   <C extends React.FC<any>>() =>
-//     class Props extends Context.Tag('Props')<
-//       Props,
-//       Simplify<
-//         {
-//           [K in Exclude<
-//             keyof React.ComponentProps<C> & (string | symbol),
-//             keyof ExtractStaticProps<C>
-//           >]: Stream.Stream<
-//             NonNullable<React.ComponentProps<C>[K]>,
-//             never,
-//             PropKey<K>
-//           >;
-//         } & {
-//           [K in keyof ExtractStaticProps<C> & (string | symbol)]: Stream.Stream<
-//             ExtractStaticProps<C>[K],
-//             never,
-//             PropKey<K>
-//           >;
-//         }
-//       >
-//     >() {}
-// );
-
-// const PropsTag = getPropsTag<typeof Child>();
-
 export const Child = link(
   observer(ChildView),
-  WithUpstream(({ inject, props }) => {
+  WithUpstream(({ inject }) => {
     const count = inject(fromApp.AppRuntime).use(fromApp.Count);
 
     // TODO: instead of lifting the function into a stream and using push/pull conversion, consider just a single synchronous effect call so we can sycnhronously obtain a stream. in most cases the push/pull conversion doesn't make sense anyway, so we might want to either have a method or a different way to chose between sync or push/pull. previously we thought about having something like rxjs with switchMap, mergeMap, concatMap, exhaustMap, because the essence of push pull is really, do you want the effect to control the pace, or the consumer.
@@ -81,6 +47,7 @@ function ChildView(props: Props) {
   return (
     <div>
       <h2>{getName()}</h2>
+      {/* eslint-disable-next-line react-perf/jsx-no-new-function-as-prop */}
       <button onClick={() => log('foo')} type='button'>
         Log
       </button>

@@ -1,0 +1,65 @@
+{
+  "name": "@donverduyn/react-runtime",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "description": "effect-ts react integration",
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    }
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "lint": "eslint .",
+    "test": "vitest --ui",
+    "test:unit": "vitest run --project=unit",
+    "test:integration": "vitest run --project=integration",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report --host 0.0.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "packageManager": "yarn@1.22.22",
+  "sideEffects": false,
+  "keywords": [
+    "@donverduyn",
+    "react-runtime",
+    "react",
+    "effect",
+    "effect-ts",
+    "runtime",
+    "typescript",
+    "di"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/donverduyn/react-runtime.git"
+  },
+  "author": "Don Verduyn",
+  "license": "MIT",
+  "dependencies": {
+    "hotscript": "^1.0.13",
+    "moize": "^6.1.6",
+    "type-fest": "^4.39.1",
+    "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.17.14",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/donverduyn/react-runtime/issues"
+  },
+  "homepage": "https://github.com/donverduyn/react-runtime#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

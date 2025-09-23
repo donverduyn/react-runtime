@@ -10,7 +10,10 @@ export default defineConfig({
   plugins: [
     react(),
     tsconfigPaths({
-      projects: ['./tsconfig.json', './../../tsconfig.json'],
+      projects: [
+        './tsconfig.json',
+        './../../packages/react-runtime/tsconfig.json',
+      ],
     }) as PluginOption,
   ],
 });

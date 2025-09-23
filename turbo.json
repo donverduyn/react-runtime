@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.com/schema.v2.json",
+  "tasks": {
+    "lint": {
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "build": {
+      "outputs": ["dist/**"]
+    }
+  }
+}

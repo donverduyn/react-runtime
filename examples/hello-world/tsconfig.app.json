@@ -24,13 +24,13 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-        "@donverduyn/react-runtime": ["./../../index"]
+      "@donverduyn/react-runtime": ["./../../packages/react-runtime/index"]
     }
   },
   "include": ["src"],
   "references": [
     {
-      "path": "./../../tsconfig.lib.json"
+      "path": "./../../packages/react-runtime/tsconfig.lib.json"
     }
   ]
 }

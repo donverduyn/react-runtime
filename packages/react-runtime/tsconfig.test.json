@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.options.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "outDir": ".cache/tsc/workspace/test",
+    "moduleResolution": "Bundler",
+    "types": ["node", "vitest/globals", "vitest", "@testing-library/jest-dom"]
+  },
+  "exclude": ["node_modules/**/*", "tests/artifacts/**/*", "dist/**/*"],
+  "include": [
+    // TODO: consider where we want to include test utils, or if they should be outside of the tests folder. The best thing is likely to include them in the same tsconfig project, but have separaate eslint overrides.
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx",
+    ".*/**/*.test.ts",
+    ".*/**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
+}

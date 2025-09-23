@@ -1,8 +1,4 @@
 {
-    "include": [],
-    "references": [
-      { "path": "./tsconfig.lib.json" },
-      { "path": "./tsconfig.test.json" },
-      { "path": "./tsconfig.node.json" },
-    ]
+  "include": [],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

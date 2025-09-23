@@ -1,24 +1,16 @@
 {
-    "compilerOptions": {
-      "skipLibCheck": true,
-      "composite": true,
-      "incremental": true,
-      "noErrorTruncation": true,
-      "emitDeclarationOnly": true,
-      "declaration": true,
-      "allowSyntheticDefaultImports": true,
-      "esModuleInterop": true,
-      "resolveJsonModule": true,
-      "exactOptionalPropertyTypes": true,
-      "jsx": "react-jsx",
-      "strict": true,
-      "baseUrl": ".",
-      "paths": {
-        "*": ["src/*"],
-        "tests/*": ["tests/*"],
-        "scripts/*": ["scripts/*"],
-        "@*": ["src/*"]
-      }
-    },
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "composite": true,
+    "incremental": true,
+    "noErrorTruncation": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": true,
+    "strict": true,
+    "baseUrl": "."
   }
-  
+}

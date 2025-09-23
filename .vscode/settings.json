@@ -1,19 +1,39 @@
 {
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    "editor.codeActionsOnSave": {
-        "source.addMissingImports": "explicit",
-        "source.fixAll.eslint": "explicit",
-    },
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.detectIndentation": false,
-    "editor.wordWrap": "wordWrapColumn",
-    "editor.wordWrapColumn": 80,
-    "playwright.env": {
-      "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
-    },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.codeActionsOnSave": {
+    "source.addMissingImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 80,
+  "playwright.env": {
+    "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+  },
   // "editor.inlayHints.enabled": "on",
   "editor.inlayHints.maximumLength": 240,
   "orta.vscode-twoslash-queries.maxLength": 240,
+  "eslint.validate": [
+    "json",
+    "jsonc",
+    "json5",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "files.exclude": {
+    "**/playwright-report/": true,
+    "**/test-results/": true,
+    "**/.turbo/": true,
+    "**/.rollup.cache/": true
+  }
 }

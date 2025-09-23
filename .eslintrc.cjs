@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   extends: [
     'eslint:recommended',
     'prettier',
@@ -8,117 +9,23 @@ module.exports = {
   ],
   ignorePatterns: [
     'node_modules',
-    'dist',
-    'dev-dist',
     '!**/.*',
-    '!**/.*/**/.*',
+    '!**/.*/**/*',
+    'packages/**/*',
+    'examples/**/*',
   ],
   overrides: [
     {
-      files: ['./**/*.{js,cjs,mjs}'],
+      files: ['./*.{js,cjs,mjs}'],
       // config files are assumed to be running in node
       env: { node: true },
     },
-    // browser environment
+    // node-ts environment
     {
-      excludedFiles: ['./src/**/*.test.{ts,tsx}', './src/**/*.test-d.ts'],
-      files: [
-        './src/**/*.{ts,tsx}',
-        './examples/**/*.{ts,tsx}',
-        './examples/**/*.{ts,tsx}',
-      ],
-      env: { browser: true },
-      parserOptions: {
-        ecmaVersion: 'latest',
-        projectService: true,
-        sourceType: 'module',
-        tsconfigRootDir: __dirname,
-      },
-      settings: {
-        'import/resolver': {
-          typescript: {
-            alwaysTryTypes: true,
-            project: [
-              './tsconfig.lib.json',
-              './examples/hello-world/tsconfig.json',
-            ],
-          },
-        },
-      },
-    },
-    {
-      excludedFiles: [
-        './examples/hello-world/**/*.test.{ts,tsx}',
-        './examples/hello-world/**/*.test-d.ts',
-      ],
-      files: ['./examples/hello-world/**/*.{ts,tsx}'],
-      env: { browser: true },
-      parserOptions: {
-        ecmaVersion: 'latest',
-        projectService: true,
-        sourceType: 'module',
-        tsconfigRootDir: __dirname + '/examples/hello-world',
-      },
-      settings: {
-        'import/resolver': {
-          typescript: {
-            alwaysTryTypes: true,
-            project: ['./examples/hello-world/tsconfig.json'],
-          },
-        },
-      },
-      // rules: {}
-    },
-    // test environment
-    {
-      files: [
-        '.*/**/*.test.{ts,tsx}',
-        './tests/**/*.{ts,tsx}',
-        './src/**/*.test.{ts,tsx}',
-        './src/*.test-d.ts',
-        './**/*.test.{ts,tsx}',
-      ],
+      files: ['./*.ts', './.*/**/*.ts'],
       env: { node: true },
       parserOptions: {
         ecmaVersion: 'latest',
-        projectService: true,
-        sourceType: 'module',
-        tsconfigRootDir: __dirname,
-      },
-      settings: {
-        'import/resolver': {
-          node: true,
-          typescript: {
-            alwaysTryTypes: true,
-            project: ['./tsconfig.test.json'],
-          },
-        },
-      },
-      extends: ['plugin:vitest/legacy-all'],
-      rules: {
-        'vitest/max-expects': ['warn', { max: 8 }],
-        'vitest/max-nested-describe': ['error', { max: 3 }],
-        'vitest/no-hooks': 'off',
-        'vitest/prefer-expect-assertions': 'off',
-        'vitest/prefer-lowercase-title': [
-          'warn',
-          { ignoreTopLevelDescribe: true },
-        ],
-      },
-    },
-    // node environment
-    {
-      files: [
-        './*.ts',
-        // Maybe remove this if not needed
-        './.*/**/*.ts',
-        './scripts/**/*.ts',
-        './.devcontainer/**/*.{ts,tsx}',
-      ],
-      env: { node: true },
-      parserOptions: {
-        ecmaVersion: 'latest',
-        // include tsconfig.app.json for importing types from server
         projectService: true,
         sourceType: 'module',
         tsconfigRootDir: __dirname,
@@ -134,8 +41,8 @@ module.exports = {
       },
     },
     {
-      // all TypeScript files
-      files: ['./**/*.{ts,tsx}', './.*/**/*.{ts,tsx}'],
+      // all TypeScript files at root
+      files: ['./*.{ts,tsx}', './.*/**/*.{ts,tsx}'],
       extends: [
         'plugin:@typescript-eslint/strict-type-checked',
         'plugin:import/typescript',
@@ -223,122 +130,9 @@ module.exports = {
         'prefer-spread': 'off',
       },
     },
-    {
-      files: ['./**/*.tsx', './.*/**/*.tsx'],
-      // all React files excluding test files
-      excludedFiles: [
-        './**/*.test.tsx',
-        './**/*.test.ts',
-        './.*/**/*.test.tsx',
-        './.*/**/*.test.ts',
-      ],
-      extends: ['plugin:react-perf/all'],
-      plugins: ['react-perf'],
-      rules: {
-        'react-perf/jsx-no-jsx-as-prop': 'warn',
-        'react-perf/jsx-no-new-function-as-prop': 'warn',
-        'react-perf/jsx-no-new-object-as-prop': 'warn',
-      },
-    },
-    {
-      files: ['./**/*.tsx'],
-      // all React files
-      extends: [
-        'plugin:react/jsx-runtime',
-        'plugin:react/all',
-        'plugin:react-hooks/recommended',
-        // 'plugin:react-perf/all',
-      ],
-      plugins: [
-        'react',
-        'react-hooks',
-        'react-refresh',
-        // 'react-perf',
-        // '@emotion',
-      ],
-      rules: {
-        // '@emotion/syntax-preference': ['warn', 'string'],
-        'no-restricted-imports': [
-          'error',
-          {
-            patterns: [],
-          },
-        ],
-        'react/jsx-first-prop-new-line': ['off', 'multiline'],
-        'react-hooks/exhaustive-deps': 'warn',
-        'react-hooks/rules-of-hooks': 'error',
-        // 'react-perf/jsx-no-jsx-as-prop': 'warn',
-        // 'react-perf/jsx-no-new-function-as-prop': 'warn',
-        // 'react-perf/jsx-no-new-object-as-prop': 'warn',
-        'react-refresh/only-export-components': [
-          'warn',
-          { allowConstantExport: true },
-        ],
-        'react/destructuring-assignment': 'off',
-        'react/forbid-component-props': 'off',
-        'react/jsx-one-expression-per-line': 'off',
-        'react/function-component-definition': [
-          'warn',
-          {
-            namedComponents: ['function-declaration', 'arrow-function'],
-            unnamedComponents: ['arrow-function', 'function-expression'],
-          },
-        ],
-        'react/hook-use-state': 'off',
-        'react/jsx-boolean-value': 'off',
-        'react/jsx-child-element-spacing': 'off',
-        'react/jsx-closing-bracket-location': ['warn', 'tag-aligned'],
-        'react/jsx-closing-tag-location': ['off', 'tag-aligned'],
-        'react/jsx-curly-brace-presence': 'warn',
-        'react/jsx-curly-newline': 'warn',
-        'react/jsx-curly-spacing': 'warn',
-        'react/jsx-filename-extension': [
-          'error',
-          { allow: 'as-needed', extensions: ['.tsx'] },
-        ],
-        'react/jsx-handler-names': 'off',
-        'react/jsx-indent': ['warn', 2],
-        'react/jsx-indent-props': ['warn', 2],
-        'react/jsx-max-depth': ['warn', { max: 4 }],
-        'react/jsx-max-props-per-line': [
-          'off',
-          { maximum: { multi: 1, single: 2 } },
-        ],
-        'react/jsx-newline': [
-          'warn',
-          { allowMultilines: false, prevent: true },
-        ],
-        'react/jsx-no-bind': ['error', { allowArrowFunctions: true }],
-        'react/jsx-no-comment-textnodes': 'warn',
-        'react/jsx-no-literals': 'off',
-        'react/jsx-no-useless-fragment': 'warn',
-        'react/jsx-props-no-multi-spaces': 'warn',
-        'react/jsx-props-no-spreading': 'off',
-        'react/jsx-sort-props': [
-          'warn',
-          {
-            callbacksLast: false,
-            ignoreCase: true,
-            multiline: 'last',
-            reservedFirst: true,
-            shorthandFirst: true,
-          },
-        ],
-        'react/jsx-wrap-multilines': 'warn',
-        'react/no-multi-comp': ['warn', { ignoreStateless: true }],
-        'react/no-unknown-property': ['error', { ignore: ['css'] }],
-        'react/no-unused-prop-types': 'off',
-        'react/prop-types': 'off',
-        'react/react-in-jsx-scope': 'off',
-        'react/require-default-props': 'off',
-        'react/jsx-tag-spacing': 'warn',
-      },
-      settings: { react: { version: 'detect' } },
-    },
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['import', 'unused-imports'],
-  // root: true,
   rules: {
     'eslint-comments/no-unused-disable': 'warn',
     'import/no-named-as-default-member': 'off',

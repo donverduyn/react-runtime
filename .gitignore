@@ -1,5 +1,5 @@
 # Node.js dependencies
-node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -34,9 +34,12 @@ Thumbs.db
 *.orig
 
 # Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/playwright/.cache/
 
-/tests/artifacts/
+**/tests/artifacts/
+
+.turbo/
+.rollup.cache/

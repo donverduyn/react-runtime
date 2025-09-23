@@ -31,7 +31,7 @@ const App = link(AppView, withLogger);
 export const Root = link(Child, WithProviderScope(App));
 
 type Props = {
-  readonly store: AppRuntime.Count;
+  readonly store: fromApp.Count;
 };
 
 export function AppView(_: Props) {
@@ -55,7 +55,6 @@ export function AppView(_: Props) {
       </div>
       <h1>Vite + React + Effect + Mobx</h1>
       <div className='card'>
-        {/* @ts-expect-error wrong signature for jsx, //TODO: fix this */}
         {count % 2 === 0 ? <Child id='2' /> : null}
         <button
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop

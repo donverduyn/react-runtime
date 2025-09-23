@@ -5,6 +5,7 @@ import { action, observable } from 'mobx';
 const countStore = Effect.gen(function* () {
   const count = yield* Count;
   const scope = yield* Scope.make();
+
   yield* pipe(
     Stream.fromSchedule(Schedule.fixed(1000 / 60)),
     Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),

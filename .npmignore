@@ -16,6 +16,8 @@ yarn-error.log*
 .vscode/
 *.swp
 
+.turbo/
+
 # Build artifacts
 build/
 coverage/
@@ -25,4 +27,4 @@ coverage/
 Thumbs.db
 
 .devcontainer/
-tests/artifacts
+**/tests/artifacts
