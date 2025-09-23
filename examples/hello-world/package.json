@@ -1,6 +1,6 @@
 {
   "name": "hello-world",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -12,7 +12,8 @@
   "peerDependencies": {
     "effect": "^3.17.14",
     "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "vite": "vite@^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "dependencies": {
     "mobx": "^6.13.7",
