@@ -29,7 +29,7 @@
     [
       "@semantic-release/github",
       {
-        "assets": "packages/react-runtime/dist/**/*"
+        "assets": "packages/react-runtime/dist"
       }
     ]
   ]
