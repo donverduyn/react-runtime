@@ -29,36 +29,7 @@
     [
       "@semantic-release/github",
       {
-        "assets": [
-          {
-            "path": "packages/react-runtime/dist/index.cjs.js",
-            "name": "react-runtime/index.cjs.js"
-          },
-          {
-            "path": "packages/react-runtime/dist/index.esm.js",
-            "name": "react-runtime/index.esm.js"
-          },
-          {
-            "path": "packages/react-runtime/dist/index.esm.min.js",
-            "name": "react-runtime/index.esm.min.js"
-          },
-          {
-            "path": "packages/react-runtime/dist/index.d.ts",
-            "name": "react-runtime/index.d.ts"
-          },
-          {
-            "path": "packages/react-runtime/dist/**/*.d.ts",
-            "name": "react-runtime/[name]" 
-          },
-          {
-            "path": "packages/react-runtime/dist/**/*.map",
-            "name": "react-runtime/[name]"
-          },
-          {
-            "path": "packages/react-runtime/dist/**/*.tsbuildinfo",
-            "name": "react-runtime/[name]"
-          }
-        ]
+        "assets": ["packages/react-runtime/dist/*"]
       }
     ]
   ]
