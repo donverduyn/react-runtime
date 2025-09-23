@@ -27,4 +27,4 @@ coverage/
 Thumbs.db
 
 .devcontainer/
-**/tests/artifacts
+tests/artifacts/

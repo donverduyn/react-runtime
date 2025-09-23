@@ -41,5 +41,6 @@ Thumbs.db
 
 **/tests/artifacts/
 
-.turbo/
-.rollup.cache/
+**/.turbo/
+**/.rollup.cache/
+**/.cache/

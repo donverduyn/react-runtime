@@ -42,7 +42,7 @@ jobs:
     - name: Cache ESLint dependencies
       uses: actions/cache@v4
       with: 
-        path: ./packages/client/.cache/eslint
+        path: ./packages/react-runtime/.cache/eslint
         key: ${{ runner.os }}-eslint-${{ hashFiles('yarn.lock') }}-${{ hashFiles('**/.eslintrc.cjs') }}
         restore-keys: |
           ${{ runner.os }}-eslint-

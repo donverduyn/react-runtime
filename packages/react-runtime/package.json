@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "lint": "eslint .",
+    "lint": "eslint . --cache --cache-location ./.cache/eslint/.eslintcache",
     "test": "vitest --ui",
     "test:unit": "vitest run --project=unit",
     "test:integration": "vitest run --project=integration",

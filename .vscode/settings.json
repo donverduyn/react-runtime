@@ -34,6 +34,7 @@
     "**/playwright-report/": true,
     "**/test-results/": true,
     "**/.turbo/": true,
-    "**/.rollup.cache/": true
+    "**/.rollup.cache/": true,
+    "**/.cache/": true
   }
 }

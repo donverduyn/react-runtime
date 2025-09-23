@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --cache --cache-location ./.cache/eslint/.eslintcache",
     "preview": "vite preview"
   },
   "peerDependencies": {
