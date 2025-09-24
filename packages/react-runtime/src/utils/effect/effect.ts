@@ -8,13 +8,6 @@ import type {
   Key,
 } from '@/types';
 
-// export { ChannelTypeId } from 'effect/Channel';
-// export { EffectTypeId } from 'effect/Effect';
-// export { NodeInspectSymbol } from 'effect/Inspectable';
-// export { STMTypeId } from 'effect/STM';
-// export { SinkTypeId } from 'effect/Sink';
-// export { StreamTypeId } from 'effect/Stream';
-
 export const createProxy = <T extends Record<string, unknown>>(value: T) =>
   new Proxy<Subscribable<NoInfer<T>> & T>(
     Object.assign({}, value) as Subscribable<NoInfer<T>> & T,

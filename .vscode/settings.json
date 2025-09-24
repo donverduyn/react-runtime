@@ -35,6 +35,7 @@
     "**/test-results/": true,
     "**/.turbo/": true,
     "**/.rollup.cache/": true,
-    "**/.cache/": true
+    "**/.cache/": true,
+    "**/node_modules": true
   }
 }

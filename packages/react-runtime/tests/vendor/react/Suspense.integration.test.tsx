@@ -22,7 +22,7 @@ describe('suspense', () => {
     };
 
     const { getByText } = render(<Test />);
-    await Promise.resolve();
+    await act(() => Promise.resolve());
 
     expect(gcd).toBeFalsy();
     expect(getByText(text)).toBeTruthy();

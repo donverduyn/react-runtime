@@ -4,12 +4,6 @@ import '@testing-library/jest-dom/vitest';
 
 configure({ reactStrictMode: true });
 
-// because uuid is not tree-shakeable with cjs
-// vi.mock('uuid', () => ({
-//   v4: () => crypto.randomUUID(),
-//   v5: () => crypto.randomUUID()
-// }));
-
 afterEach(() => {
   vi.clearAllMocks();
   // Clean up the DOM after all tests using Testing Library
