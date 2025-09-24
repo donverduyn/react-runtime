@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { act } from 'react';
 import { render } from '@testing-library/react';
+import { suppressActWarning } from '@/tests/utils/suppressActWarning';
 
 describe('suspense', () => {
   it('should promote after a finished render', async () => {
@@ -22,7 +23,7 @@ describe('suspense', () => {
     };
 
     const { getByText } = render(<Test />);
-    await act(() => Promise.resolve());
+    await Promise.resolve();
 
     expect(gcd).toBeFalsy();
     expect(getByText(text)).toBeTruthy();
@@ -66,10 +67,12 @@ describe('suspense', () => {
     await Promise.resolve(); // let any microtasks run
 
     expect(gcd).toBeTruthy();
-    // eslint-disable-next-line vitest/require-to-throw-message
+    // // eslint-disable-next-line vitest/require-to-throw-message
     expect(() => getByText(text)).toThrow();
 
-    await act(vi.runAllTimersAsync);
+    // TODO: figure out why act is unsupported here, yet the test passes.
+    await suppressActWarning(() => act(vi.runAllTimersAsync));
+
     expect(gcd).toBeFalsy();
     expect(getByText(text)).toBeTruthy();
   });

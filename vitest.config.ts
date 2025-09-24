@@ -11,7 +11,7 @@ export default defineConfig({
     isolate: false,
     maxConcurrency: 5,
     open: false,
-    // exclude: ['**/.*/**/*'],
+    exclude: ['**/.*/**/*', '**/playwright-report', 'test-results'],
     projects: ['packages/*/vitest.config.*.ts'],
     coverage: { provider: 'v8', reporter: 'html' },
   },
