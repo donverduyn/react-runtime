@@ -17,7 +17,7 @@
   // Use 'postCreateCommand' to run commands after the container is created.
 
   "postCreateCommand": {
-    "yarn": "yarn && corepack enable",
+    "yarn": "yarn && corepack enable && corepack prepare yarn@1.22.22 --activate",
     "nvm": "bash -i -c 'nvm i 22 && nvm alias default 22 && nvm use default'",
     "chown": "sudo chown vscode node_modules",
     "playwright": "rm -rf /home/vscode/.cache/ms-playwright && yarn run playwright:install"
@@ -34,7 +34,8 @@
         "Gruntfuggly.todo-tree",
         "YoavBls.pretty-ts-errors",
         "ms-playwright.playwright",
-        "Orta.vscode-twoslash-queries"
+        "Orta.vscode-twoslash-queries",
+        "effectful-tech.effect-vscode"
       ]
     }
   },

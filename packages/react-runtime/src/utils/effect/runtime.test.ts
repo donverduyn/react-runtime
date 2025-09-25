@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Layer } from 'effect';
 import { describe, it, expect } from 'vitest';
-import { isFunctionalComponent } from '@utils/react';
+import { isFunctionalComponent } from '@/utils/react';
 import { isRuntimeContext } from './runtime';
 
 // Dummy React components for testing

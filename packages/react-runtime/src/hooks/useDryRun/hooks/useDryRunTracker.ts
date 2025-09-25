@@ -37,16 +37,7 @@ const validateCandidates = moize(
     }
     if (candidates.length === 0) {
       console.info(
-        `\x1b[38;5;39m[Notice]\x1b[0m \x1b[2mNo structural matches found. Resolving as a direct descendent of the provider scope root. To silence this message, use:\x1b[0m\n ` +
-          `\x1b[38;5;229mwithProviderScope\x1b[0m` + // whitish yellow function
-          `\x1b[38;5;33m(\x1b[0m` + // vibrant blue (
-          `\x1b[38;5;39mRoot\x1b[0m` + // brighter, vivid blue variable
-          `\x1b[38;5;153m,\x1b[0m ` + // light blue comma
-          `\x1b[38;5;227m{\x1b[0m` + // pink {
-          `\x1b[38;5;153m structural\x1b[0m: ` + // light blue property
-          `\x1b[38;5;39mfalse\x1b[0m` + // blue boolean
-          `\x1b[38;5;227m }\x1b[0m` + // pink }
-          `\x1b[38;5;33m)\x1b[0m` // vibrant blue )
+        `\x1b[38;5;39m[Notice]\x1b[0m \x1b[2mNo structural matches found. Resolving as a direct descendent of the provider scope root. To silence this message, use:\x1b[0m withProviderScope(Root, { structural: false })`
       );
     }
   },

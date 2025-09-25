@@ -1,10 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import {
-  WithRuntime,
-  link,
-  WithProviderScope,
-} from '@donverduyn/react-runtime';
+import { withRuntime, link } from '@donverduyn/react-runtime';
 import * as fromApp from './App.runtime';
 import effectLogo from './assets/effect.svg';
 import mobxLogo from './assets/mobx.svg';
@@ -13,28 +9,40 @@ import { Child } from './components/Child/Child';
 // eslint-disable-next-line import/no-unresolved
 import viteLogo from '/vite.svg';
 import './App.css';
+// import { Chunk } from 'effect/Schema';
 
-const withLogger = (component: React.FC<Props>) =>
+const withLogger = (component: React.FC<fromApp.Props>) =>
   link(
     component,
-    // withUpstream(SomeRuntime, ({ runtime }) => {
-    //   console.log('SomeRuntime', runtime.instance );
-    // }),
-    WithRuntime(fromApp.AppRuntime, ({ configure }) => {
+    withRuntime(fromApp.Runtime, ({ configure }) => {
       const runtime = configure({ postUnmountTTL: 1000 });
-      return { store: runtime.use(fromApp.Count) };
+      // void runtime.instance.runPromise(
+      //   fromApp.Id.pipe(
+      //     Stream.unwrap,
+      //     Stream.runCollect
+      //   )
+      // );
+      // void runtime.instance.runSync(
+      //   Effect.sync(() => Promise.resolve(true))
+      // );
+      // console.log({ id });
+      return {
+        store: runtime.use(fromApp.Count),
+      };
     })
+    // TODO: test pathological case with cycle and have appropriate error
+    // WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
+    //   return { foo: props.bar }
+    // })
+    // WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
+    //   return { bar: props.foo }
+    // })
   );
 
-const App = link(AppView, withLogger);
+export const App = link(AppView, withLogger);
+// export const Root = link(Child, WithProviderScope(App));
 
-export const Root = link(Child, WithProviderScope(App));
-
-type Props = {
-  readonly store: fromApp.Count;
-};
-
-export function AppView(_: Props) {
+export function AppView(_: fromApp.Props) {
   const [count, setCount] = useState(0);
 
   return (

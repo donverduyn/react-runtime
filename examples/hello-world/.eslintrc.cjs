@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   extends: [
-    // 'eslint:recommended',
+    'eslint:recommended',
     'prettier',
     'plugin:prettier/recommended',
     'plugin:import/recommended',
@@ -34,63 +34,6 @@ module.exports = {
         },
       },
     },
-    // {
-    //   files: ['./**/*.{ts,tsx}'],
-    //   env: { browser: true },
-    //   parserOptions: {
-    //     ecmaVersion: 'latest',
-    //     projectService: true,
-    //     sourceType: 'module',
-    //     tsconfigRootDir: __dirname,
-    //   },
-    //   settings: {
-    //     'import/resolver': {
-    //       typescript: {
-    //         alwaysTryTypes: true,
-    //         project: ['./tsconfig.json'],
-    //       },
-    //     },
-    //   },
-    //   // rules: {}
-    // },
-    // test environment
-    // {
-    //   files: [
-    //     '.*/**/*.test.{ts,tsx}',
-    //     './tests/**/*.{ts,tsx}',
-    //     './src/**/*.test.{ts,tsx}',
-    //     './src/*.test-d.ts',
-    //     './**/*.test.{ts,tsx}',
-    //   ],
-    //   env: { node: true },
-    //   parserOptions: {
-    //     ecmaVersion: 'latest',
-    //     projectService: true,
-    //     sourceType: 'module',
-    //     tsconfigRootDir: __dirname,
-    //   },
-    //   settings: {
-    //     'import/resolver': {
-    //       node: true,
-    //       typescript: {
-    //         alwaysTryTypes: true,
-    //         project: ['./tsconfig.test.json'],
-    //       },
-    //     },
-    //   },
-    //   extends: ['plugin:vitest/legacy-all'],
-    //   rules: {
-    //     'vitest/max-expects': ['warn', { max: 8 }],
-    //     'vitest/max-nested-describe': ['error', { max: 3 }],
-    //     'vitest/no-hooks': 'off',
-    //     'vitest/prefer-expect-assertions': 'off',
-    //     'vitest/prefer-lowercase-title': [
-    //       'warn',
-    //       { ignoreTopLevelDescribe: true },
-    //     ],
-    //   },
-    // },
-    // // node environment
     {
       files: ['vite.config.ts'],
       env: { node: true },

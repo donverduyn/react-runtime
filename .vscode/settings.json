@@ -36,6 +36,6 @@
     "**/.turbo/": true,
     "**/.rollup.cache/": true,
     "**/.cache/": true,
-    "**/node_modules": true
+    // "**/node_modules": true
   }
 }

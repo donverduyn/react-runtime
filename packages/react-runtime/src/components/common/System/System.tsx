@@ -19,15 +19,6 @@ import {
   type TreeFrameParentNode,
 } from '@/hooks/useTreeFrame/useTreeFrame';
 import { useTreeMap } from '@/hooks/useTreeMap/useTreeMap';
-import { tryFnSync } from '@/utils/function';
-import { combineV5, createIdFactory, type EdgeDataFields } from '@/utils/hash';
-import { combineSetsFromMap, mergeSetsFromMaps } from '@/utils/map';
-import {
-  createElement,
-  copyStaticProperties,
-  extractMeta,
-  createChildrenSketch,
-} from '@/utils/react';
 import {
   ComponentId,
   RegisterId,
@@ -38,6 +29,15 @@ import {
   type ProviderId,
   type RuntimeContext,
 } from '@/types';
+import { tryFnSync } from '@/utils/function';
+import { combineV5, createIdFactory, type EdgeDataFields } from '@/utils/hash';
+import { combineSetsFromMap, mergeSetsFromMaps } from '@/utils/map';
+import {
+  createElement,
+  copyStaticProperties,
+  extractMeta,
+  createChildrenSketch,
+} from '@/utils/react';
 import { OffTreeContainer } from './components/OffTreeContainer';
 import { OffTreeNode } from './components/OffTreeNode';
 import { RenderContainer } from './components/RenderContainer';

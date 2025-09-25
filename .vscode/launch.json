@@ -11,6 +11,6 @@
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/examples/hello-world",
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
-    },
+    }
   ]
 }

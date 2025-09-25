@@ -1,11 +1,18 @@
-export * from '@components/withRuntime/withRuntime';
-export * from '@components/withUpstream/withUpstream';
-export * from '@components/withProps/withProps';
-export * from '@components/withProviderScope/withProviderScope';
-export * from '@components/withMock/withMock';
-export * from '@components/common/System/System';
+// eslint-disable-next-line eslint-comments/disable-enable-pair
+/* eslint-disable @typescript-eslint/no-deprecated */
+
+// primary API
+export { WithRuntime as withRuntime } from '@/components/withRuntime/withRuntime';
+export { WithUpstream as withUpstream } from '@/components/withUpstream/withUpstream';
+export { WithProps as withProps } from '@/components/withProps/withProps';
+
+// testing utilties
+export { WithMock as withMock } from '@/components/withMock/withMock';
+export { WithProviderScope as withProviderScope } from '@/components/withProviderScope/withProviderScope';
+
+// we don't paternalize our users, full access to system primtives
+export * from '@/components/common/System/System';
 export * from '@/types';
-export * from '@utils/effect/runtime';
-export * from '@utils/react';
-// TODO: remove this after monorepo setup shares package.json
-// export * from 'effect';
+
+export * from '@/utils/effect';
+export * from '@/utils/react';

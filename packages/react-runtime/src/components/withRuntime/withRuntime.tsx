@@ -32,6 +32,8 @@ import { getDisplayName, type ExtractMeta } from '@/utils/react';
 
 export function WithRuntime<
   R,
+  // E,
+  // A,
   CProps, // component props static
   TProps extends ExtensibleProps<CProps>, // local provider props (inferred)
   PProps, // providerProps cumulative

@@ -22,8 +22,6 @@ import {
   getStaticProviderList,
   getStaticDryRunId,
 } from '@/components/common/System/utils/static';
-import { isRuntimeContext } from '@/utils/effect/runtime';
-import { getDisplayName, type ExtractMeta } from '@/utils/react';
 import type {
   PROPS_PROP,
   ExtractStaticProps,
@@ -38,6 +36,8 @@ import type {
   UpstreamProviderFn,
   RuntimeContext,
 } from '@/types';
+import { isRuntimeContext } from '@/utils/effect/runtime';
+import { getDisplayName, type ExtractMeta } from '@/utils/react';
 
 export function WithUpstream<
   CProps, // component props static
@@ -107,7 +107,8 @@ export function WithUpstream<
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
   module: RuntimeContext<R>,
-  fn: ProviderFn<R, PProps & Partial<CProps>, TProps>
+  fn: ProviderFn<R, PProps & Partial<CProps>, TProps>,
+  ..._deprecated: never[]
 ): (
   Component:
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)
@@ -132,7 +133,9 @@ export function WithUpstream<
       _error: ['Type mismatch on provided props'];
     };
 
-// captures void return only
+/**
+ * @deprecated In the upcoming 2.0 release, we will remove support for runtime modules as argument. Instead, use the inject API from the function arguments.
+ */
 export function WithUpstream<
   R,
   CProps,
@@ -140,14 +143,16 @@ export function WithUpstream<
   PProps,
   PErrors,
 >(
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R> & { __deprecatedBrand?: unknown },
+  // captures void return
   fnVoid: ProviderFn<
     R,
     PProps & Partial<CProps>,
     // when the inferred return type is not void, we have to create a mismatch against the original props.
     TProps &
       (TProps extends Record<string, unknown> ? Partial<IdProp & CProps> : void)
-  >
+  >,
+  ..._deprecated: never[]
 ): (
   Component:
     | ({ [PROPS_PROP]: PProps } & React.FC<CProps>)

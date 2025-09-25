@@ -1,4 +1,3 @@
-import type React from 'react';
 import {
   Console,
   Context,
@@ -10,27 +9,18 @@ import {
   Stream,
 } from 'effect';
 import { asyncRange } from '@/utils/iterator';
-import {
-  createPropsTag,
-  createProxy,
-  createProxyStreamMap,
-  enhanceRuntime,
-  type PropKey,
-} from './effect';
+import { getPropsTag, createProxy, createProxyStreamMap } from './effect';
 
 describe('effect utils', () => {
   it('should create a subscription ref', async () => {
     const proxy = createProxy({ count: 0, bar: 'foo' });
 
-    type Component = React.FC<{ readonly count?: number }> & {
-      _props: { bar: string };
-    };
-
-    const Props = createPropsTag<Component>()(Context.Tag);
+    type Props = { readonly count: number; bar: string };
+    const { PropService } = getPropsTag<Props>()(Context.Tag);
 
     class CountStream extends Effect.Service<CountStream>()('Count', {
       effect: Effect.gen(function* () {
-        const { count } = yield* Props;
+        const { count } = yield* PropService;
         return count.pipe(Stream.map((a) => a * 2));
       }),
     }) {}
@@ -47,14 +37,14 @@ describe('effect utils', () => {
 
     const layer = pipe(
       CountStream.Default,
-      Layer.provide(Layer.scoped(Props, createProxyStreamMap(proxy)))
+      Layer.provide(Layer.scoped(PropService, createProxyStreamMap(proxy)))
     );
 
     const runtime = ManagedRuntime.make(layer);
-    type AvailableProps = PropKey<'count'>;
+    // type AvailableProps = PropKey<'count'>;
 
-    const typedRuntime = enhanceRuntime<AvailableProps>()(runtime);
-    void typedRuntime.runPromise(program);
+    // const typedRuntime = enhanceRuntime<AvailableProps>()(runtime);
+    void runtime.runPromise(program);
 
     for await (const index of asyncRange(1, 5, 1)) {
       proxy.count = index;
@@ -71,21 +61,33 @@ describe('effect utils', () => {
   });
 
   it('should swap a layer service and use the new service inside the effect', async () => {
+    class Foo extends Effect.Service<Foo>()('Foo', {
+      effect: Effect.gen(function* () {
+        yield* Console.log('foo');
+        return { foo: 'foo' };
+      }),
+    }) {}
     const createCounter = (value: number = 0) => {
       return class Counter extends Effect.Service<Counter>()('Counter', {
         accessors: true,
-        effect: Ref.make(value).pipe(
-          Effect.map((ref) => ({
-            increment: Ref.updateAndGet(ref, (n) => n + 1),
-          }))
-        ),
+        effect: Effect.gen(function* () {
+          // const foo = yield* Foo;
+          // console.log(foo.foo);
+          const ref = yield* Ref.make(value);
+          return { increment: Ref.updateAndGet(ref, (n) => n + 1) };
+        }),
       }) {};
     };
 
     const Counter = createCounter();
     const Counter2 = createCounter(100);
 
-    const runtime = ManagedRuntime.make(Counter.Default);
+    const layer = pipe(
+      Counter.Default
+      // Layer.merge(Counter2.Default),
+      // Layer.provide(Foo.Default)
+    );
+    const runtime = ManagedRuntime.make(layer);
     const increment = Effect.andThen(Counter, ({ increment }) => increment);
 
     const counter = await runtime.runPromise(increment);

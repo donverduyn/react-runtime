@@ -1,5 +1,3 @@
-// eslint-disable-next-line eslint-comments/disable-enable-pair
-/* eslint-disable vitest/prefer-strict-equal */
 import * as React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import { identity } from 'effect';
@@ -129,7 +127,9 @@ describe('strict mode/hooks', () => {
     // stateInitFn: 2 components * 2 calls each (StrictMode double invoke)
 
     const stateInitCalls = ['root', 'root', 'child', 'child'];
-    expect(stateInitFn.mock.calls.flatMap(identity)).toStrictEqual(stateInitCalls);
+    expect(stateInitFn.mock.calls.flatMap(identity)).toStrictEqual(
+      stateInitCalls
+    );
 
     const memoCalls = ['root', 'root', 'child', 'child'];
     expect(memoFn.mock.calls.flatMap(identity)).toStrictEqual(memoCalls);
