@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build --filter=./packages/*",
+    "zip": "turbo run zip --filter=./packages/*",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix",
     "test": "turbo run test",

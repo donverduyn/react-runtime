@@ -15,8 +15,8 @@
     }
   },
   "scripts": {
-    "build": "rollup -c && yarn run pack",
-    "pack": "VERSION=$(git describe --tags --abbrev=0) && rm -rf /tmp/releases/react-runtime && mkdir -p /tmp/releases/react-runtime && npm pack --pack-destination /tmp/releases/react-runtime && cd /tmp/releases/react-runtime && mv *.tgz react-runtime-$VERSION.tgz && tar -xzf react-runtime-$VERSION.tgz && zip -r react-runtime-$VERSION.zip package && rm -rf package",
+    "build": "rollup -c && yarn zip",
+    "zip": "VERSION=$(git describe --tags --abbrev=0) && rm -rf /tmp/releases/react-runtime && mkdir -p /tmp/releases/react-runtime && npm pack --pack-destination /tmp/releases/react-runtime && cd /tmp/releases/react-runtime && mv *.tgz react-runtime-$VERSION.tgz && tar -xzf react-runtime-$VERSION.tgz && zip -r react-runtime-$VERSION.zip package && rm -rf package",
     "lint": "eslint . --cache --cache-location ./.cache/eslint/.eslintcache",
     "test": "vitest --ui",
     "test:unit": "vitest run --project=unit",

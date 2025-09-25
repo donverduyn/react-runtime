@@ -1,0 +1,11 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    [
+      "@semantic-release/github",
+      {
+        "assets": ["/tmp/releases/react-runtime/*"]
+      }
+    ]
+  ]
+}

@@ -10,6 +10,10 @@
     },
     "build": {
       "outputs": ["dist/**"]
+    },
+    "zip": {
+      "dependsOn": ["build"],
+      "cache": false
     }
   }
 }

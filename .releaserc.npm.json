@@ -25,12 +25,6 @@
       {
         "pkgRoot": "packages/react-runtime"
       }
-    ],
-    [
-      "@semantic-release/github",
-      {
-        "assets": ["/tmp/releases/react-runtime/*"]
-      }
     ]
   ]
 }
