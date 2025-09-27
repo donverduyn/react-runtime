@@ -78,20 +78,11 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        VERSION=$(npx semantic-release --dry-run | grep "Found git tag" | sed -E "s/.*version ([0-9]+\.[0-9]+\.[0-9]+).*/\1/")
-        echo "Version to pack: $VERSION"
-        rm -rf /tmp/releases/react-runtime
-        mkdir -p /tmp/releases/react-runtime
-        npm pack --pack-destination /tmp/releases/react-runtime
-        cd /tmp/releases/react-runtime
-        mv *.tgz react-runtime-v$VERSION.tgz
-        tar -xzf react-runtime-v$VERSION.tgz
-        zip -r react-runtime-v$VERSION.zip package
-        rm -rf package
+        npx semantic-release --dry-run
 
-    - name: Release with semantic-release
-      if: github.event_name == 'push'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: npx semantic-release
+    # - name: Release with semantic-release
+    #   if: github.event_name == 'push'
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    #   run: npx semantic-release
