@@ -81,6 +81,7 @@ jobs:
         VERSION=$(npx semantic-release --dry-run | grep "The next release version is" | awk '{print $NF}')
         rm -rf /tmp/releases/react-runtime
         mkdir -p /tmp/releases/react-runtime
+        cd ./packages/react-runtime
         npm pack --pack-destination /tmp/releases/react-runtime
         cd /tmp/releases/react-runtime
         mv *.tgz react-runtime-v$VERSION.tgz
