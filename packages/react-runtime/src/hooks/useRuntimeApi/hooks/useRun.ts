@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Effect, Scope, Exit } from 'effect';
 import type { RuntimeContext, RuntimeInstance, RuntimeKey } from '@/types';
+import type { PropService } from 'utils/effect';
 
 /*
 This hook is used to run an effect in a runtime.
@@ -9,7 +10,7 @@ It takes a context and an effect and runs the effect in the runtime provided by 
 
 export const createRun =
   <R, P>(
-    localContext: RuntimeContext<R>,
+    localContext: RuntimeContext<R, never, PropService>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) =>

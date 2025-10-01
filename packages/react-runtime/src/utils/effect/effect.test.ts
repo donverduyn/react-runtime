@@ -7,16 +7,17 @@ import {
   pipe,
   Ref,
   Stream,
+  Chunk,
 } from 'effect';
 import { asyncRange } from '@/utils/iterator';
-import { getPropsTag, createProxy, createProxyStreamMap } from './effect';
+import { getPropTag, createProxy, createProxyStreamMap } from './effect';
 
 describe('effect utils', () => {
   it('should create a subscription ref', async () => {
     const proxy = createProxy({ count: 0, bar: 'foo' });
 
     type Props = { readonly count: number; bar: string };
-    const { PropService } = getPropsTag<Props>()(Context.Tag);
+    const { PropService } = getPropTag<Props>()(Context.Tag);
 
     class CountStream extends Effect.Service<CountStream>()('Count', {
       effect: Effect.gen(function* () {
@@ -61,12 +62,12 @@ describe('effect utils', () => {
   });
 
   it('should swap a layer service and use the new service inside the effect', async () => {
-    class Foo extends Effect.Service<Foo>()('Foo', {
-      effect: Effect.gen(function* () {
-        yield* Console.log('foo');
-        return { foo: 'foo' };
-      }),
-    }) {}
+    // class Foo extends Effect.Service<Foo>()('Foo', {
+    //   effect: Effect.gen(function* () {
+    //     yield* Console.log('foo');
+    //     return { foo: 'foo' };
+    //   }),
+    // }) {}
     const createCounter = (value: number = 0) => {
       return class Counter extends Effect.Service<Counter>()('Counter', {
         accessors: true,
@@ -108,5 +109,28 @@ describe('effect utils', () => {
 
     // Dispose runtime
     void runtime.dispose();
+  });
+  it('should allow any generated props tag to be used interchangably within the same runtime', () => {
+    const PropsTag1 = getPropTag<{ foo: string }>()(Context.Tag);
+    const PropsTag2 = getPropTag<{ foo: string }>()(Context.Tag);
+
+    const program = Effect.gen(function* () {
+      const { foo } = yield* PropsTag1.PropService;
+      return yield* foo.pipe(
+        Stream.tap(Console.log),
+        Stream.runCollect,
+        Effect.andThen(Chunk.toArray)
+      );
+    });
+
+    const result = Effect.runSync(
+      program.pipe(
+        Effect.provideService(PropsTag2.PropService, {
+          foo: Stream.fromIterable(['foo']),
+        })
+      )
+    );
+
+    expect(result[0]).toBe('foo');
   });
 });

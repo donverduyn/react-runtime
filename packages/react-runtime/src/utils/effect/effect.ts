@@ -1,23 +1,22 @@
 import { Stream, Effect, Deferred, Context, type ManagedRuntime } from 'effect';
 import moize from 'moize';
 import type { Simplify } from 'type-fest';
-import { v4 as uuid } from 'uuid';
-import type {
-  ExtractStaticProps,
-  Subscribable,
-  SubscribeFn,
-  Key,
-} from '@/types';
+import type { ExtractStaticProps, Subscribable, SubscribeFn } from '@/types';
 
-export const createProxy = <T extends Record<string, unknown>>(value: T) =>
+export type IsEffect<T> =
+  T extends Effect.Effect<infer A, infer E, infer R>
+    ? Effect.Effect<A, E, R>
+    : never;
+
+export const createProxy = <T extends Record<PropertyKey, unknown>>(value: T) =>
   new Proxy<Subscribable<NoInfer<T>> & T>(
     Object.assign({}, value) as Subscribable<NoInfer<T>> & T,
     (() => {
-      const map = new Map<Key, Set<SubscribeFn<T[keyof T]>>>();
+      const map = new Map<PropertyKey, Set<SubscribeFn<T[keyof T]>>>();
       return {
         get: (target, prop) => {
           if (prop === 'subscribe') {
-            return (key: Key, fn: SubscribeFn<T[keyof T]>) => {
+            return (key: PropertyKey, fn: SubscribeFn<T[keyof T]>) => {
               if (!map.has(key)) map.set(key, new Set());
               map.get(key)!.add(fn);
               return () => {
@@ -41,15 +40,18 @@ export const createProxy = <T extends Record<string, unknown>>(value: T) =>
 
 // assume all properties that are needed, are enumerable on proxyState, if not values later still update refs that start with undefined, but we filter undefined away.
 export const createProxyStreamMap = <
-  T extends Record<Exclude<string, keyof Subscribable<NoInfer<T>>>, unknown>,
+  T extends Record<
+    Exclude<PropertyKey, keyof Subscribable<NoInfer<T>>>,
+    unknown
+  >,
 >(
   proxyState: Subscribable<T> & T,
-  onKeyAccess: (key: Key) => void = () => {}
+  onKeyAccess: (key: PropertyKey) => void = () => {}
 ) =>
   Effect.gen(function* () {
     const deferred = yield* Deferred.make();
     yield* Effect.addFinalizer(() => Deferred.succeed(deferred, true));
-    return new Proxy<{ [K in keyof T]: Stream.Stream<T[K]> }>({} as never, {
+    return new Proxy<PropsOf<T>>({} as never, {
       get: moize.shallow((_, prop) =>
         Stream.merge(
           Stream.fromIterable([proxyState[prop as keyof T]]).pipe(
@@ -66,39 +68,42 @@ export const createProxyStreamMap = <
     });
   });
 
-export type PropKey<K extends string | symbol> = { __propKey: K };
+export type PropKey<K extends PropertyKey> = { __propKey: K };
 
 export const enhanceRuntime =
   <RProps>() =>
   <R, E>(runtime: ManagedRuntime.ManagedRuntime<R, E>) =>
     runtime as ManagedRuntime.ManagedRuntime<R | RProps, E>;
 
-type PropsOf<C extends Record<string, unknown>> = Simplify<
+type PropsOf<C extends Record<PropertyKey, unknown>> = Simplify<
   {
     [K in Exclude<
-      keyof C & (string | symbol),
+      keyof C & PropertyKey,
       keyof ExtractStaticProps<C>
     >]: Stream.Stream<NonNullable<C[K]>>;
   } & {
-    [K in keyof ExtractStaticProps<C> & (string | symbol)]: Stream.Stream<
-      ExtractStaticProps<C>[K]
+    [K in keyof ExtractStaticProps<C> & PropertyKey]: Stream.Stream<
+      NonNullable<ExtractStaticProps<C>[K]>
     >;
   }
 >;
 
-export const getPropsTag =
-  <C extends Record<string, unknown>>() =>
+const PropTagSymbol = Symbol.for('react-runtime/getPropTag/Id');
+
+export type PropService = Context.TagClassShape<'PropService', never>;
+
+export const getPropTag =
+  <C extends Record<PropertyKey, unknown>>() =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <T extends (...args: any[]) => any>(
     tag: <const Id extends string>(id: Id) => T
   ) => {
-    const TagClass = tag(uuid());
+    const TagClass = tag(PropTagSymbol.toString());
     class PropsTag extends TagClass() {}
-    type PropService = Context.TagClassShape<'Props', never>;
 
     type PropsTagType = T extends (...args: any[]) => infer R
       ? R extends Context.TagClass<unknown, string, unknown>
-        ? Context.TagClass<PropService, 'Props', PropsOf<C>>
+        ? Context.TagClass<PropService, 'PropService', PropsOf<C>>
         : never
       : never;
 

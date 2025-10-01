@@ -1,66 +1,36 @@
-import { getPropsTag, createRuntimeContext } from '@donverduyn/react-runtime';
+import { getPropTag, createRuntimeContext } from '@donverduyn/react-runtime';
 import {
   pipe,
-  Layer,
   Effect,
   Stream,
   Schedule,
-  Console,
   Context,
+  Ref,
+  SubscriptionRef,
 } from 'effect';
-import { action, observable } from 'mobx';
+import type { Props } from './App';
 
-export type Props = {
-  readonly id: string;
-  readonly store: Count;
-};
+const { PropService } = getPropTag<Props>()(Context.Tag);
 
-const { PropService } = getPropsTag<Props>()(Context.Tag);
-
-export class Id extends Effect.Service<Id>()('App/Id', {
-  effect: Effect.gen(function* () {
-    console.log('testtest');
+export class AppCounter extends Effect.Service<AppCounter>()('App/AppCounter', {
+  scoped: Effect.gen(function* () {
     const { id } = yield* PropService;
-    return id.pipe(Stream.map((v) => v));
+    const countRef = yield* SubscriptionRef.make(0);
+
+    yield* pipe(
+      Stream.fromSchedule(Schedule.fixed(1000)),
+      Stream.map((v) => v + 1),
+      Stream.tap((v) => Ref.updateAndGet(countRef, () => v)),
+      Stream.runDrain,
+      Effect.forkScoped
+    );
+    return pipe(
+      Stream.zipLatest(id, countRef.changes),
+      Stream.map(([id, value]) => `from ${id}: ${String(value)}`)
+    );
   }),
 }) {}
 
-export class Count extends Effect.Service<Count>()('App/Count', {
-  effect: Effect.sync(() => observable.box(0)),
-}) {}
+export const layer = pipe(AppCounter.Default);
 
-const incrementer = Effect.gen(function* () {
-  const count = yield* Count;
-  yield* pipe(
-    Stream.fromSchedule(Schedule.fixed(1000)),
-    Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),
-    Stream.tap(() => Console.log('tick')),
-    Stream.ensuring(Console.log('ensuring')),
-    Stream.runDrain,
-    Effect.forkScoped
-  );
-});
-
-// const proxy = createProxy<Props>({
-//   id: '123',
-//   store: Count.Service,
-// });
-
-export const layer = pipe(
-  Layer.scopedDiscard(incrementer),
-  Layer.provideMerge(Count.Default)
-  // Layer.merge(Id.Default),
-  // Layer.provide(
-  //   Layer.scoped(
-  //     PropService,
-  //     createProxyStreamMap(proxy, (key) => {
-  //       // console.log(key);
-  //     })
-  //   )
-  // )
-);
-
-// console.log('loading file that creates context');
-
-//* we want to extend the layer when we call register on runtimeRegistry, so we can add the PropService and keep a reference to the proxy, which we store on the instance object itself. This way, we can access the proxy and write updated props to it on every re-render in useEntryBuilder
-export const Runtime = createRuntimeContext({ name: 'AppRuntime' })(layer);
+export const AppRuntime = createRuntimeContext({ name: 'AppRuntime' })(layer);

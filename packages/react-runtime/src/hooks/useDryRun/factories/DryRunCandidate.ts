@@ -10,6 +10,7 @@ import type {
   RuntimeContext,
 } from '@/types';
 import type { EdgeDataFields } from '@/utils/hash';
+import type { PropService } from 'utils/effect';
 
 export type DryRunCandidateId = Tagged<string, 'DryRunCandidate'>;
 
@@ -32,7 +33,10 @@ export type DryRunCandidateAncestor = {
   id: RegisterId;
   declId: DeclarationId;
   props: Record<string, unknown>;
-  upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>;
+  upstreamModules: Map<
+    ProviderId,
+    Set<RuntimeContext<any, never, PropService>>
+  >;
   localProviders: ResolvedProviderEntry<any, any, unknown>[];
 };
 

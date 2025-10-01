@@ -20,7 +20,9 @@ import type {
   UpstreamProviderApi,
   ProviderId,
   RuntimeContext,
+  RuntimePayload,
 } from '@/types';
+import type { PropService } from 'utils/effect';
 
 export const useApiProxyFactory = <R, P>(
   runtimeApi: RuntimeApiFactory<R, P>,
@@ -97,8 +99,11 @@ export const usePropsProxyFactory = (name: string) =>
 
 //* useRuntimeFactory calls register, which instantiates the runtime instance and stores it in runtimeProvider.
 
-const useRuntimeFactory = <R, C extends React.FC<any>, P>(
-  runtimeApi: RuntimeApiFactory<R, P>,
+const useRuntimeFactory = <R, C extends React.FC<any>>(
+  runtimeApi: RuntimeApiFactory<
+    R,
+    Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
+  >,
   name: string
 ) =>
   React.useCallback(
@@ -108,9 +113,19 @@ const useRuntimeFactory = <R, C extends React.FC<any>, P>(
         type: 'runtime';
       },
       callback: (
-        instance: RuntimeInstance<any, P>
-      ) => Map<RuntimeKey, RuntimeInstance<any, P>>,
+        instance: RuntimeInstance<
+          any,
+          Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
+        >
+      ) => Map<
+        RuntimeKey,
+        RuntimeInstance<
+          any,
+          Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
+        >
+      >,
       runtimeProvider: ReturnType<typeof useRuntimeProvider>,
+      currentProps: Partial<React.ComponentProps<C> & ExtractStaticProps<C>>,
       options?: EntryBuilderOptions
     ) =>
       (overrides: Partial<RuntimeConfig> = {}) => {
@@ -120,12 +135,20 @@ const useRuntimeFactory = <R, C extends React.FC<any>, P>(
           index: provider.index,
           context: provider.module,
           config: overrides,
-        };
+          props: currentProps,
+        } satisfies RuntimePayload<
+          R,
+          Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
+        >;
+
         if (options?.dryRun) return runtimeApi.createInert(options.stub?.value);
         const method = options?.isolated
           ? runtimeProvider.registerIsolated
           : runtimeProvider.register;
-        const instance = method(id, payload);
+        const instance = method<
+          R,
+          Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
+        >(id, payload);
 
         // instances.set(context.key, instance);
         const instances = callback(instance);
@@ -147,12 +170,12 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
   const createRuntimeApi = useRuntimeApi(scopeId);
   const createApiProxy = useApiProxyFactory<R, P>(createRuntimeApi, name);
   const createPropsProxy = usePropsProxyFactory(name);
-  const createRuntime = useRuntimeFactory<R, C, P>(createRuntimeApi, name);
+  const createRuntime = useRuntimeFactory<R, C>(createRuntimeApi, name);
 
-  const currentProps = useStatefulMerger({
-    id: null as never,
-  } as unknown as Partial<React.ComponentProps<C> & ExtractStaticProps<C>> &
-    IdProp);
+  const currentProps = useStatefulMerger(
+    {} as unknown as Partial<React.ComponentProps<C> & ExtractStaticProps<C>> &
+      IdProp
+  );
 
   return React.useCallback(
     (
@@ -160,7 +183,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
       // currentUpstreamModuleMap either comes from dry run ancestor data, componentInstanceApi getModules or is undefined during the first render on-tree. Can be appended using withMock.
       currentUpstreamModuleMap: Map<
         ProviderId,
-        Set<RuntimeContext<any>>
+        Set<RuntimeContext<any, never, PropService>>
       > | null,
       initialProps: Record<string, unknown>,
       registerId: RegisterId,
@@ -180,10 +203,10 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
       ) as EntryBuilderOptions;
       // const runtimeProvider = runtimeProviderApi.getSnapshot();
       // collect upstreamModules to register with useComponentInstance. This is very important, because we rely on this data being updated, before we call resolveProviderData on providerTree, which relies on these upstreamModules to traverse upward, and discover dependencies of dependencies.
-      const missingUpstream = new Set<RuntimeContext<any>>();
+      const missingUpstream = new Set<RuntimeContext<R, never, PropService>>();
       const upstreamModuleSource = new Map<
         ProviderId,
-        Set<RuntimeContext<any>>
+        Set<RuntimeContext<any, never, PropService>>
       >();
 
       // initialProps comes from dry run or from the component props.
@@ -197,7 +220,9 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
       // }
 
       for (const provider of providerEntries.values()) {
-        const localUpstream = new Set<RuntimeContext<any>>();
+        const localUpstream = new Set<
+          RuntimeContext<any, never, PropService>
+        >();
 
         // TODO: instances is used to refresh hooks like use, useFn, useRun etc, because if any dependency changes, we have to refresh the effects. we have to think about how we keep this stable, because right now any rerender would create a new map.
         const populated = new Map<RuntimeKey, RuntimeInstance<any, any>>();
@@ -291,7 +316,18 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
 
           if (exists) {
             populated.set(provider.module.key, exists);
+            console.log('foozz');
+            const instance = populated.get(provider.module.key)!;
+            console.log(currentProps.get());
+            Object.entries(currentProps.get()).forEach(([key, value]) => {
+              console.log({ key, value, instance });
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              if (instance.propProxy[key] !== value!)
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                instance.propProxy[key] = value!;
+            });
           }
+          console.log({ registerId });
           const factory = !exists
             ? createRuntime(
                 registerId,
@@ -300,6 +336,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
                   // returns instances map with the new instance added
                   populated.set(provider.module.key, instance),
                 runtimeProvider,
+                currentProps.get(),
                 mergedOptions
               )
             : () => createRuntimeApi.create(provider.module, populated);
@@ -312,6 +349,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
               propsProxy,
               (module) => {
                 localUpstream.add(module);
+                // TODO: is this correct? shouldn't we shadow multiple withRuntime usages top to bottom
                 if (!populated.has(module.key)) {
                   const [instance] = runtimeProvider.getByKey(
                     registerId,
@@ -334,6 +372,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
             // TODO: figure out why types are misaligned with props using MergeLeft in ProviderFn type
             const maybeProps = provider.fn(apiProxy as never);
             if (maybeProps) {
+              console.log(maybeProps, 'maybeProps');
               currentProps.update(maybeProps);
             }
           } else {

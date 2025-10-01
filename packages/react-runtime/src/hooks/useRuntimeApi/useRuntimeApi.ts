@@ -6,13 +6,14 @@ import type {
   RuntimeKey,
   ScopeId,
 } from '@/types';
+import type { PropService } from 'utils/effect';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
 import { createRun } from './hooks/useRun';
 
 const createRuntimeApi = () => {
   function create<R, P>(
-    module: RuntimeContext<R>,
+    module: RuntimeContext<R, never, PropService>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) {

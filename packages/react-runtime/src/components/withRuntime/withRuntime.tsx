@@ -29,6 +29,7 @@ import type {
   RuntimeContext,
 } from '@/types';
 import { getDisplayName, type ExtractMeta } from '@/utils/react';
+import type { PropService } from 'utils/effect';
 
 export function WithRuntime<
   R,
@@ -40,7 +41,7 @@ export function WithRuntime<
   PErrors,
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R, never, PropService>,
   fn?: ProviderFn<R, PProps & Partial<CProps>, TProps>
 ): (
   Component:
@@ -71,7 +72,7 @@ export function WithRuntime<
   PProps,
   PErrors,
 >(
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R, never, PropService>,
   fnVoid?: ProviderFn<
     R,
     PProps & Partial<CProps>,
@@ -93,7 +94,7 @@ export function WithRuntime<
 
 //
 export function WithRuntime<C extends React.FC<any>, R>(
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R, never, PropService>,
   fn?: ProviderFn<any, any>
 ) {
   return (Component: C) => {
@@ -130,7 +131,7 @@ export function WithRuntime<C extends React.FC<any>, R>(
 
 function createRuntimeEntry<R, C extends React.FC<any>>(
   id: ProviderId,
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R, never, PropService>,
   fn?: ProviderFn<R, C>
 ): ProviderEntry<R, C> {
   return {

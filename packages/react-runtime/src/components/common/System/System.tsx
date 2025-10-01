@@ -38,6 +38,7 @@ import {
   extractMeta,
   createChildrenSketch,
 } from '@/utils/react';
+import type { PropService } from 'utils/effect';
 import { OffTreeContainer } from './components/OffTreeContainer';
 import { OffTreeNode } from './components/OffTreeNode';
 import { RenderContainer } from './components/RenderContainer';
@@ -69,6 +70,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
   const Wrapper: React.FC<Partial<IdProp & React.ComponentProps<C>>> = (
     props
   ) => {
+    console.log('at the start', props.id);
     const { children, ...propsWithoutChildren } = props;
     const hasRun = React.useRef(false);
     const disposed = React.useRef(false);
@@ -98,15 +100,19 @@ export function CreateSystem<R, C extends React.FC<any>>(
     );
 
     // unique identifier per component instance, used to register runtime instances
-    const registerId = React.useMemo(
-      () =>
-        createId.withTrail(
-          parentFrame.parent.cumSig,
-          props.id ?? '',
-          salt
-        ) as RegisterId,
-      [props.id, parentFrame.parent.cumSig, salt]
-    );
+
+    console.log(props.id, parentFrame.parent.cumSig, salt, 'before registerId');
+    const registerId = React.useMemo(() => {
+      const id = createId.withTrail(
+        parentFrame.parent.cumSig,
+        props.id ?? '',
+        null
+      ) as RegisterId;
+      console.log('creating id', id);
+      return id;
+    }, [props.id, parentFrame.parent.cumSig, salt]);
+
+    //TODO: if props.id or parentFrame.parent.cumSig changes, we have to invalidate everything downstream. at unmount, this already happens, but in this case, the tree stays mounted, which means we have to unregister all descendent instances.
 
     // calculate how distinguishable children are, for matching purposes.
     const childrenSketch = React.useMemo(
@@ -344,6 +350,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
 
     //* 2. LIVE TREE (WITHOUT DRYRUN API) | DRY MODE WITHOUT PRUNING, in which case we just build and return
     if (systemContext.dryRunId === null) {
+      console.log({ registerId }, 'system');
       const { resultProps, upstreamModuleSource } = buildEntries(
         localProviders,
         // already set at begin in live tree but not in dry run.
@@ -372,8 +379,10 @@ export function CreateSystem<R, C extends React.FC<any>>(
       );
       providerTree.register(declarationId, localProviders);
 
+      console.log('before mergedProps', props.id);
       const mergedProps = Object.assign({}, props, resultProps, {
         registerId: registerId.substring(0, 3),
+        id: props.id,
       });
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const memoTarget = React.useMemo(() => React.memo(target), []);
@@ -447,7 +456,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
                   { dryRun: true, stub: { value: stub } }
                 )
               );
-              return result
+              return !(result instanceof Error)
                 ? [
                     set.union(result.missingUpstream),
                     mergeSetsFromMaps(upstream, result.upstreamModuleSource),
@@ -455,8 +464,11 @@ export function CreateSystem<R, C extends React.FC<any>>(
                 : [set, upstream];
             },
             [
-              new Set<RuntimeContext<unknown>>(),
-              new Map<ProviderId, Set<RuntimeContext<unknown>>>(),
+              new Set<RuntimeContext<any, never, PropService>>(),
+              new Map<
+                ProviderId,
+                Set<RuntimeContext<any, never, PropService>>
+              >(),
             ]
           );
 
@@ -498,7 +510,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
           );
 
           //* without provided stubs, buildEntries throws on missing modules, so if result is not undefined, we know it has no missing modules, but we check anyway.
-          if (result && result.missingUpstream.size === 0) {
+          if (!(result instanceof Error) && result.missingUpstream.size === 0) {
             componentInstanceApi.register(
               options.registerId,
               options.declarationId,
@@ -514,13 +526,15 @@ export function CreateSystem<R, C extends React.FC<any>>(
           const [resolved] = providerTree.resolveProviderData(
             options.registerId,
             dryRun,
-            result ? result.missingUpstream : new Set<RuntimeContext<unknown>>()
+            !(result instanceof Error)
+              ? result.missingUpstream
+              : new Set<RuntimeContext<unknown>>()
           );
 
           return {
             offTreeMap: resolved,
             succeeded:
-              result !== undefined && result.missingUpstream.size === 0,
+              !(result instanceof Error) && result.missingUpstream.size === 0,
           };
         }
 
@@ -563,7 +577,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
           );
 
           //* without provided stubs, buildEntries throws on missing modules, so if result is not undefined, we know it has no missing modules, but we check anyway.
-          if (result && result.missingUpstream.size === 0) {
+          if (!(result instanceof Error) && result.missingUpstream.size === 0) {
             componentInstanceApi.register(
               options.registerId,
               options.declarationId,
@@ -574,13 +588,15 @@ export function CreateSystem<R, C extends React.FC<any>>(
           const [resolved] = providerTree.resolveProviderData(
             options.registerId,
             dryRun,
-            result ? result.missingUpstream : new Set<RuntimeContext<unknown>>()
+            !(result instanceof Error)
+              ? result.missingUpstream
+              : new Set<RuntimeContext<unknown>>()
           );
 
           return {
             offTreeMap: resolved,
             succeeded:
-              result !== undefined && result.missingUpstream.size === 0,
+              !(result instanceof Error) && result.missingUpstream.size === 0,
           };
         }
         return null as never;

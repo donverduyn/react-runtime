@@ -38,6 +38,7 @@ import type {
 } from '@/types';
 import { isRuntimeContext } from '@/utils/effect/runtime';
 import { getDisplayName, type ExtractMeta } from '@/utils/react';
+import type { PropService } from 'utils/effect';
 
 export function WithUpstream<
   CProps, // component props static
@@ -106,7 +107,7 @@ export function WithUpstream<
   PErrors, // errors cumulative
   // the resulting component takes all original props, not returned by providers as is, makes all original props that are provided optional, and adds new properties and id as optional.
 >(
-  module: RuntimeContext<R>,
+  module: RuntimeContext<R, never, PropService>,
   fn: ProviderFn<R, PProps & Partial<CProps>, TProps>,
   ..._deprecated: never[]
 ): (
@@ -143,7 +144,7 @@ export function WithUpstream<
   PProps,
   PErrors,
 >(
-  module: RuntimeContext<R> & { __deprecatedBrand?: unknown },
+  module: RuntimeContext<R, never, PropService>,
   // captures void return
   fnVoid: ProviderFn<
     R,
@@ -168,7 +169,9 @@ export function WithUpstream<
 //* implementation
 
 export function WithUpstream<R, C extends React.FC<any>>(
-  moduleOrFn: RuntimeContext<R> | UpstreamProviderFn<any, any>,
+  moduleOrFn:
+    | RuntimeContext<R, never, PropService>
+    | UpstreamProviderFn<any, any>,
   fn?: ProviderFn<any, any>
 ) {
   const isModule = isRuntimeContext(moduleOrFn);

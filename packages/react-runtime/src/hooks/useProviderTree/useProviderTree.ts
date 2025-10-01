@@ -15,6 +15,7 @@ import type {
 } from '@/types';
 import { tryFnSync } from '@/utils/function';
 import { createGhostId } from '@/utils/hash';
+import type { PropService } from 'utils/effect';
 
 export type ProviderTreeApi = {
   register: (id: DeclarationId, providers: ProviderEntry<any, any>[]) => void;
@@ -25,7 +26,7 @@ export type ProviderTreeApi = {
   resolveProviderData: (
     id: RegisterId,
     dryRunInstance: DryRunApi,
-    initialModules?: Set<RuntimeContext<any>>
+    initialModules?: Set<RuntimeContext<any, never, PropService>>
   ) => readonly [
     Map<RegisterId, DryRunCandidateAncestor>,
     DryRunCandidateAncestor,
@@ -64,7 +65,7 @@ export const useProviderTree = (
   function resolveProviderData(
     id: RegisterId,
     dryRunInstance: DryRunApi,
-    initialModules?: Set<RuntimeContext<any>>
+    initialModules?: Set<RuntimeContext<any, never, PropService>>
   ) {
     const unresolvedModules = collectUnresolved(id, 0, initialModules);
 
@@ -89,7 +90,7 @@ export const useProviderTree = (
       ? tryFnSync(() => extractProviders(ancestors, unresolvedModules))
       : extractProviders(ancestors, unresolvedModules);
 
-    if (!result) {
+    if (result instanceof Error) {
       throw new Error(
         "Couldn't resolve upstream dependencies as a direct descendent of the root. If the provided root does render your component through children, you can provide children to the root, via the second argument in of withProviderScope"
       );
@@ -102,10 +103,10 @@ export const useProviderTree = (
   function collectUnresolved(
     currentId: RegisterId,
     level: number = 0,
-    initialModules?: Set<RuntimeContext<any>>,
-    unresolved = new Set<RuntimeContext<any>>(),
+    initialModules?: Set<RuntimeContext<any, never, PropService>>,
+    unresolved = new Set<RuntimeContext<any, never, PropService>>(),
     seen = new Set<RegisterId>()
-  ): Set<RuntimeContext<any>> {
+  ): Set<RuntimeContext<any, never, PropService>> {
     if (seen.has(currentId)) return unresolved;
     seen.add(currentId);
 
@@ -149,7 +150,7 @@ export const useProviderTree = (
 
   function lookAhead(
     currentId: RegisterId,
-    module: RuntimeContext<any>
+    module: RuntimeContext<any, never, PropService>
   ): RegisterId | null {
     const parentId = treeMap.getParent(currentId);
     if (parentId === '__ROOT__') return parentId;
@@ -169,7 +170,7 @@ export const useProviderTree = (
   // root entries are collected upstream entries that reached __ROOT__ by walking up the tree map.
   function extractProviders(
     ancestors: DryRunCandidateAncestor[],
-    rootModules: Set<RuntimeContext<any>>
+    rootModules: Set<RuntimeContext<any, never, PropService>>
   ) {
     // for every entry, we want to validate separately, because every entry needs it's own traversal. however, we can use a set for root entries instead of an array, because IF withupstream reaches __ROOT__ we know for any duplicates that they will share the first ancestor that provides it.
     const modules = Array.from(rootModules.values());
@@ -189,7 +190,7 @@ export const useProviderTree = (
 
   function resolveProvidersFromCandidate(
     ancestors: DryRunCandidateAncestor[],
-    module: RuntimeContext<any, any>
+    module: RuntimeContext<any, never, PropService>
   ) {
     // obtain index of the candidate self in the ancestors array, as sometimes we start at the first descendent.
     const startIdx = Array.from(ancestors.values()).findIndex((a) =>
@@ -213,7 +214,7 @@ export const useProviderTree = (
       currentLevel.set(ancestor.id, ancestor);
 
       // Merge in all upstream maps
-      const combinedModules = new Set<RuntimeContext<any>>(
+      const combinedModules = new Set<RuntimeContext<any, never, PropService>>(
         ...upstreamModules.values()
       );
       for (const upstreamModule of combinedModules) {
@@ -245,7 +246,7 @@ export const useProviderTree = (
   function lookAheadInAncestors(
     ancestors: DryRunCandidateAncestor[],
     startIdx: number,
-    module: RuntimeContext<any>
+    module: RuntimeContext<any, never, PropService>
   ): number | null {
     for (let i = startIdx + 1; i < ancestors.length; i++) {
       // this returns the intantiated modules on the declId, but this is not working, as we cannot use declid anymore, in fact we need to bring this over from the ancestor data.
@@ -253,7 +254,7 @@ export const useProviderTree = (
       // TODO: consider if we want to do this on the fly or that we store a set on the ancestor data. Seems to be better to put this on the ancestor data
       const modules = ancestors[i].localProviders.reduce(
         (p, entry) => (entry.type === 'runtime' ? p.add(entry.module) : p),
-        new Set<RuntimeContext<any>>()
+        new Set<RuntimeContext<any, never, PropService>>()
       );
       if (modules.has(module)) return i;
     }

@@ -1,5 +1,7 @@
-import { ManagedRuntime } from 'effect';
+import { Context, Layer, ManagedRuntime } from 'effect';
+import { v4 as uuid } from 'uuid';
 import type {
+  InstanceId,
   RegisterId,
   RuntimeConfig,
   RuntimeId,
@@ -8,7 +10,7 @@ import type {
   RuntimePayload,
   ScopeId,
 } from '@/types';
-import { createProxy } from '@/utils/effect';
+import { createProxy, createProxyStreamMap, getPropTag } from '@/utils/effect';
 import { cloneNestedMap, deepMergeMapsInPlace } from '@/utils/map';
 import { createSingletonHook } from '../../common/factories/SingletonFactory';
 
@@ -40,8 +42,10 @@ export function createRuntimeRegistry(_: ScopeId) {
   const promotionMap: Map<RegisterId, boolean> = new Map();
   // const listeners: ListenerMap = new Map();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function registerIsolated<P>(id: RegisterId, payload: RuntimePayload<any>) {
+  function registerIsolated<R, P extends Record<PropertyKey, unknown>>(
+    id: RegisterId,
+    payload: RuntimePayload<R, P>
+  ) {
     const exists = getById(id, payload.context.key, payload.index);
     if (exists) return exists;
     const { context, config, providerId: entryId } = payload;
@@ -57,24 +61,32 @@ export function createRuntimeRegistry(_: ScopeId) {
     const runtimeIdMap = runtimeKeyMap.get(context.key)!;
     runtimeIdMap.set(payload.index, runtimeId);
 
+    const { PropService } = getPropTag<P>()(Context.Tag);
+    const propProxy = createProxy(payload.props);
+
+    const proxymap = createProxyStreamMap(propProxy);
+    const PropLayer = Layer.scoped(PropService, proxymap);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const instance: RuntimeInstance<any, P> = {
-      runtime: ManagedRuntime.make(context.layer),
+      id: uuid() as InstanceId,
+      runtime: ManagedRuntime.make(
+        context.layer.pipe(Layer.provide(PropLayer))
+      ),
       config: Object.assign({}, defaultConfig, config),
-      propsProxy: createProxy({} as Record<never, never> & P),
+      propProxy: createProxy(payload.props as Record<never, never> & P),
     };
+    console.log('first id', instance.id);
     isolatedRegistry.set(runtimeId, instance);
 
     const currentId = runtimeKeyMap.get(context.key)?.get(payload.index);
     return isolatedRegistry.get(currentId!)!;
   }
 
-  function register<P>(
+  function register<R, P extends Record<string, unknown>>(
     id: RegisterId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    payload: RuntimePayload<any>
+    payload: RuntimePayload<R, P>
   ) {
-    // console.log('register', id.substring(0, 3), payload);
+    console.log('register', id.substring(0, 3), payload);
     const exists = getById(id, payload.context.key, payload.index);
     if (exists) return exists;
 
@@ -96,12 +108,24 @@ export function createRuntimeRegistry(_: ScopeId) {
     const runtimeIdMap = runtimeKeyMap.get(context.key)!;
     runtimeIdMap.set(payload.index, runtimeId);
 
+    const { PropService } = getPropTag<P>()(Context.Tag);
+    const propProxy = createProxy(payload.props);
+
+    const proxymap = createProxyStreamMap(propProxy);
+    const PropLayer = Layer.scoped(PropService, proxymap);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const instance: RuntimeInstance<any, P> = {
-      runtime: ManagedRuntime.make(context.layer),
+      id: uuid() as InstanceId,
+      runtime: ManagedRuntime.make(
+        context.layer.pipe(Layer.provide(PropLayer))
+      ),
       config: Object.assign({}, defaultConfig, config),
-      propsProxy: createProxy({} as Record<never, never> & P),
+      propProxy,
     };
+    console.log('first id', instance.id, payload.context.name, exists);
+    // setInterval(() => {
+    //   propProxy.count += 3
+    // }, 1000)
     registry.set(runtimeId, instance);
 
     // listeners.forEach((fn) => fn());

@@ -8,6 +8,7 @@ import type {
   RuntimeContext,
   ScopeId,
 } from '@/types';
+import type { PropService } from 'utils/effect';
 
 const createProviderMap = () => {
   const map = new Map<
@@ -39,7 +40,7 @@ const createProviderMap = () => {
     const entryMap = map.get(id)!;
     return Array.from(entryMap.values()).reduce(
       (set, entry) => (entry.type === 'runtime' ? set.add(entry.module) : set),
-      new Set<RuntimeContext<any>>()
+      new Set<RuntimeContext<any, never, PropService>>()
     );
   }
 

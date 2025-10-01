@@ -8,6 +8,7 @@ import type { IsStringLiteral, Simplify, Tagged } from 'type-fest';
 import type { createUse } from '@/hooks/useRuntimeApi/hooks/use';
 import type { createFn } from '@/hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from '@/hooks/useRuntimeApi/hooks/useRun';
+import type { PropService } from 'utils/effect';
 // import type { Subscribable } from '@/utils/effect';
 
 export type ScopeId = Tagged<string, 'ScopeId'>;
@@ -20,6 +21,7 @@ export type RegisterId = Tagged<string, 'RegisterId'>;
 export type RuntimeKey = symbol;
 export type RuntimeId = Tagged<string, 'RuntimeId'>;
 export type ProviderId = Tagged<string, 'ProviderId'>;
+export type InstanceId = Tagged<string, 'InstanceId'>;
 
 export type ComponentMeta = {
   name: string;
@@ -44,7 +46,7 @@ export type RuntimeApi<R, P> = {
 
 export type RuntimeApiFactory<R, P> = {
   create: (
-    module: RuntimeContext<R>,
+    module: RuntimeContext<R, never, PropService>,
     instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) => RuntimeApi<R, P>;
   createInert: (stub: unknown) => RuntimeApi<R, P>;
@@ -69,17 +71,19 @@ export type RuntimeContext<R, E = never, A = never> = {
   layer: Layer.Layer<R, E, A>;
 };
 
-export type RuntimePayload<R> = {
+export type RuntimePayload<R, P extends Record<string, unknown>> = {
   providerId: string;
   index: number;
-  context: RuntimeContext<R>;
+  context: RuntimeContext<R, never, PropService>;
   config: Partial<RuntimeConfig>;
+  props: P;
 };
 
 export type RuntimeInstance<R, P = object> = {
+  id: InstanceId;
   runtime: ManagedRuntime.ManagedRuntime<R, never>;
   config: RuntimeConfig;
-  propsProxy: Subscribable<NoInfer<P>> & P;
+  propProxy: Subscribable<NoInfer<P>> & P;
 };
 
 export type IdProp = { readonly id: string };
@@ -87,12 +91,14 @@ export type IdProp = { readonly id: string };
 export type Extensible<T extends Record<PropertyKey, unknown>> = T &
   Record<PropertyKey, unknown>;
 
-export type Key = string | symbol;
 export type SubscribeFn<T> = (value: T) => void;
 export type UnsubscribeFn = () => void;
 
 export type Subscribable<T> = {
-  subscribe: (key: keyof T | Key, fn: SubscribeFn<T[keyof T]>) => UnsubscribeFn;
+  subscribe: (
+    key: keyof T | PropertyKey,
+    fn: SubscribeFn<T[keyof T]>
+  ) => UnsubscribeFn;
   value: T;
 };
 
@@ -116,7 +122,9 @@ export type ResultProps<
 export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 
 export type UpstreamProviderApi<P> = {
-  inject: <R>(module: RuntimeContext<R>) => RuntimeApi<R, P>;
+  inject: <R>(
+    module: RuntimeContext<R, never, PropService>
+  ) => RuntimeApi<R, P>;
   props: P;
 };
 
@@ -127,7 +135,9 @@ export type UpstreamProviderFn<CProps, TResult = unknown> = (
 export type ProviderApi<R, P = object> = {
   configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R, P>;
   runtime: RuntimeApi<R, P>;
-  inject: <R>(module: RuntimeContext<R>) => RuntimeApi<R, P>;
+  inject: <R>(
+    module: RuntimeContext<R, never, PropService>
+  ) => RuntimeApi<R, P>;
   props: P;
 };
 
@@ -144,13 +154,13 @@ export type ProviderEntry<R, C extends React.FC<any>, P = any> =
   | {
       id: ProviderId;
       type: 'runtime';
-      module: RuntimeContext<any>;
+      module: RuntimeContext<R, never, PropService>;
       fn?: ProviderFn<R, C, P> | ProviderFn<R, C, undefined> | undefined;
     }
   | {
       id: ProviderId;
       type: 'upstream';
-      module?: RuntimeContext<any> | undefined;
+      module?: RuntimeContext<R, never, PropService> | undefined;
       fn: ProviderFn<R, C, P> | ProviderFn<R, C>;
     }
   | {

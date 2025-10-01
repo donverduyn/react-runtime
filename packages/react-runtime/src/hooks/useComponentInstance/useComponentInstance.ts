@@ -8,25 +8,29 @@ import type {
   ScopeId,
 } from '@/types';
 import { deepMergeMapsInPlace } from '@/utils/map';
+import type { PropService } from 'utils/effect';
 
 export type ComponentInstanceApi = {
   register: (
     id: RegisterId,
     declarationId: DeclarationId,
-    upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>
+    upstreamModules: Map<
+      ProviderId,
+      Set<RuntimeContext<any, never, PropService>>
+    >
   ) => void;
   dispose: (id: RegisterId) => void;
   getDeclarationId: (id: RegisterId) => DeclarationId | null;
   getUpstreamById: (
     id: RegisterId
-  ) => Map<ProviderId, Set<RuntimeContext<any>>>;
+  ) => Map<ProviderId, Set<RuntimeContext<any, never, PropService>>>;
 };
 
 export const useComponentInstance = (_: ScopeId): ComponentInstanceApi => {
   const idMap = new Map<RegisterId, DeclarationId>();
   const moduleMap = new Map<
     RegisterId,
-    Map<ProviderId, Set<RuntimeContext<any>>>
+    Map<ProviderId, Set<RuntimeContext<any, never, PropService>>>
   >();
   function getDeclarationId(id: RegisterId) {
     return idMap.get(id) || null;
@@ -42,7 +46,10 @@ export const useComponentInstance = (_: ScopeId): ComponentInstanceApi => {
   function register(
     id: RegisterId,
     declarationId: DeclarationId,
-    upstreamModules: Map<ProviderId, Set<RuntimeContext<any>>>
+    upstreamModules: Map<
+      ProviderId,
+      Set<RuntimeContext<any, never, PropService>>
+    >
   ) {
     idMap.set(id, declarationId);
     const current = moduleMap.get(id);

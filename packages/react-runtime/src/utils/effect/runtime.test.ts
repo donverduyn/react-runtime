@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Layer } from 'effect';
+import { Layer, ManagedRuntime, Effect, Context } from 'effect';
 import { describe, it, expect } from 'vitest';
 import { isFunctionalComponent } from '@/utils/react';
+import { tryFnSync } from 'utils/function';
 import { isRuntimeContext } from './runtime';
 
 // Dummy React components for testing
@@ -75,6 +76,32 @@ describe('isRuntimeContext', () => {
       layer: {},
     };
     expect(isRuntimeContext(context)).toBeFalsy();
+  });
+});
+
+class Tag extends Context.Tag('Tag')<Tag, number>() {}
+const syncEffect = Effect.succeed(42);
+const asyncEffect = Effect.promise(() => Promise.resolve(42));
+
+describe('runSync behavior on runtime with async layers', () => {
+  let runtime: ManagedRuntime.ManagedRuntime<never, never>;
+  beforeEach(() => {
+    const asyncLayer = Layer.effect(Tag, asyncEffect);
+    runtime = ManagedRuntime.make(asyncLayer);
+  });
+  afterEach(() => runtime.dispose());
+
+  it('with an async layer, runSync on the runtime always in the same tick', async () => {
+    // runtime is only ready in the next tick
+    const firstResult = tryFnSync(() => runtime.runSync(syncEffect));
+    expect(firstResult).toBeInstanceOf(Error);
+
+    // next tick
+    await runtime.runPromise(Effect.sleep(0));
+
+    // no issues
+    const secondResult = tryFnSync(() => runtime.runSync(syncEffect));
+    expect(secondResult).toBe(42);
   });
 });
 

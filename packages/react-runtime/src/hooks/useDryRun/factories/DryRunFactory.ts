@@ -19,6 +19,7 @@ import {
 } from '@/utils/dom';
 import { tryFnSync } from '@/utils/function';
 import type { EdgeDataFields } from '@/utils/hash';
+import type { PropService } from 'utils/effect';
 import { DryRunContext } from '../hooks/useDryRunContext';
 import {
   getDryRunTracker,
@@ -32,7 +33,7 @@ import { createDryRunContextObject } from './DryRunContextObject';
 
 export type DryRunApi = {
   getOffTreeData(
-    rootModules: Set<RuntimeContext<any, any>>
+    rootModules: Set<RuntimeContext<any, never, PropService>>
   ): readonly [
     Map<RegisterId, DryRunCandidateAncestor>,
     DryRunCandidate,

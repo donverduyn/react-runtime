@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Effect, pipe, Stream, Scope, Exit } from 'effect';
 import type { RuntimeContext, RuntimeInstance, RuntimeKey } from '@/types';
 import { EventEmitter, createAsyncIterator } from '@/utils/emitter';
+import type { PropService } from 'utils/effect';
 
 /*
 This hook returns a function that can be called to trigger an effect.
@@ -15,7 +16,7 @@ type InferArgs<F> = F extends (...args: infer A) => any ? A : never;
 type InferReturn<F> = F extends (...args: any[]) => infer R ? R : never;
 
 export function createFn<R, P>(
-  localContext: RuntimeContext<R>,
+  localContext: RuntimeContext<R, never, PropService>,
   instance: Map<RuntimeKey, RuntimeInstance<any, P>>
 ): {
   <Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
@@ -38,7 +39,7 @@ export function createFn<R, P>(
 };
 
 export function createFn<R, P>(
-  localContext: RuntimeContext<R>,
+  localContext: RuntimeContext<R, never, PropService>,
   instances: Map<RuntimeKey, RuntimeInstance<any, P>>
 ) {
   return <T extends unknown[], A, E>(
@@ -90,60 +91,60 @@ export function createFn<R, P>(
   };
 }
 
-type Subscriber = () => void;
+// type Subscriber = () => void;
 
-export class MultiMemoStore<T> {
-  private values = new Map<string, T>();
-  private subscribers = new Map<string, Set<Subscriber>>();
+// export class MultiMemoStore<T> {
+//   private values = new Map<string, T>();
+//   private subscribers = new Map<string, Set<Subscriber>>();
 
-  set(key: string, value: T) {
-    this.values.set(key, value);
-    this.notify(key);
-  }
+//   set(key: string, value: T) {
+//     this.values.set(key, value);
+//     this.notify(key);
+//   }
 
-  get(key: string): T | undefined {
-    return this.values.get(key);
-  }
+//   get(key: string): T | undefined {
+//     return this.values.get(key);
+//   }
 
-  subscribe(key: string, cb: Subscriber) {
-    if (!this.subscribers.has(key)) {
-      this.subscribers.set(key, new Set());
-    }
-    this.subscribers.get(key)!.add(cb);
-  }
+//   subscribe(key: string, cb: Subscriber) {
+//     if (!this.subscribers.has(key)) {
+//       this.subscribers.set(key, new Set());
+//     }
+//     this.subscribers.get(key)!.add(cb);
+//   }
 
-  unsubscribe(key: string, cb: Subscriber) {
-    const subs = this.subscribers.get(key);
-    if (subs) {
-      subs.delete(cb);
-      if (subs.size === 0) {
-        this.subscribers.delete(key);
-      }
-    }
-  }
+//   unsubscribe(key: string, cb: Subscriber) {
+//     const subs = this.subscribers.get(key);
+//     if (subs) {
+//       subs.delete(cb);
+//       if (subs.size === 0) {
+//         this.subscribers.delete(key);
+//       }
+//     }
+//   }
 
-  private notify(key: string) {
-    const subs = this.subscribers.get(key);
-    if (subs) {
-      subs.forEach((cb) => cb());
-    }
-  }
-}
+//   private notify(key: string) {
+//     const subs = this.subscribers.get(key);
+//     if (subs) {
+//       subs.forEach((cb) => cb());
+//     }
+//   }
+// }
 
-function useMultiMemoStore<T>(keys: string[], store: MultiMemoStore<T>) {
-  return React.useSyncExternalStore(
-    (cb) => {
-      // Subscribe to changes for any key
-      keys.forEach((key) => store.subscribe(key, cb));
-      return () => keys.forEach((key) => store.unsubscribe(key, cb));
-    },
-    () => keys.map((key) => store.get(key))
-  );
-}
+// function useMultiMemoStore<T>(keys: string[], store: MultiMemoStore<T>) {
+//   return React.useSyncExternalStore(
+//     (cb) => {
+//       // Subscribe to changes for any key
+//       keys.forEach((key) => store.subscribe(key, cb));
+//       return () => keys.forEach((key) => store.unsubscribe(key, cb));
+//     },
+//     () => keys.map((key) => store.get(key))
+//   );
+// }
 
-const store = new MultiMemoStore<number>();
-store.set('a', 1);
-store.set('b', 2);
+// const store = new MultiMemoStore<number>();
+// store.set('a', 1);
+// store.set('b', 2);
 
 // const values = useMultiMemoStore(['a', 'b'], store);
 // values will be [1, 2]

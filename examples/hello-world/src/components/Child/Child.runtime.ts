@@ -1,24 +1,17 @@
-import { createRuntimeContext } from '@donverduyn/react-runtime';
-import { Effect, pipe, Schedule, Layer, Stream } from 'effect';
-import { action, observable } from 'mobx';
+import { createRuntimeContext, getPropTag } from '@donverduyn/react-runtime';
+import { Effect, pipe, Stream, Context } from 'effect';
+import type { Props } from './Child';
 
-const incrementer = Effect.gen(function* () {
-  const count = yield* Count;
-  yield* pipe(
-    Stream.fromSchedule(Schedule.fixed(1000)),
-    Stream.mapEffect((i) => Effect.sync(action(() => count.set(i)))),
-    Stream.runDrain
-  );
-});
+const { PropService } = getPropTag<Props>()(Context.Tag);
 
-export class Count extends Effect.Service<Count>()('App/Store', {
-  effect: Effect.sync(() => observable.box(0)),
+export class ChildText extends Effect.Service<ChildText>()('Child/Count', {
+  effect: Effect.gen(function* () {
+    const { text } = yield* PropService;
+    return text.pipe(Stream.map((y) => y.toUpperCase()));
+  }),
 }) {}
 
-const layer = pipe(
-  Layer.scopedDiscard(incrementer.pipe(Effect.forkScoped)),
-  Layer.provideMerge(Count.Default)
-);
+const layer = pipe(ChildText.Default);
 
 export const ChildRuntime = createRuntimeContext({ name: 'ChildRuntime' })(
   layer

@@ -1,9 +1,17 @@
 import * as React from 'react';
-import { Effect, Exit, Scope, Stream, type ManagedRuntime } from 'effect';
+import {
+  Effect,
+  Exit,
+  Scope,
+  Stream,
+  type ManagedRuntime,
+  Option,
+} from 'effect';
 import type { RuntimeFiber } from 'effect/Fiber';
 import moize from 'moize';
 import type { RuntimeContext, RuntimeInstance, RuntimeKey } from '@/types';
 import { isStream } from '@/utils/effect/stream';
+import type { InferSuccess, PropService } from 'utils/effect';
 
 const create = moize.shallow(
   <A, E, R>(runtime: ManagedRuntime.ManagedRuntime<R, never>) =>
@@ -11,19 +19,37 @@ const create = moize.shallow(
       effectOrStream: Effect.Effect<A, E, R> | Stream.Stream<A, E, R>,
       onSuccess: (value: A) => void
     ) => {
-      const scope = Effect.runSync(Scope.make());
-      const fiber = runtime.runSync(
-        Effect.gen(function* () {
-          const effect = isStream<A, E, R>(effectOrStream)
-            ? effectOrStream.pipe(
-                Stream.tap((a) => Effect.sync(() => onSuccess(a))),
-                Stream.runDrain
+      const stream = isStream(effectOrStream)
+        ? effectOrStream
+        : !Effect.isEffect(effectOrStream)
+          ? Stream.empty
+          : Stream.unwrap(
+              effectOrStream.pipe(
+                Effect.andThen((a) => {
+                  const result = isStream(a)
+                    ? a
+                    : Stream.fromEffect(Effect.succeed(a));
+                  return result as Stream.Stream<A, E, R>;
+                })
               )
-            : effectOrStream.pipe(Effect.tap(onSuccess));
-          return yield* effect.pipe(Effect.forkScoped, Scope.extend(scope));
-        })
+            );
+
+      const scope = Effect.runSync(Scope.make());
+      try {
+        const first = runtime.runSync(Stream.runHead(stream));
+        if (Option.isSome(first)) {
+          onSuccess(first.value);
+        }
+      } catch {
+        // swallow if effect/stream is async-only
+      }
+      const fiber = runtime.runFork(
+        stream.pipe(
+          Stream.tap((v) => Effect.sync(() => onSuccess(v))),
+          Stream.runDrain
+        ),
+        { scope }
       );
-      // runtime.runFork(Effect.promise(() => Promise.resolve(true)));
       return { fiber, scope };
     }
 );
@@ -34,7 +60,7 @@ const useFork = <R>(runtime: ManagedRuntime.ManagedRuntime<R, never>) => {
 
 export const createUse =
   <R, P>(
-    localContext: RuntimeContext<R>,
+    localContext: RuntimeContext<R, never, PropService>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     instances: Map<RuntimeKey, RuntimeInstance<any, P>>
   ) =>
@@ -47,13 +73,17 @@ export const createUse =
     // think about wether we want to implement a more specific solution for updating downstream components when upstream dependencies change.
     const fork = useFork(instance.runtime);
 
-    const [state, setState] = React.useState<A | null>(null);
+    const stateRef = React.useRef<InferSuccess<A> | null>(null);
     const fiber = React.useMemo(
       () =>
         fork.create(effect, (value) => {
-          setState(value as A);
+          stateRef.current = value as InferSuccess<A>;
+          // setState(value as InferSuccess<A>);
         }),
       []
+    );
+    const [state, setState] = React.useState<InferSuccess<A> | null>(
+      () => stateRef.current
     );
     const fiberRef = React.useRef<{
       fiber: RuntimeFiber<void, unknown>;
@@ -66,14 +96,14 @@ export const createUse =
     React.useEffect(() => {
       if (fiberRef.current === null) {
         fiberRef.current = fork.create(effect, (value) => {
-          setState(value as A);
+          setState(value as InferSuccess<A>);
         });
       }
       return () => {
-        Effect.runSync(Scope.close(fiberRef.current!.scope, Exit.void));
+        Effect.runFork(Scope.close(fiberRef.current!.scope, Exit.void));
         fiberRef.current = null;
       };
-    }, [instanceDeps, instance, ...deps]);
+    }, []);
 
     return state!;
   };
