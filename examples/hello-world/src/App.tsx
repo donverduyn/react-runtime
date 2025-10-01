@@ -1,44 +1,39 @@
-import * as React from 'react';
 import { useState } from 'react';
 import { withRuntime, link } from '@donverduyn/react-runtime';
 import * as fromApp from './App.runtime';
 import effectLogo from './assets/effect.svg';
 import reactLogo from './assets/react.svg';
 import { Child } from './components/Child/Child';
-
 import './App.css';
-// import { Chunk } from 'effect/Schema';
 
 export type Props = {
   readonly id: string;
 };
 
-const withLogger = (component: React.FC<Props>) =>
-  link(
-    component
+// const withLogger = (component: React.FC<Props>) =>
+//   link(
+//     component
 
-    // TODO: test pathological case with cycle and have appropriate error
-    // WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
-    //   return { foo: props.bar }
-    // })
-    // WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
-    //   return { bar: props.foo }
-    // })
-  );
+// TODO: test pathological case with cycle and have appropriate error
+// WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
+//   return { foo: props.bar }
+// })
+// WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
+//   return { bar: props.foo }
+// })
+// );
 
 export const App = link(
   AppView,
-  withRuntime(fromApp.AppRuntime, ({ configure, props }) => {
-    console.log('inside app withruntime', props.id);
+  withRuntime(fromApp.AppRuntime, ({ configure }) => {
+    // console.log('inside app withruntime', props.id);
     const runtime = configure({ postUnmountTTL: 1000 });
-    // const count = runtime.use(Stream.unwrap(fromApp.Count2));
-    // console.log(count);
     // return { parentCount: count };
   })
 );
 // export const Root = link(Child, withProviderScope(App));
 
-export function AppView(props: Props) {
+export function AppView(_: Props) {
   // const { parentCount } = props as ExtractProps<typeof App>;
   const [visibility, setVisibility] = useState(true);
 
