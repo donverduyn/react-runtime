@@ -61,7 +61,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     const runtimeIdMap = runtimeKeyMap.get(context.key)!;
     runtimeIdMap.set(payload.index, runtimeId);
 
-    const { PropService } = getPropTag<P>()(Context.Tag);
+    const { PropService } = getPropTag<P>();
     const propProxy = createProxy(payload.props);
 
     const proxymap = createProxyStreamMap(propProxy);
@@ -75,7 +75,7 @@ export function createRuntimeRegistry(_: ScopeId) {
       config: Object.assign({}, defaultConfig, config),
       propProxy: createProxy(payload.props as Record<never, never> & P),
     };
-    console.log('first id', instance.id);
+    // console.log('first id', instance.id);
     isolatedRegistry.set(runtimeId, instance);
 
     const currentId = runtimeKeyMap.get(context.key)?.get(payload.index);
@@ -86,7 +86,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     id: RegisterId,
     payload: RuntimePayload<R, P>
   ) {
-    console.log('register', id.substring(0, 3), payload);
+    // console.log('register', id.substring(0, 3), payload);
     const exists = getById(id, payload.context.key, payload.index);
     if (exists) return exists;
 
@@ -108,7 +108,7 @@ export function createRuntimeRegistry(_: ScopeId) {
     const runtimeIdMap = runtimeKeyMap.get(context.key)!;
     runtimeIdMap.set(payload.index, runtimeId);
 
-    const { PropService } = getPropTag<P>()(Context.Tag);
+    const { PropService } = getPropTag<P>();
     const propProxy = createProxy(payload.props);
 
     const proxymap = createProxyStreamMap(propProxy);
@@ -122,10 +122,7 @@ export function createRuntimeRegistry(_: ScopeId) {
       config: Object.assign({}, defaultConfig, config),
       propProxy,
     };
-    console.log('first id', instance.id, payload.context.name, exists);
-    // setInterval(() => {
-    //   propProxy.count += 3
-    // }, 1000)
+    // console.log('first id', instance.id, payload.context.name, exists);
     registry.set(runtimeId, instance);
 
     // listeners.forEach((fn) => fn());

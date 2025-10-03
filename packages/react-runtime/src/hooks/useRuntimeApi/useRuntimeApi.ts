@@ -9,27 +9,30 @@ import type {
 import type { PropService } from 'utils/effect';
 import { createUse } from './hooks/use';
 import { createFn } from './hooks/useFn';
+import { createPush } from './hooks/usePush';
 import { createRun } from './hooks/useRun';
 
 const createRuntimeApi = () => {
-  function create<R, P>(
+  function create<R>(
     module: RuntimeContext<R, never, PropService>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
+    instances: Map<RuntimeKey, RuntimeInstance<any>>
   ) {
     return {
       instance: instances.get(module.key)!.runtime,
       use: createUse(module, instances),
       useFn: createFn(module, instances),
+      usePush: createPush(module, instances),
       useRun: createRun(module, instances),
     };
   }
 
-  function createInert<R, P>(stubValue: unknown) {
+  function createInert<R>(stubValue: unknown) {
     return {
       instance: ManagedRuntime.make<R, never>(Layer.empty as Layer.Layer<R>),
       use: () => stubValue as never,
       useFn: () => () => Promise.resolve(stubValue) as never,
+      usePush: () => () => Promise.resolve(stubValue) as never,
       useRun: () => undefined as never,
     };
   }

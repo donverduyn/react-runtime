@@ -59,10 +59,10 @@ const useFork = <R>(runtime: ManagedRuntime.ManagedRuntime<R, never>) => {
 };
 
 export const createUse =
-  <R, P>(
+  <R>(
     localContext: RuntimeContext<R, never, PropService>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
+    instances: Map<RuntimeKey, RuntimeInstance<any>>
   ) =>
   // consider whether we ant to filter away constituents or provide them through runtime method signature
   <A, E>(
@@ -73,7 +73,7 @@ export const createUse =
     // think about wether we want to implement a more specific solution for updating downstream components when upstream dependencies change.
     const fork = useFork(instance.runtime);
 
-    const stateRef = React.useRef<InferSuccess<A> | null>(null);
+    const stateRef = React.useRef<InferSuccess<A> | undefined>(undefined);
     const fiber = React.useMemo(
       () =>
         fork.create(effect, (value) => {
@@ -82,7 +82,7 @@ export const createUse =
         }),
       []
     );
-    const [state, setState] = React.useState<InferSuccess<A> | null>(
+    const [state, setState] = React.useState<InferSuccess<A> | undefined>(
       () => stateRef.current
     );
     const fiberRef = React.useRef<{

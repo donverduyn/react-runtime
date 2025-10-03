@@ -26,6 +26,7 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
+  font-size: 1.2em;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -44,13 +45,15 @@ button {
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  /* transition: border-color 0.25s; */
 }
 button:hover {
-  border-color: #ffbf00;
+  border-color: #ffb300;
+  color: #ffb300;
 }
 button:focus,
 button:focus-visible {
+  color: white;
   outline: 4px auto -webkit-focus-ring-color;
 }
 

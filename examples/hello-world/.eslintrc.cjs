@@ -192,7 +192,10 @@ module.exports = {
         // 'react-perf/jsx-no-new-object-as-prop': 'warn',
         'react-refresh/only-export-components': [
           'warn',
-          { allowConstantExport: true },
+          {
+            allowConstantExport: true,
+            allowExportNames: ['providers'],
+          },
         ],
         'react/destructuring-assignment': 'off',
         'react/forbid-component-props': 'off',

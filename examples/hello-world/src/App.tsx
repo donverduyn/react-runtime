@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { withRuntime, link } from '@donverduyn/react-runtime';
-import * as fromApp from './App.runtime';
+import { withRuntime } from '@donverduyn/react-runtime';
+import { pipe } from 'effect';
+import { AppRuntime } from './App.runtime';
 import effectLogo from './assets/effect.svg';
 import reactLogo from './assets/react.svg';
 import { Child } from './components/Child/Child';
@@ -10,31 +11,14 @@ export type Props = {
   readonly id: string;
 };
 
-// const withLogger = (component: React.FC<Props>) =>
-//   link(
-//     component
-
-// TODO: test pathological case with cycle and have appropriate error
-// WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
-//   return { foo: props.bar }
-// })
-// WithRuntime(fromApp.AppRuntime, ({ runtime, props }) => {
-//   return { bar: props.foo }
-// })
-// );
-
-export const App = link(
+export const App = pipe(
   AppView,
-  withRuntime(fromApp.AppRuntime, ({ configure }) => {
-    // console.log('inside app withruntime', props.id);
-    const runtime = configure({ postUnmountTTL: 1000 });
-    // return { parentCount: count };
+  withRuntime(AppRuntime, ({ configure }) => {
+    configure({ postUnmountTTL: 1000 });
   })
 );
-// export const Root = link(Child, withProviderScope(App));
 
 export function AppView(_: Props) {
-  // const { parentCount } = props as ExtractProps<typeof App>;
   const [visibility, setVisibility] = useState(true);
 
   return (

@@ -50,7 +50,7 @@ describe('use', () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => use(Tag));
 
-    expect(result.current).toBeNull();
+    expect(result.current).toBeUndefined();
 
     await act(vi.runAllTimersAsync);
     expect(result.current).toBe('foo');

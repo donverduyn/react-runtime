@@ -8,6 +8,7 @@ import type { IsStringLiteral, Simplify, Tagged } from 'type-fest';
 import type { createUse } from '@/hooks/useRuntimeApi/hooks/use';
 import type { createFn } from '@/hooks/useRuntimeApi/hooks/useFn';
 import type { createRun } from '@/hooks/useRuntimeApi/hooks/useRun';
+import type { createPush } from 'hooks/useRuntimeApi/hooks/usePush';
 import type { PropService } from 'utils/effect';
 // import type { Subscribable } from '@/utils/effect';
 
@@ -37,19 +38,20 @@ export const PROPS_PROP = '_props';
 export const UPSTREAM_PROP = '_upstream';
 export const ERROR_PROP = '_error';
 
-export type RuntimeApi<R, P> = {
-  instance: RuntimeInstance<R, P>['runtime'];
-  use: ReturnType<typeof createUse<R, P>>;
-  useFn: ReturnType<typeof createFn<R, P>>;
-  useRun: ReturnType<typeof createRun<R, P>>;
+export type RuntimeApi<R> = {
+  instance: RuntimeInstance<R>['runtime'];
+  use: ReturnType<typeof createUse<R>>;
+  useFn: ReturnType<typeof createFn<R>>;
+  usePush: ReturnType<typeof createPush<R>>;
+  useRun: ReturnType<typeof createRun<R>>;
 };
 
-export type RuntimeApiFactory<R, P> = {
+export type RuntimeApiFactory<R> = {
   create: (
     module: RuntimeContext<R, never, PropService>,
-    instances: Map<RuntimeKey, RuntimeInstance<any, P>>
-  ) => RuntimeApi<R, P>;
-  createInert: (stub: unknown) => RuntimeApi<R, P>;
+    instances: Map<RuntimeKey, RuntimeInstance<any>>
+  ) => RuntimeApi<R>;
+  createInert: (stub: unknown) => RuntimeApi<R>;
 };
 
 export type RuntimeConfig = {
@@ -58,11 +60,6 @@ export type RuntimeConfig = {
   env: 'prod' | 'dev'; // Environment config
   replace: boolean; // Freshness config
   cleanupPolicy: 'onUnmount' | 'immediate'; // Disposal strategy
-};
-
-export type RuntimeModule<R, C = React.FC<any>> = {
-  context: RuntimeContext<R>;
-  // reference: () => C;
 };
 
 export type RuntimeContext<R, E = never, A = never> = {
@@ -122,9 +119,7 @@ export type ResultProps<
 export type ExtensibleProps<CProps> = Extensible<Partial<IdProp & CProps>>;
 
 export type UpstreamProviderApi<P> = {
-  inject: <R>(
-    module: RuntimeContext<R, never, PropService>
-  ) => RuntimeApi<R, P>;
+  inject: <R>(module: RuntimeContext<R, never, PropService>) => RuntimeApi<R>;
   props: P;
 };
 
@@ -133,11 +128,9 @@ export type UpstreamProviderFn<CProps, TResult = unknown> = (
 ) => TResult;
 
 export type ProviderApi<R, P = object> = {
-  configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R, P>;
-  runtime: RuntimeApi<R, P>;
-  inject: <R>(
-    module: RuntimeContext<R, never, PropService>
-  ) => RuntimeApi<R, P>;
+  configure: (config?: Partial<RuntimeConfig>) => RuntimeApi<R>;
+  runtime: RuntimeApi<R>;
+  inject: <R>(module: RuntimeContext<R, never, PropService>) => RuntimeApi<R>;
   props: P;
 };
 
@@ -174,11 +167,6 @@ export type ResolvedProviderEntry<
   C extends React.FC<any>,
   P,
 > = ProviderEntry<R, C, P> & {
-  level: number;
-  index: number;
-};
-
-export type ResolvedRuntimeModule<R> = RuntimeModule<R> & {
   level: number;
   index: number;
 };

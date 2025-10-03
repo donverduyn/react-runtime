@@ -92,20 +92,22 @@ const PropTagSymbol = Symbol.for('react-runtime/getPropTag/Id');
 
 export type PropService = Context.TagClassShape<'PropService', never>;
 
-export const getPropTag =
-  <C extends Record<PropertyKey, unknown>>() =>
+export const createGetPropTag =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <T extends (...args: any[]) => any>(
-    tag: <const Id extends string>(id: Id) => T
-  ) => {
-    const TagClass = tag(PropTagSymbol.toString());
-    class PropsTag extends TagClass() {}
+      tag: <const Id extends string>(id: Id) => T
+    ) =>
+    <C extends Record<PropertyKey, unknown>>() => {
+      const TagClass = tag(PropTagSymbol.toString());
+      class PropsTag extends TagClass() {}
 
-    type PropsTagType = T extends (...args: any[]) => infer R
-      ? R extends Context.TagClass<unknown, string, unknown>
-        ? Context.TagClass<PropService, 'PropService', PropsOf<C>>
-        : never
-      : never;
+      type PropsTagType = T extends (...args: any[]) => infer R
+        ? R extends Context.TagClass<unknown, string, unknown>
+          ? Context.TagClass<PropService, 'PropService', PropsOf<C>>
+          : never
+        : never;
 
-    return { PropService: PropsTag as unknown as PropsTagType };
-  };
+      return { PropService: PropsTag as unknown as PropsTagType };
+    };
+
+export const getPropTag = createGetPropTag(Context.Tag);

@@ -25,7 +25,6 @@ hello-world/
 ├── src/
 │   ├── App.runtime.ts
 │   ├── App.tsx
-│   ├── store.ts
 │   └── index.tsx
 └── README.md
 ```
@@ -34,47 +33,35 @@ hello-world/
 
 ### Defining the Runtime
 
-The runtime is defined in `App.runtime.ts`. It includes a store created with `mobx` and is exported as `context`.
+The runtime is defined in `App.runtime.ts`. It includes an AppCounter service created , and exports the context as `AppRuntime`.
 
 ```tsx
 // src/App.runtime.ts
-import { createRuntimeContext, withRuntime } from 'react-runtime';
-import { pipe, Layer, Effect } from 'effect';
-import * as Tags from './App.tags';
-import { createStore } from './store';
+import { getPropTag, createRuntimeContext } from '@donverduyn/react-runtime';
+import type { Props } from './App';
 
-export const references = () => ({});
+const { PropService } = getPropTag<Props>();
 
-export const context = pipe(
-  Layer.scopedDiscard(Effect.gen(function* () {
-    const store = yield* Tags.Store;
+export class AppCounter extends Effect.Service<AppCounter>()('App/AppCounter', {
+  scoped: Effect.gen(function* () {
+    const { id } = yield* PropService;
+    const countRef = yield* SubscriptionRef.make(0);
+
     yield* pipe(
-      Stream.fromIterable([1, 2, 3]),
-      Stream.tap((i) => store.set('message', `Hello, world! ${i}`)),
-      Stream.runDrain(),
+      Stream.fromSchedule(Schedule.fixed(1000)),
+      Stream.tap(() => Ref.updateAndGet(countRef, (v) => v + 1)),
+      Stream.runDrain,
       Effect.forkScoped
-    )
-  })),
-  Layer.provideMerge(
-    Layer.effect(Tags.Store, Effect.sync(createStore))
-  ),
-  createRuntimeContext
-);
-```
+    );
+    return pipe(
+      Stream.zipLatest(id, countRef.changes),
+      Stream.map(([id, value]) => `from ${id}: ${String(value)}`)
+    );
+  }),
+}) {}
 
-### Creating the Store
-
-The store is a simple `mobx` observable map.
-
-```tsx
-// src/store.ts
-import { observable } from 'mobx';
-
-export const createStore = () => {
-  const store = observable.map<string, any>();
-  store.set('message', 'Hello, world!');
-  return store;
-};
+const layer = pipe(AppCounter.Default);
+export const AppRuntime = createRuntimeContext({ name: 'AppRuntime' })(layer);
 ```
 
 ### Using `withRuntime`
@@ -83,55 +70,39 @@ The `App` component uses `withRuntime` to inject the runtime context and access 
 
 ```tsx
 // src/App.tsx
-import React from 'react';
-import { withRuntime } from 'react-runtime';
-import { pipe } from 'effect';
-import * as Tags from './App.tags';
-import { context } from './App.runtime';
+import { withRuntime } from '@donverduyn/react-runtime';
+import { AppRuntime } from './App.runtime';
+
+type Props = {
+  text: string;
+};
 
 export const App = pipe(
   AppView,
-  withRuntime(context, ({ runtime }) => {
-    const store = runtime.use(Tags.Store);
-    return { message: store.get('message') };
+  withRuntime(AppRuntime, ({ runtime }) => {
+    const count = runtime.use(AppCounter);
+    return { text: count };
   })
 );
 
-type Props = {
-  message: string;
+const AppView: React.FC<Props> = ({ text }) => {
+  return <h1>{text}</h1>;
 };
-
-const AppView: React.FC<Props> = ({ message }) => {
-  return <h1>{message}</h1>;
-};
-```
-
-### Entry Point
-
-The `index.tsx` file renders the `App` component.
-
-```tsx
-// src/index.tsx
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { App } from './App';
-
-ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
 ## Running the Example
 
 1. Build and start the application:
    ```bash
-   npm start
+   yarn dev
    ```
-2. Open your browser and navigate to `http://localhost:3000`. You should see the message "Hello, world!".
+2. Open your browser and navigate to `http://localhost:5173`. You should see the message "Hello, world!".
 
 ## How It Works
 
-1. **Runtime Definition:** The runtime context is defined in `App.runtime.ts` and includes the `mobx` store.
-2. **Dependency Injection:** The `withRuntime` HOC injects the runtime context into the `App` component.
-3. **Dynamic Resolution:** The `App` component retrieves the `message` from the store and displays it.
+1. **Runtime Definition:** The runtime context is defined in `App.runtime.ts`.
+2. **Dependency Injection:** The `withRuntime` HOC injects the runtime into the `App` component.
+3. **Dynamic Resolution:** Descendents of the `App` component can access the runtime and its services.
 
 ## License
 

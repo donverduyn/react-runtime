@@ -17,7 +17,7 @@ describe('effect utils', () => {
     const proxy = createProxy({ count: 0, bar: 'foo' });
 
     type Props = { readonly count: number; bar: string };
-    const { PropService } = getPropTag<Props>()(Context.Tag);
+    const { PropService } = getPropTag<Props>();
 
     class CountStream extends Effect.Service<CountStream>()('Count', {
       effect: Effect.gen(function* () {
@@ -111,8 +111,8 @@ describe('effect utils', () => {
     void runtime.dispose();
   });
   it('should allow any generated props tag to be used interchangably within the same runtime', () => {
-    const PropsTag1 = getPropTag<{ foo: string }>()(Context.Tag);
-    const PropsTag2 = getPropTag<{ foo: string }>()(Context.Tag);
+    const PropsTag1 = getPropTag<{ foo: string }>();
+    const PropsTag2 = getPropTag<{ foo: string }>();
 
     const program = Effect.gen(function* () {
       const { foo } = yield* PropsTag1.PropService;

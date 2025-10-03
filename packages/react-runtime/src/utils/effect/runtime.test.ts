@@ -103,34 +103,24 @@ describe('runSync behavior on runtime with async layers', () => {
     const secondResult = tryFnSync(() => runtime.runSync(syncEffect));
     expect(secondResult).toBe(42);
   });
+
+  it('should print', () => {
+    class Service extends Effect.Service<Service>()('@App/Namespace/123', {
+      effect: Effect.succeed({ foo: true }),
+    }) {}
+
+    console.log(Service.key);
+  });
 });
 
-// describe('isRuntimeModule', () => {
-//   it('returns true for a valid runtime module', () => {
-//     const layer = Layer.empty;
-//     const context = {
-//       key: Symbol('RuntimeContext'),
-//       layer,
-//     };
-//     const module = {
-//       context,
-//       reference: () => FunctionalComponent,
-//     };
-//     expect(isRuntimeModule<number>(module)).toBeTruthy();
-//   });
+class Service extends Effect.Service<Service>()('@App/Namespace/Foo', {
+  effect: Effect.succeed({ foo: true }),
+}) {}
 
-//   it('returns false if context is invalid', () => {
-//     const module = {
-//       context: {},
-//       reference: () => FunctionalComponent,
-//     };
-//     expect(isRuntimeModule(module)).toBeFalsy();
-//   });
+class Service2 extends Effect.Service<Service2>()('@App/Namespace/Bar', {
+  effect: Effect.succeed({ foo: true }),
+}) {}
 
-//   it('returns false for non-object input', () => {
-//     expect(isRuntimeModule(null)).toBeFalsy();
-//     expect(isRuntimeModule(undefined)).toBeFalsy();
-//     expect(isRuntimeModule(123)).toBeFalsy();
-//     expect(isRuntimeModule('string')).toBeFalsy();
-//   });
-// });
+class Service3 extends Effect.Service<Service3>()('@App/Namespace2/Bar', {
+  effect: Effect.succeed({ foo: true }),
+}) {}

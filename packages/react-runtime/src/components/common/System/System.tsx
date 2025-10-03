@@ -70,7 +70,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
   const Wrapper: React.FC<Partial<IdProp & React.ComponentProps<C>>> = (
     props
   ) => {
-    console.log('at the start', props.id);
+    // console.log('at the start', props.id);
     const { children, ...propsWithoutChildren } = props;
     const hasRun = React.useRef(false);
     const disposed = React.useRef(false);
@@ -101,14 +101,14 @@ export function CreateSystem<R, C extends React.FC<any>>(
 
     // unique identifier per component instance, used to register runtime instances
 
-    console.log(props.id, parentFrame.parent.cumSig, salt, 'before registerId');
+    // console.log(props.id, parentFrame.parent.cumSig, salt, 'before registerId');
     const registerId = React.useMemo(() => {
       const id = createId.withTrail(
         parentFrame.parent.cumSig,
         props.id ?? '',
         null
       ) as RegisterId;
-      console.log('creating id', id);
+      // console.log('creating id', id);
       return id;
     }, [props.id, parentFrame.parent.cumSig, salt]);
 
@@ -311,11 +311,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
       return runtimeProviderApi.unregister;
     }, []);
 
-    const buildEntries = useEntryBuilder<
-      R,
-      C,
-      Partial<IdProp & React.ComponentProps<C>>
-    >(scopeId, name);
+    const buildEntries = useEntryBuilder<R, C>(scopeId, name);
 
     //* from here on we start returning jsx.
     //* we need to distinguish between three modes.
@@ -350,7 +346,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
 
     //* 2. LIVE TREE (WITHOUT DRYRUN API) | DRY MODE WITHOUT PRUNING, in which case we just build and return
     if (systemContext.dryRunId === null) {
-      console.log({ registerId }, 'system');
+      // console.log({ registerId }, 'system');
       const { resultProps, upstreamModuleSource } = buildEntries(
         localProviders,
         // already set at begin in live tree but not in dry run.
@@ -379,7 +375,7 @@ export function CreateSystem<R, C extends React.FC<any>>(
       );
       providerTree.register(declarationId, localProviders);
 
-      console.log('before mergedProps', props.id);
+      // console.log('before mergedProps', props.id);
       const mergedProps = Object.assign({}, props, resultProps, {
         registerId: registerId.substring(0, 3),
         id: props.id,

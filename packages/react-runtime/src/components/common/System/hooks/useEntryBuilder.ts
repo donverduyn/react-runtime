@@ -24,8 +24,8 @@ import type {
 } from '@/types';
 import type { PropService } from 'utils/effect';
 
-export const useApiProxyFactory = <R, P>(
-  runtimeApi: RuntimeApiFactory<R, P>,
+export const useApiProxyFactory = <R>(
+  runtimeApi: RuntimeApiFactory<R>,
   name: string
 ) =>
   React.useCallback(
@@ -39,7 +39,7 @@ export const useApiProxyFactory = <R, P>(
       ) => Map<RuntimeKey, RuntimeInstance<any, any>>,
       factory?: (
         overrides?: Partial<RuntimeConfig>
-      ) => RuntimeApi<R, P> | undefined,
+      ) => RuntimeApi<R> | undefined,
       options?: EntryBuilderOptions
     ) => {
       return new Proxy<ProviderApi<R> | UpstreamProviderApi<any>>({} as never, {
@@ -100,10 +100,7 @@ export const usePropsProxyFactory = (name: string) =>
 //* useRuntimeFactory calls register, which instantiates the runtime instance and stores it in runtimeProvider.
 
 const useRuntimeFactory = <R, C extends React.FC<any>>(
-  runtimeApi: RuntimeApiFactory<
-    R,
-    Partial<React.ComponentProps<C> & ExtractStaticProps<C>>
-  >,
+  runtimeApi: RuntimeApiFactory<R>,
   name: string
 ) =>
   React.useCallback(
@@ -163,12 +160,12 @@ type EntryBuilderOptions = {
   stub: { value: unknown } | undefined;
 };
 
-export const useEntryBuilder = <R, C extends React.FC<any>, P>(
+export const useEntryBuilder = <R, C extends React.FC<any>>(
   scopeId: ScopeId,
   name: string
 ) => {
   const createRuntimeApi = useRuntimeApi(scopeId);
-  const createApiProxy = useApiProxyFactory<R, P>(createRuntimeApi, name);
+  const createApiProxy = useApiProxyFactory<R>(createRuntimeApi, name);
   const createPropsProxy = usePropsProxyFactory(name);
   const createRuntime = useRuntimeFactory<R, C>(createRuntimeApi, name);
 
@@ -209,7 +206,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
         Set<RuntimeContext<any, never, PropService>>
       >();
 
-      // initialProps comes from dry run or from the component props.
+      // initialProps comes from dry run or from the component props and overrides id, when user provided.
       currentProps.reset();
       currentProps.update({ id: registerId, ...initialProps } as never);
 
@@ -316,18 +313,18 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
 
           if (exists) {
             populated.set(provider.module.key, exists);
-            console.log('foozz');
+            // console.log('foozz');
             const instance = populated.get(provider.module.key)!;
-            console.log(currentProps.get());
+            // console.log(currentProps.get());
             Object.entries(currentProps.get()).forEach(([key, value]) => {
-              console.log({ key, value, instance });
+              // console.log({ key, value, instance });
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               if (instance.propProxy[key] !== value!)
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 instance.propProxy[key] = value!;
             });
           }
-          console.log({ registerId });
+          // console.log({ registerId });
           const factory = !exists
             ? createRuntime(
                 registerId,
@@ -372,7 +369,7 @@ export const useEntryBuilder = <R, C extends React.FC<any>, P>(
             // TODO: figure out why types are misaligned with props using MergeLeft in ProviderFn type
             const maybeProps = provider.fn(apiProxy as never);
             if (maybeProps) {
-              console.log(maybeProps, 'maybeProps');
+              // console.log(maybeProps, 'maybeProps');
               currentProps.update(maybeProps);
             }
           } else {
