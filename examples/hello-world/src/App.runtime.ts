@@ -3,7 +3,7 @@ import {
   createRuntimeContext,
   createKey,
 } from '@donverduyn/react-runtime';
-import { pipe, Effect, Stream, Schedule, Ref, SubscriptionRef, Layer } from 'effect';
+import { pipe, Effect, Stream, Schedule, Ref, SubscriptionRef } from 'effect';
 import type { Props } from './App';
 
 const { PropService } = getPropTag<Props>();
@@ -30,10 +30,6 @@ export class AppCounter extends Effect.Service<AppCounter>()(
   }
 ) {}
 
-export class Foo extends Effect.Service<Foo>()('@App/Fooo', {
-  effect: Effect.succeed({ foo: 'bar' }),
-}) {}
-
-export const layer = pipe(AppCounter.Default.pipe(Layer.merge(Foo.Default)));
+export const layer = pipe(AppCounter.Default);
 
 export const AppRuntime = createRuntimeContext({ name: 'AppRuntime' })(layer);

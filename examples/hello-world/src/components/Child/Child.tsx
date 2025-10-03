@@ -4,12 +4,11 @@ import {
   withUpstream,
 } from '@donverduyn/react-runtime';
 import { pipe } from 'effect';
-import { AppCounter, AppRuntime, Foo } from '../../App.runtime';
+import { AppCounter, AppRuntime } from '../../App.runtime';
 import { ChildRuntime, ChildText } from './Child.runtime';
 
 export const providers = getProviders((from) => [
-  from(AppRuntime).provide(AppCounter),
-  from(AppRuntime).provide(Foo),
+  from(AppRuntime).provide(AppCounter)
 ]);
 
 export type Props = {

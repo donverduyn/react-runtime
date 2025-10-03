@@ -26,16 +26,6 @@ export function createFn<R>(
   ) => InferReturn<Fn> extends Effect.Effect<infer A, any, any>
     ? Effect.Effect<A>
     : never;
-
-  // <R1, Fn extends (...args: any[]) => Effect.Effect<any, any, any>>(
-  //   target: RuntimeContext<R1> | RuntimeInstance<R1>,
-  //   fn: Fn,
-  //   deps?: React.DependencyList
-  // ): (
-  //   ...args: InferArgs<Fn>
-  // ) => Promise<
-  //   InferReturn<Fn> extends Effect.Effect<infer A, any, any> ? A : never
-  // >;
 };
 
 export function createFn<R>(
